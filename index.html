@@ -174,6 +174,12 @@
     .hub .match { font-size: .68rem; }
     .hub .result { font-size: .62rem; }
     .hub button { font-size: .58rem; padding: .35em .9em; }
+    /* Wheel is scaled down here, so boost the glow radius (SVG user units)
+       to keep the neon halo visible on mobile */
+    .sector-outer, .sector-inner {
+      stroke-width: 3.2;
+      filter: drop-shadow(0 0 6px var(--seg-color)) drop-shadow(0 0 14px var(--seg-color));
+    }
   }
   .hub button:hover, .hub button:focus-visible {
     background: var(--brass); color: var(--sky-deep); outline: none;
