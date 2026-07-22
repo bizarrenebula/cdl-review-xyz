@@ -33,6 +33,7 @@
     color: var(--parchment);
     font-family: 'Spectral', Georgia, serif;
     display: flex; flex-direction: column; align-items: center;
+    justify-content: center;
     overflow-x: hidden;
   }
   .stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
@@ -65,7 +66,7 @@
   .lang-switch button.active,
   .lang-switch button:hover { background: var(--brass); color: var(--sky-deep); border-color: var(--brass); }
 
-  header { text-align: center; padding: 2.6rem 1rem .6rem; z-index: 1; }
+  header { text-align: center; padding: 1.4rem 1rem .4rem; z-index: 1; }
   header h1 {
     font-family: 'Marcellus', serif; font-weight: 400;
     font-size: clamp(1.4rem, 4vw, 2.2rem);
@@ -79,9 +80,16 @@
 
   .stage {
     position: relative;
-    width: min(92vw, 640px); aspect-ratio: 1;
-    margin: 1rem auto .4rem; z-index: 1;
+    width: min(94vw, 640px, 74vh); aspect-ratio: 1;
+    margin: .6rem auto; z-index: 1;
     touch-action: none;
+  }
+
+  /* Roomier spacing on larger (desktop) screens */
+  @media (min-width: 760px) {
+    header { padding: 2.6rem 1rem 1rem; }
+    header p { margin-top: .9rem; }
+    .stage { margin: 1.8rem auto; }
   }
   svg { width: 100%; height: 100%; display: block; }
   .ring-group { cursor: grab; }
