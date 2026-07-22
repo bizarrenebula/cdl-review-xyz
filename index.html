@@ -69,6 +69,36 @@
   .lang-switch button.active,
   .lang-switch button:hover { background: var(--brass); color: var(--sky-deep); border-color: var(--brass); }
 
+  /* The sound toggle sits opposite the languages, quiet until you look for it.
+     Three bars that stand still when muted and drift when the drone is on. */
+  .sound {
+    position: fixed; top: .9rem; left: .9rem; z-index: 5;
+    display: flex; align-items: center; gap: .42rem;
+    padding: .42em .8em .42em .7em;
+    background: rgba(20,17,46,.7);
+    border: 1px solid var(--brass-dim); border-radius: 2rem;
+    color: #b9aed9; cursor: pointer;
+    font-family: 'Spectral', serif; font-size: .68rem; letter-spacing: .12em;
+    transition: color .3s, border-color .3s, background .3s;
+  }
+  .sound:hover, .sound:focus-visible { outline: none; border-color: var(--brass); color: var(--parchment); }
+  .sound i { display: flex; align-items: flex-end; gap: 2px; height: .7rem; }
+  .sound i b {
+    display: block; width: 2px; height: 30%;
+    background: currentColor; border-radius: 1px;
+    transition: height .35s ease;
+  }
+  .sound.on { color: var(--brass); border-color: var(--brass-dim); }
+  .sound.on i b { animation: sound-bar 2.6s ease-in-out infinite; }
+  .sound.on i b:nth-child(2) { animation-duration: 3.4s; animation-delay: -.9s; }
+  .sound.on i b:nth-child(3) { animation-duration: 4.1s; animation-delay: -1.7s; }
+  @keyframes sound-bar {
+    0%, 100% { height: 28%; }
+    50%      { height: 100%; }
+  }
+  @media (prefers-reduced-motion: reduce) { .sound.on i b { animation: none; height: 62%; } }
+  @media (max-width: 520px) { .sound span { display: none; } .sound { padding: .45em .6em; } }
+
   header { text-align: center; padding: 1.4rem 1rem .4rem; z-index: 1; }
   header h1 {
     font-family: 'Marcellus', serif; font-weight: 400;
@@ -203,14 +233,16 @@
      back through .lp-num's own transition. Opt in with `mark-ink`. */
   @keyframes mark-ink {
     45% {
-      fill: #fff6e0;
+      fill: #fff;
       fill-opacity: 1;
-      stroke: rgba(255,252,244,.95);
-      stroke-width: 2.2px;
+      /* The rim stays dark through the flare. Lighting it as well turned the
+         numeral into a white blob at the moment it was meant to be clearest. */
+      stroke: rgba(8,6,20,.35);
+      stroke-width: 1.8px;
       filter:
-        drop-shadow(0 0 3px #fff)
-        drop-shadow(0 0 10px var(--seg-color, #d3a95f))
-        drop-shadow(0 0 22px var(--seg-color, #d3a95f));
+        drop-shadow(0 0 4px rgba(255,255,255,.7))
+        drop-shadow(0 0 12px var(--seg-color, #d3a95f))
+        drop-shadow(0 0 26px var(--seg-color, #d3a95f));
     }
   }
   .mark-ink.mark-pulse { animation-name: mark-ink; }
@@ -266,28 +298,40 @@
     font-weight: 700;
     text-anchor: middle;
     pointer-events: none; user-select: none;
-    transition: fill .35s ease, stroke .35s ease, filter .35s ease;
+    transition: fill .35s ease, stroke .35s ease, filter .35s ease,
+                opacity .3s ease;
   }
+  /* Dipped while it changes places with its label — see numShift(). */
+  .lp-num.num-settling { opacity: .4; }
   .lp-num-lip {                                  /* the cast shadow, underneath */
-    fill: rgba(3,2,12,.6);
+    fill: rgba(3,2,12,.55);
     stroke: none;
   }
-  .lp-num-cut {                                  /* the brass face */
-    fill: rgba(233,238,255,.14);
-    stroke: rgba(211,169,95,.62);
+  /* The face is solid. It used to be a 14%-opacity wash, which meant every
+     numeral was really showing the dark copy underneath it plus whatever the
+     sector was doing behind that — so a number over a saturated segment went
+     muddy and some read as nearly black. One opaque fill, and all twelve are
+     the same numeral on every ring. Everything here stays inside the white
+     range: brightness alone separates them, never hue. */
+  .lp-num-cut {
+    fill: #e6eaf6;
+    fill-opacity: 1;
+    stroke: rgba(8,6,20,.55);                    /* a dark rim, so it never merges */
     stroke-width: 1.5px;
     paint-order: stroke fill;
     stroke-linejoin: round;
   }
 
-  /* Selected: the numeral fills with the sector's own light. */
+  /* Selected: the same numeral, brighter, with the sector's colour thrown
+     around it rather than into it. */
   .lp-num-cut.num-active {
-    fill: var(--seg-color);
-    fill-opacity: .92;
-    stroke: rgba(255,246,224,.75);
-    filter: drop-shadow(0 0 3px var(--seg-color)) drop-shadow(0 0 11px var(--seg-color));
+    fill: #fff;
+    fill-opacity: 1;
+    stroke: rgba(8,6,20,.4);
+    filter: drop-shadow(0 0 4px rgba(255,255,255,.55))
+            drop-shadow(0 0 12px var(--seg-color));
   }
-  .lp-num-lip.num-active { fill: rgba(3,2,12,.75); }
+  .lp-num-lip.num-active { fill: rgba(3,2,12,.7); }
 
   /* Size is per-number, computed in numSize() — a two-digit number cannot go
      as wide as a single one where the sector narrows. */
@@ -723,6 +767,10 @@
 
 <div class="stars" id="stars"></div>
 
+<button class="sound" id="soundBtn" type="button" aria-pressed="false">
+  <i aria-hidden="true"><b></b><b></b><b></b></i><span id="soundLabel">Klang</span>
+</button>
+
 <div class="lang-switch" id="langSwitch">
   <button data-lang="de">DE</button>
   <button data-lang="en">EN</button>
@@ -791,6 +839,7 @@ const I18N = {
       subtitle: 'Drehen Sie das äußere Rad nach links und rechts, um die Person zu wählen, und drehen Sie das innere Rad nach links und rechts, um die Kategorie des Ereignisses zu wählen.',
       alignment: 'Ausrichtung',
       readMore: 'Mehr lesen',
+      sound: 'Klang',
       outer: 'Außen · Personen',
       inner: 'Innen · Lebensbereiche',
       hint: 'Tippen Sie auf einen Sektor für Details. Ziehen Sie die Ringe zum Ausrichten.',
@@ -903,6 +952,7 @@ const I18N = {
       subtitle: 'Rotate the outer wheel left and right to select the person, and rotate the inner wheel left and right to select the category of the event.',
       alignment: 'Alignment',
       readMore: 'Read more',
+      sound: 'Sound',
       outer: 'Outer · People',
       inner: 'Inner · Life areas',
       hint: 'Tap a sector for details. Drag the rings to align.',
@@ -1015,6 +1065,7 @@ const I18N = {
       subtitle: 'Поворачивайте внешнее колесо влево и вправо, чтобы выбрать человека, и поворачивайте внутреннее колесо влево и вправо, чтобы выбрать категорию события.',
       alignment: 'Совмещение',
       readMore: 'Подробнее',
+      sound: 'Звук',
       outer: 'Внешний · Люди',
       inner: 'Внутренний · Сферы жизни',
       hint: 'Нажмите на сектор, чтобы узнать подробности. Вращайте кольца перетаскиванием.',
@@ -1127,6 +1178,7 @@ const I18N = {
       subtitle: 'Завъртайте външното колело наляво и надясно, за да изберете човека, и завъртайте вътрешното колело наляво и надясно, за да изберете категорията на събитието.',
       alignment: 'Подравняване',
       readMore: 'Прочети още',
+      sound: 'Звук',
       outer: 'Външен · Хора',
       inner: 'Вътрешен · Сфери на живота',
       hint: 'Докоснете сектор за подробности. Завъртете пръстените с плъзгане.',
@@ -1885,10 +1937,10 @@ function step(ring, dir) {
 const MARK_MS     = 1050;    // one beat; matches --mark-ms in the CSS
 const MARK_GAP    = 480;     // each beat trails the one before it
 const MARK_SWEEP  = 950;     // the light's run around the group
-/* A full round is now the walk (2.8s) plus the procession (1.6s), so at the
-   old 6s the wheel was moving five seconds out of every six. 8s leaves the
-   same pause between rounds that 6s did before the chain was added. */
-const MARK_EVERY  = 8000;
+/* A full round is the walk (2.8s), a breath, then the procession (1.6s) —
+   about 5.3s of movement. The gap is set from what is left over: at 8s the
+   next round arrived while the last one was still settling. */
+const MARK_EVERY  = 13000;
 const MARK_FIRST  = 2600;    // the first hint, shortly after the page settles
 /* A number goes home the moment its light goes out, on the same 60ms as every
    other piece. Holding it in front any longer left one numeral standing over
@@ -1945,21 +1997,41 @@ function selectedParts(ring) {
    than as a remembered sibling: raiseActive may reshuffle the group while the
    number is away, and following the path is right in every case where a
    remembered node would be stale. */
-function markLiftNum(ring, delay) {
+function liftNum(ring, idx, delay, hold) {
   const group = ring === 'outer' ? outerG : innerG;
-  const idx = selectedIndex(ring);
   const nums = [...group.querySelectorAll(`.lp-num[data-index="${idx}"]`)];
   if (!nums.length) return;
   setTimeout(() => {
     if (!markAllowed() || !nums[0].isConnected) return;
-    nums.forEach(el => group.appendChild(el));        // in front of everything
-    setTimeout(() => {
+    numShift(nums, () => nums.forEach(el => group.appendChild(el)));   // to the front
+    setTimeout(() => numShift(nums, () => {
       const path = group.querySelector(`.sector-${ring}[data-index="${idx}"]`);
       if (!path) return;                              // ring was rebuilt under us
       const after = path.nextSibling;
       nums.forEach(el => { if (el.parentNode === group) group.insertBefore(el, after); });
-    }, MARK_LIFT);
+    }), hold);
   }, delay);
+}
+const markLiftNum = (ring, delay) => liftNum(ring, selectedIndex(ring), delay, MARK_LIFT);
+
+/* ---- Changing places without the jump ----
+   Reordering is instantaneous: one frame the numeral is over its label, the
+   next it is beneath it, and at full brightness either direction lands as a
+   flinch. So it dips first — down to a little under half, which is roughly
+   where the label would have been covering it anyway — the move happens at the
+   bottom of the dip where there is least to see, and it comes back up in its
+   new place. The eye reads a fade, not a reorder.
+
+   Both directions use this. Coming forward, the dip runs while the marker's
+   light is rising on the same numeral, so it reads as the number fading up out
+   of the ring rather than jumping out of it. */
+const NUM_SINK = 300;          // matches the opacity transition in .lp-num
+function numShift(els, move) {
+  els.forEach(el => el.classList.add('num-settling'));
+  setTimeout(() => {
+    move();
+    els.forEach(el => el.classList.remove('num-settling'));
+  }, NUM_SINK);
 }
 
 /* One station of the walk: a wedge, its number, and the number brought to the
@@ -1981,31 +2053,28 @@ function markStation(ring, delay) {
    disc. Each touch is short, because 24 beats at the marker's usual length
    would be a wall of light instead of a chain.
 
-   The numerals are lifted as one batch for the length of the run rather than
-   one at a time: the same number of DOM moves, but done twice instead of
-   interleaved with two dozen animations. */
-const TRACE_MS   = 620;      // one number's beat in the chain
-const TRACE_STEP = 92;       // how far behind its neighbour each one follows
-const TRACE_LEAD = 200;      // the chain starts just before the walk's last light fades
+   Each numeral rises and settles with its own light, rather than the whole
+   ring being lifted for the length of the run. Lifting them as a batch was
+   cheaper, but it meant all twenty-four popped forward the instant the chain
+   began and dropped back together at the end — two events that had nothing to
+   do with the light travelling round, and read as exactly that. Twenty-four
+   small fades spread over three seconds cost little and are the effect. */
+/* Slower and further apart than the first pass. At 620ms a number was lit and
+   gone before it had registered, and the chain read as a flicker running round
+   the ring; at 950 each one is legible as itself and the light still travels.
+   The step has to grow with the beat, or ten numbers are lit at once and the
+   chain becomes a glow rather than a light going somewhere. */
+const TRACE_MS   = 950;      // one number's beat in the chain
+const TRACE_STEP = 135;      // how far behind its neighbour each one follows
+/* The chain used to start 200ms before the walk's last light had faded, which
+   ran the two into each other. It waits now: the pause is what tells the eye
+   the second thing is a separate statement about the whole wheel, rather than
+   the tail of the first one about the chosen pair. */
+const TRACE_WAIT = 900;      // quiet between the walk and the chain
 
 function numFace(ring, i) {
   const group = ring === 'outer' ? outerG : innerG;
   return group.querySelector(`.lp-num-cut[data-index="${i}"]`);
-}
-
-/* All twelve numerals of a ring to the front at once; returns the undo. */
-function liftAllNums(ring) {
-  const group = ring === 'outer' ? outerG : innerG;
-  [...group.querySelectorAll('.lp-num')].forEach(el => group.appendChild(el));
-  return () => {
-    for (let i = 0; i < 12; i++) {
-      const path = group.querySelector(`.sector-${ring}[data-index="${i}"]`);
-      if (!path) continue;                            // ring was rebuilt under us
-      const after = path.nextSibling;
-      group.querySelectorAll(`.lp-num[data-index="${i}"]`)
-        .forEach(el => group.insertBefore(el, after));
-    }
-  };
 }
 
 let traceTimers = [];
@@ -2014,13 +2083,15 @@ function markProcession(delay) {
   traceTimers = [];
   traceTimers.push(setTimeout(() => {
     if (!markAllowed()) return;
-    const undo = ['outer', 'inner'].map(liftAllNums);
+    /* The lift starts a dip ahead of the light, so the numeral has finished
+       fading forward exactly as its beat begins. */
     for (let k = 0; k < 12; k++) {
-      markPulse(numFace('outer', k),      k * TRACE_STEP, true, TRACE_MS);
-      markPulse(numFace('inner', 11 - k), k * TRACE_STEP, true, TRACE_MS);
+      const t = k * TRACE_STEP;
+      markPulse(numFace('outer', k),      t + NUM_SINK, true, TRACE_MS);
+      markPulse(numFace('inner', 11 - k), t + NUM_SINK, true, TRACE_MS);
+      liftNum('outer', k,      t, TRACE_MS + 60);
+      liftNum('inner', 11 - k, t, TRACE_MS + 60);
     }
-    traceTimers.push(setTimeout(() => undo.forEach(fn => fn()),
-                                11 * TRACE_STEP + TRACE_MS + 80));
   }, delay));
 }
 
@@ -2069,7 +2140,7 @@ function markGroupNow() {
   markStation('outer', together);
   markStation('inner', together);
   markPulse(hubRing, together);
-  markProcession(together + MARK_HANDOFF + MARK_MS - TRACE_LEAD);
+  markProcession(together + MARK_HANDOFF + MARK_MS + TRACE_WAIT);
 }
 
 /* The standing reminder: the same pieces, one station after another, outward
@@ -2081,7 +2152,7 @@ function markRound() {
   markStation('inner', MARK_GAP);
   const last = MARK_GAP * 2 + MARK_HANDOFF;          // the ball, after the last word
   markPulse(hubRing, last);
-  markProcession(last + MARK_MS - TRACE_LEAD);
+  markProcession(last + MARK_MS + TRACE_WAIT);
 }
 
 let markTimer = null;
@@ -2301,6 +2372,7 @@ function applyLanguage(newLang) {
   document.getElementById('uiSubtitle').textContent = T().subtitle;
   document.getElementById('uiAlignment').textContent = T().alignment;
   document.getElementById('readMoreBtn').textContent = T().readMore;
+  document.getElementById('soundLabel').textContent = T().sound;
   buildRing(outerG, 'outer');
   buildRing(innerG, 'inner');
   applyRotation('outer');
@@ -2322,6 +2394,157 @@ for (let i = 0; i < 60; i++) {
   s.style.transform = `scale(${0.5 + Math.random()})`;
   starsEl.appendChild(s);
 }
+
+/* ================= THE DRONE =================
+   There is no audio file. A recording of something this slow would be a large
+   download of mostly nothing, and it would loop — and a loop point is the one
+   event the ear always finds. This is a few oscillators and a filter instead:
+   a handful of lines, no asset, and it never repeats.
+
+   What is playing:
+     · three sine voices a fifth and an octave apart, detuned by a couple of
+       cents so they beat against each other very slowly. That beating is the
+       whole character — it is what makes a chord sound like a place.
+     · one lowpass filter over the lot, its cutoff drifting on a 40s cycle, so
+       the timbre opens and closes like something breathing in a large room.
+     · single notes from a pentatonic set, struck every 9 to 22 seconds at low
+       volume, each with a long decay. Sparse enough that they read as events
+       rather than as a melody.
+     · a convolution reverb built from decaying noise, so everything sits at a
+       distance rather than against the ear.
+
+   All of it stays under a master gain that fades in over eight seconds. Volume
+   is deliberately low: this should be noticed only when it stops. */
+const SOUND_KEY = 'cdl-sound';
+const soundBtn = document.getElementById('soundBtn');
+let audio = null;                              // built on first use, never twice
+
+function buildAudio() {
+  const Ctx = window.AudioContext || window.webkitAudioContext;
+  if (!Ctx) return null;
+  const ctx = new Ctx();
+
+  const master = ctx.createGain();
+  master.gain.value = 0;                       // faded up by startAudio
+  master.connect(ctx.destination);
+
+  /* Reverb: two seconds of noise decaying exponentially is a passable room. */
+  const len = ctx.sampleRate * 2.6;
+  const imp = ctx.createBuffer(2, len, ctx.sampleRate);
+  for (let ch = 0; ch < 2; ch++) {
+    const d = imp.getChannelData(ch);
+    for (let i = 0; i < len; i++) {
+      d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.6);
+    }
+  }
+  const verb = ctx.createConvolver();
+  verb.buffer = imp;
+  const verbGain = ctx.createGain();
+  verbGain.gain.value = .5;
+  verb.connect(verbGain).connect(master);
+
+  /* The drone, through its own slowly opening filter. */
+  const lp = ctx.createBiquadFilter();
+  lp.type = 'lowpass';
+  lp.frequency.value = 340;
+  lp.Q.value = .6;
+  lp.connect(master);
+  lp.connect(verb);
+
+  const drift = ctx.createOscillator();        // the 40s breath on the cutoff
+  const driftAmt = ctx.createGain();
+  drift.frequency.value = 1 / 40;
+  driftAmt.gain.value = 190;
+  drift.connect(driftAmt).connect(lp.frequency);
+  drift.start();
+
+  [[55, 0], [82.5, +3], [110, -2.5]].forEach(([hz, cents]) => {
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.value = hz;
+    osc.detune.value = cents;
+    const g = ctx.createGain();
+    g.gain.value = hz < 100 ? .22 : .12;       // the low voice carries it
+    osc.connect(g).connect(lp);
+    osc.start();
+  });
+
+  /* The occasional note. A minor pentatonic on A, three octaves up from the
+     drone, so it floats well clear of it. */
+  const NOTES = [440, 523.25, 587.33, 659.25, 783.99, 880, 1046.5];
+  let bellTimer = null;
+  function bell() {
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    const pan = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
+    osc.type = 'sine';
+    osc.frequency.value = NOTES[Math.floor(Math.random() * NOTES.length)];
+    const t = ctx.currentTime, dur = 5 + Math.random() * 4;
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(.06, t + .8);        // struck softly, slowly
+    g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    osc.connect(g);
+    if (pan) { pan.pan.value = Math.random() * 1.6 - .8; g.connect(pan); pan.connect(verb); pan.connect(master); }
+    else { g.connect(verb); g.connect(master); }
+    osc.start(t);
+    osc.stop(t + dur + .1);
+    bellTimer = setTimeout(bell, 9000 + Math.random() * 13000);
+  }
+  bellTimer = setTimeout(bell, 4000 + Math.random() * 5000);
+
+  return {
+    ctx, master,
+    stop() { clearTimeout(bellTimer); }
+  };
+}
+
+const SOUND_PEAK = .16;
+function startAudio() {
+  if (!audio) audio = buildAudio();
+  if (!audio) return false;
+  audio.ctx.resume();
+  const t = audio.ctx.currentTime;
+  audio.master.gain.cancelScheduledValues(t);
+  audio.master.gain.setValueAtTime(audio.master.gain.value, t);
+  audio.master.gain.linearRampToValueAtTime(SOUND_PEAK, t + 8);   // arrives, rather than starts
+  return true;
+}
+function stopAudio() {
+  if (!audio) return;
+  const t = audio.ctx.currentTime;
+  audio.master.gain.cancelScheduledValues(t);
+  audio.master.gain.setValueAtTime(audio.master.gain.value, t);
+  audio.master.gain.linearRampToValueAtTime(0, t + 1.4);
+}
+
+function setSound(on, remember = true) {
+  soundBtn.classList.toggle('on', on);
+  soundBtn.setAttribute('aria-pressed', String(on));
+  if (remember) { try { localStorage.setItem(SOUND_KEY, on ? '1' : '0'); } catch (e) {} }
+  if (on) { if (!startAudio()) soundBtn.classList.remove('on'); }
+  else stopAudio();
+}
+soundBtn.addEventListener('click', () => setSound(!soundBtn.classList.contains('on')));
+
+/* A page may not make noise until it has been touched, so the drone waits for
+   the first gesture — and only then, and only if it was left on. Silence is
+   the default for anyone arriving for the first time: sound on arrival is the
+   web's rudest habit. */
+let wantsSound = false;
+try { wantsSound = localStorage.getItem(SOUND_KEY) === '1'; } catch (e) {}
+if (wantsSound) {
+  const wake = () => { setSound(true, false); off(); };
+  const off = () => ['pointerdown', 'keydown'].forEach(e =>
+    document.removeEventListener(e, wake));
+  ['pointerdown', 'keydown'].forEach(e =>
+    document.addEventListener(e, wake, { once: false }));
+}
+/* Leaving the tab takes the sound with it. */
+document.addEventListener('visibilitychange', () => {
+  if (!audio) return;
+  if (document.hidden) stopAudio();
+  else if (soundBtn.classList.contains('on')) startAudio();
+});
 
 applyLanguage('de');
 scheduleMark(MARK_FIRST);
