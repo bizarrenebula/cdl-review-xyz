@@ -140,6 +140,86 @@
       drop-shadow(0 0 19.5px var(--seg-color));
   }
 
+  /* ============ THE MARKER ============================================
+     One gesture for "look here", used everywhere on the page: a white border
+     swells around the thing and falls back. Add the class `mark-pulse` to any
+     element for one beat; JS side is markPulse(el, delay) in the MARKER
+     section, which handles the timing and the cleanup.
+
+       markPulse(document.querySelector('#readMoreBtn'));   // any element
+       markPulse(sectorEl, 480);                            // any SVG shape
+
+     Two flavours, picked by what the element is, because a border means a
+     different property in each world:
+       · SVG shapes  -> the stroke itself brightens and thickens.
+       · HTML boxes  -> an outline swells and drifts outward as it fades.
+     Outline is deliberate: it follows border-radius, is not clipped by the
+     element's own overflow, and leaves box-shadow free for whatever the
+     element already uses it for (the hub's breathing, for one). */
+  :root { --mark-ms: 1.05s; }
+
+  /* Only the mid-frame is declared, so the start and end values are the
+     element's own — the same flare reads correctly on an already-glowing
+     sector and on a dim one, with nothing to snap back from. */
+  @keyframes mark-stroke {
+    45% {
+      stroke: #fff7e4;
+      stroke-width: var(--mark-w, 5.4);
+      filter:
+        drop-shadow(0 0 2px #fff)
+        drop-shadow(0 0 8px var(--seg-color, #d3a95f))
+        drop-shadow(0 0 18px var(--seg-color, #d3a95f))
+        drop-shadow(0 0 30px var(--seg-color, #d3a95f));
+    }
+  }
+  @keyframes mark-ring {
+    0%   { outline-color: rgba(255,247,228,0);   outline-width: 1px; outline-offset: 1px; }
+    45%  { outline-color: rgba(255,247,228,.92); outline-width: 3px; outline-offset: 3px; }
+    100% { outline-color: rgba(255,247,228,0);   outline-width: 3px; outline-offset: 9px; }
+  }
+  .mark-pulse {
+    outline: 1px solid transparent;
+    animation: mark-ring var(--mark-ms) ease-in-out;
+  }
+  svg .mark-pulse { outline: none; animation-name: mark-stroke; }
+
+  /* A third flavour, for an element that has box-shadow to spare: the same
+     ring, but as a spread shadow, which carries a real halo the way outline
+     cannot — and which lands on phone browsers that will not round an outline
+     to a border-radius. Opt in with `mark-glow` alongside `mark-pulse`. */
+  @keyframes mark-ring-glow {
+    0%   { box-shadow: 0 0 0 1px rgba(255,247,228,0),
+                       0 0 8px 0 rgba(255,247,228,0); }
+    45%  { box-shadow: 0 0 0 3px rgba(255,247,228,.92),
+                       0 0 26px 7px rgba(255,240,214,.45); }
+    100% { box-shadow: 0 0 0 9px rgba(255,247,228,0),
+                       0 0 34px 12px rgba(255,240,214,0); }
+  }
+  .mark-glow.mark-pulse { outline: none; animation-name: mark-ring-glow; }
+
+  /* ---- The marker's other half: one light running the whole way round a
+     group of things, to say they belong together. The path is built in JS
+     (markSweepPath) because it traces the union of the two chosen wedges and
+     the ball; here it is only lit and moved. pathLength=100 in the markup, so
+     the dash numbers below are percentages of the outline however big it is. */
+  #markSweep path {
+    fill: none;
+    stroke: #fff7e4;
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-dasharray: 22 78;
+    opacity: 0;
+    pointer-events: none;
+    filter: drop-shadow(0 0 4px #fff) drop-shadow(0 0 12px rgba(211,169,95,.9));
+  }
+  #markSweep.run path { animation: mark-sweep .95s cubic-bezier(.35,0,.25,1); }
+  @keyframes mark-sweep {
+    0%   { opacity: 0; stroke-dashoffset: 122; }
+    12%  { opacity: 1; }
+    82%  { opacity: 1; }
+    100% { opacity: 0; stroke-dashoffset: 0; }
+  }
+
   /* ---- The principle number, struck into the sector ----
      Two stacked copies: a dark copy offset downwards reads as the shadow the
      numeral casts, and the face on top is outlined in gold with a faintly lit
@@ -204,13 +284,18 @@
       radial-gradient(circle at 38% 30%,
         #3b3170 0%, #2a2358 22%, #1c1848 48%, #120f31 74%, #08061a 100%),
       var(--hub);
-    border: 1px solid rgba(211,169,95,.42);
+    border: 1px solid rgba(255,240,214,.66);
+    /* The last three shadows are the ball's answer to a selected sector: a
+       white hairline over the rim and two gold halos, so the centre reads as
+       lit in the same register as the two chosen wedges. */
     box-shadow:
       inset 0 0 42px rgba(6,4,18,.9),          /* rim shadow: rounds the ball */
       inset -10px -12px 34px rgba(6,4,18,.55), /* terminator, away from the light */
       inset 0 -14px 30px rgba(180,119,255,.13),/* bounce light off the base */
       0 0 30px rgba(0,0,0,.6),
-      0 0 26px rgba(211,169,95,.16);
+      0 0 2px rgba(255,255,255,.5),
+      0 0 14px rgba(211,169,95,.45),
+      0 0 34px rgba(211,169,95,.3);
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
     text-align: center; padding: 4%; gap: .35rem;
@@ -307,13 +392,29 @@
                  inset 0 -14px 30px rgba(180,119,255,.16),
                  inset 0 10px 26px rgba(214,226,255,.07),
                  0 0 30px rgba(0,0,0,.6),
-                 0 0 26px rgba(211,169,95,.16); }
+                 0 0 2px rgba(255,255,255,.5),
+                 0 0 14px rgba(211,169,95,.45),
+                 0 0 34px rgba(211,169,95,.3); }
     50%      { box-shadow:
                  inset 0 0 30px rgba(8,6,22,.7),
                  inset 0 -18px 38px rgba(180,119,255,.3),
                  inset 0 10px 26px rgba(214,226,255,.1),
                  0 0 30px rgba(0,0,0,.6),
-                 0 0 48px rgba(211,169,95,.34); }
+                 0 0 3px rgba(255,255,255,.62),
+                 0 0 20px rgba(211,169,95,.6),
+                 0 0 52px rgba(211,169,95,.42); }
+  }
+
+  /* The ball cannot wear the marker itself: .lit already owns its `animation`
+     property for the breathing, and a second one would replace it. So the
+     marker goes on a bare ring laid over the ball — same circle, nothing in
+     it, nothing else animating it. (The general rule for the marker: if the
+     target already animates, mark an overlay instead of the element.) */
+  .hub-ring {
+    position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    width: 42%; height: 42%; border-radius: 50%;
+    pointer-events: none; z-index: 3;
   }
 
   .hub.pulse .rim   { animation: rim-fade 1.15s linear; }
@@ -383,7 +484,9 @@
         inset 0 -16px 34px rgba(180,119,255,.24),
         inset 0 10px 26px rgba(214,226,255,.09),
         0 0 30px rgba(0,0,0,.6),
-        0 0 36px rgba(211,169,95,.25);
+        0 0 2px rgba(255,255,255,.5),
+        0 0 16px rgba(211,169,95,.5),
+        0 0 40px rgba(211,169,95,.32);
     }
   }
   .hub .eyebrow { display: none; }
@@ -424,6 +527,13 @@
     .sector-outer, .sector-inner {
       stroke-width: 3.2;
       filter: drop-shadow(0 0 6px var(--seg-color)) drop-shadow(0 0 14px var(--seg-color));
+      --mark-w: 8.5;              /* wheel is smaller here — flare wider */
+    }
+    /* Everything the marker draws is in SVG user units, so a phone renders it
+       at roughly half the size a desktop does. Scale it back up by hand. */
+    #markSweep path {
+      stroke-width: 6;
+      filter: drop-shadow(0 0 5px #fff) drop-shadow(0 0 16px rgba(211,169,95,.95));
     }
     .sector-outer.active, .sector-inner.active {
       stroke-width: 4.4;
@@ -604,6 +714,8 @@
     <g id="innerRing" class="ring-group"></g>
     <circle cx="350" cy="350" r="252" fill="none" stroke="#d3a95f" stroke-width="1.5" pointer-events="none"/>
     <circle cx="350" cy="350" r="164" fill="none" stroke="#d3a95f" stroke-width="1.5" pointer-events="none"/>
+    <!-- Last child, so the marker's sweep runs over everything on the wheel. -->
+    <g id="markSweep" aria-hidden="true"><path pathLength="100"/></g>
   </svg>
 
   <div class="hub" id="hub">
@@ -616,6 +728,7 @@
     <div class="result" id="resultText"></div>
     <button id="readMoreBtn" type="button"></button>
   </div>
+  <div class="hub-ring mark-glow" id="hubRing" aria-hidden="true"></div>
 </div>
 
 <div class="overlay" id="overlay" role="dialog" aria-modal="true">
@@ -1468,6 +1581,7 @@ function updateHub() {
   const e = selectedIndex('inner');
   const r = resultLP(p, e);
   pulseHub(p + ':' + e);
+  markOnChange(p + ':' + e);
   raiseActive(outerG, 'outer', p);
   raiseActive(innerG, 'inner', e);
   outerG.querySelectorAll('.sector-outer').forEach(el =>
@@ -1660,14 +1774,19 @@ const isSmall = () => matchMedia('(max-width: 520px)').matches;
 /* While a wheel is in motion the page goes into a lighter drawing mode
    (see `body.spinning` in the CSS): on phones the neon halos are the most
    expensive thing on screen, and re-rasterising 24 of them every frame is what
-   made the turn stutter. Ref-counted, since both rings can move at once. */
+   made the turn stutter. Both rings can move at once, so the flag is counted —
+   but counted by *asking the rings*, never by incrementing. A ref count that
+   drifts up by one (a second finger landing mid-drag used to do exactly that)
+   sticks the page in the cheap drawing mode for the rest of the session, which
+   costs the halos and silences the marker with nothing on screen to explain
+   why. Derived state cannot drift. */
 let spinners = 0;
-function setSpinning(on) {
-  spinners = Math.max(0, spinners + (on ? 1 : -1));
+function setSpinning() {
+  spinners = (state.outer.spinning ? 1 : 0) + (state.inner.spinning ? 1 : 0);
   document.body.classList.toggle('spinning', spinners > 0);
 }
-function beginSpin(s) { if (!s.spinning) { s.spinning = true; setSpinning(true); } }
-function endSpin(s)   { if (s.spinning)  { s.spinning = false; setSpinning(false); } }
+function beginSpin(s) { s.spinning = true;  setSpinning(); }
+function endSpin(s)   { s.spinning = false; setSpinning(); }
 
 function animateTo(ring, target, dur, ease) {
   const s = state[ring];
@@ -1702,6 +1821,120 @@ function step(ring, dir) {
   animateTo(ring, base + STEP * dir, isSmall() ? 420 : 560, easeRoll);
 }
 
+/* ================= THE MARKER =================
+   The page's one way of saying "look here": a white border swells around a
+   thing and falls back. See the MARKER block in the CSS for the two flavours
+   (SVG stroke / HTML outline) — this side is only timing.
+
+     markPulse(el)            one beat, now
+     markPulse(el, 480)       one beat, in 480ms
+     markPulse(el, 0, false)  one beat even mid-drag (ignores the quiet rules)
+
+   Used here for two jobs. Periodically, the two selected sectors and the ball
+   pulse in turn, outer → inner → centre, walking the eye the way the result is
+   read — "you are on these". And when the result changes they are marked as
+   one instead: a single light runs the whole way round the pair and the ball
+   together, then all three pulse at the same instant. */
+const MARK_MS     = 1050;    // one beat; matches --mark-ms in the CSS
+const MARK_GAP    = 480;     // each beat trails the one before it
+const MARK_SWEEP  = 950;     // the light's run around the group
+const MARK_EVERY  = 10000;
+const MARK_FIRST  = 2600;    // the first hint, shortly after the page settles
+
+function markPulse(el, delay = 0, quietly = true) {
+  setTimeout(() => {
+    if (!el || !el.isConnected) return;           // rebuilt out from under us
+    if (quietly && !markAllowed()) return;        // the moment passed
+    el.classList.remove('mark-pulse');
+    el.getBoundingClientRect();                   // reflow, so a re-pulse restarts
+    el.classList.add('mark-pulse');
+    setTimeout(() => el.classList.remove('mark-pulse'), MARK_MS + 60);
+  }, delay);
+}
+
+/* The selected wedge of a ring, which is always the one under the marker. */
+function selectedSector(ring) {
+  const group = ring === 'outer' ? outerG : innerG;
+  return group.querySelector(`.sector-${ring}[data-index="${selectedIndex(ring)}"]`);
+}
+
+/* Silent while the user is already busy — mid-turn, reading a card, or away —
+   and off entirely for anyone who asked for less motion. */
+function markAllowed() {
+  return !reduceMotion() && !document.hidden && !drag && spinners === 0 &&
+         !overlay.classList.contains('open');
+}
+
+/* ---- The sweep: one light around the pair and the ball together ----
+   The outline is the union of the two chosen wedges and the ball, and it is
+   the same shape every time: whatever is selected sits under the marker at the
+   top, so this traces the top wedge from the ball's rim outwards, round the
+   outer edge, back down, then the long way round the ball. Drawn just clear of
+   both (the ball is an HTML element painted over the SVG, so hugging its rim
+   exactly would hide half the stroke). */
+const sweepG = document.getElementById('markSweep');
+const hubRing = document.getElementById('hubRing');
+function markSweepPath() {
+  const a1 = -STEP / 2, a2 = STEP / 2;
+  const rect = hubEl.getBoundingClientRect();
+  const stage = svg.getBoundingClientRect();
+  const rh = (rect.width / stage.width) * 700 / 2 + 5;   // ball's rim, plus air
+  const ro = OUTER_R2 + 4;
+  const [ix, iy] = polar(rh, a1), [ox, oy] = polar(ro, a1);
+  const [px, py] = polar(ro, a2), [qx, qy] = polar(rh, a2);
+  return `M ${ix} ${iy} L ${ox} ${oy} A ${ro} ${ro} 0 0 1 ${px} ${py} ` +
+         `L ${qx} ${qy} A ${rh} ${rh} 0 1 1 ${ix} ${iy} Z`;
+}
+function markSweepRun() {
+  if (!sweepG) return;
+  sweepG.querySelector('path').setAttribute('d', markSweepPath());
+  sweepG.classList.remove('run');
+  sweepG.getBoundingClientRect();
+  sweepG.classList.add('run');
+  setTimeout(() => sweepG.classList.remove('run'), MARK_SWEEP + 60);
+}
+
+/* A new result: the light runs the group, then the three flare together. */
+function markGroupNow() {
+  if (!markAllowed()) return;
+  markSweepRun();
+  const together = MARK_SWEEP - 120;              // land as the light closes
+  markPulse(selectedSector('outer'), together);
+  markPulse(selectedSector('inner'), together);
+  markPulse(hubRing, together);
+}
+
+/* The standing reminder: the same three, one after another, outward to in. */
+function markRound() {
+  if (!markAllowed()) return;
+  markPulse(selectedSector('outer'), 0);
+  markPulse(selectedSector('inner'), MARK_GAP);
+  markPulse(hubRing, MARK_GAP * 2);
+}
+
+let markTimer = null;
+function scheduleMark(delay = MARK_EVERY) {
+  clearTimeout(markTimer);
+  markTimer = setTimeout(() => { markRound(); scheduleMark(); }, delay);
+}
+/* A new pairing is its own reminder — mark the group at once and restart the
+   clock. Keyed on the pair, so a language switch (same notch, new words) stays
+   quiet. The next periodic round is pushed out past the sweep, so the two
+   never overlap. */
+let lastMarkPair = null;
+function markOnChange(key) {
+  if (lastMarkPair === key) return;
+  const first = lastMarkPair === null;
+  lastMarkPair = key;
+  if (first) return;                    // the initial render gets MARK_FIRST
+  markGroupNow();
+  scheduleMark(MARK_EVERY + MARK_SWEEP);
+}
+/* A backgrounded tab holds its timer but skips the round; pick it up on return. */
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) scheduleMark();
+});
+
 /* ================= DRAG + TAP ================= */
 
 let drag = null;
@@ -1715,6 +1948,7 @@ function eventInfo(ev) {
 }
 
 svg.addEventListener('pointerdown', ev => {
+  if (drag) return;                     // one finger turns the wheel; ignore the rest
   const { angle, dist } = eventInfo(ev);
   let ring = null;
   if (dist >= INNER_R1 && dist < OUTER_R1) ring = 'inner';
@@ -1755,11 +1989,16 @@ function endDrag(ev) {
   drag = null;
 }
 svg.addEventListener('pointerup', endDrag);
-svg.addEventListener('pointercancel', () => {
+/* Any way the gesture can end without a pointerup — the browser taking the
+   touch for a scroll, the finger leaving the surface, capture lost to another
+   element — has to put the ring down too, or it stays "in motion" forever. */
+function abortDrag() {
   if (!drag) return;
   if (drag.moved) snap(drag.ring); else endSpin(state[drag.ring]);
   drag = null;
-});
+}
+svg.addEventListener('pointercancel', abortDrag);
+svg.addEventListener('lostpointercapture', abortDrag);
 
 document.querySelectorAll('.control-block button').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -1913,6 +2152,7 @@ for (let i = 0; i < 60; i++) {
 }
 
 applyLanguage('de');
+scheduleMark(MARK_FIRST);
 </script>
 </body>
 </html>
