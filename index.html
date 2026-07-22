@@ -1885,7 +1885,10 @@ function step(ring, dir) {
 const MARK_MS     = 1050;    // one beat; matches --mark-ms in the CSS
 const MARK_GAP    = 480;     // each beat trails the one before it
 const MARK_SWEEP  = 950;     // the light's run around the group
-const MARK_EVERY  = 6000;
+/* A full round is now the walk (2.8s) plus the procession (1.6s), so at the
+   old 6s the wheel was moving five seconds out of every six. 8s leaves the
+   same pause between rounds that 6s did before the chain was added. */
+const MARK_EVERY  = 8000;
 const MARK_FIRST  = 2600;    // the first hint, shortly after the page settles
 /* A number goes home the moment its light goes out, on the same 60ms as every
    other piece. Holding it in front any longer left one numeral standing over
@@ -1897,14 +1900,22 @@ const MARK_LIFT   = MARK_MS + 60;
    the number is already on its way down. */
 const MARK_HANDOFF = Math.round(MARK_MS * 0.78);
 
-function markPulse(el, delay = 0, quietly = true) {
+/* `ms` overrides the length of this one beat. The CSS reads its duration from
+   --mark-ms, so setting that on the element is enough to make a single pulse
+   quicker than the rest — which is what the procession below needs, 24 beats
+   at the standard length being a wall of light rather than a chain. */
+function markPulse(el, delay = 0, quietly = true, ms = MARK_MS) {
   setTimeout(() => {
     if (!el || !el.isConnected) return;           // rebuilt out from under us
     if (quietly && !markAllowed()) return;        // the moment passed
     el.classList.remove('mark-pulse');
+    if (ms !== MARK_MS) el.style.setProperty('--mark-ms', ms + 'ms');
     el.getBoundingClientRect();                   // reflow, so a re-pulse restarts
     el.classList.add('mark-pulse');
-    setTimeout(() => el.classList.remove('mark-pulse'), MARK_MS + 60);
+    setTimeout(() => {
+      el.classList.remove('mark-pulse');
+      if (ms !== MARK_MS) el.style.removeProperty('--mark-ms');
+    }, ms + 60);
   }, delay);
 }
 
@@ -1961,6 +1972,58 @@ function markStation(ring, delay) {
   words.forEach(el => markPulse(el, delay + MARK_HANDOFF));
 }
 
+/* ---- The procession ----------------------------------------------------
+   Once the walk has finished with the chosen pair, a light sets off around
+   each wheel and touches all twelve numbers in turn — the whole wheel gets
+   named, not just the two under the marker. The two lights travel against
+   each other: the outer counts 1 → 12 one way round, the inner 12 → 1 the
+   other, so they meet twice and the wheel reads as two rings rather than one
+   disc. Each touch is short, because 24 beats at the marker's usual length
+   would be a wall of light instead of a chain.
+
+   The numerals are lifted as one batch for the length of the run rather than
+   one at a time: the same number of DOM moves, but done twice instead of
+   interleaved with two dozen animations. */
+const TRACE_MS   = 620;      // one number's beat in the chain
+const TRACE_STEP = 92;       // how far behind its neighbour each one follows
+const TRACE_LEAD = 200;      // the chain starts just before the walk's last light fades
+
+function numFace(ring, i) {
+  const group = ring === 'outer' ? outerG : innerG;
+  return group.querySelector(`.lp-num-cut[data-index="${i}"]`);
+}
+
+/* All twelve numerals of a ring to the front at once; returns the undo. */
+function liftAllNums(ring) {
+  const group = ring === 'outer' ? outerG : innerG;
+  [...group.querySelectorAll('.lp-num')].forEach(el => group.appendChild(el));
+  return () => {
+    for (let i = 0; i < 12; i++) {
+      const path = group.querySelector(`.sector-${ring}[data-index="${i}"]`);
+      if (!path) continue;                            // ring was rebuilt under us
+      const after = path.nextSibling;
+      group.querySelectorAll(`.lp-num[data-index="${i}"]`)
+        .forEach(el => group.insertBefore(el, after));
+    }
+  };
+}
+
+let traceTimers = [];
+function markProcession(delay) {
+  traceTimers.forEach(clearTimeout);
+  traceTimers = [];
+  traceTimers.push(setTimeout(() => {
+    if (!markAllowed()) return;
+    const undo = ['outer', 'inner'].map(liftAllNums);
+    for (let k = 0; k < 12; k++) {
+      markPulse(numFace('outer', k),      k * TRACE_STEP, true, TRACE_MS);
+      markPulse(numFace('inner', 11 - k), k * TRACE_STEP, true, TRACE_MS);
+    }
+    traceTimers.push(setTimeout(() => undo.forEach(fn => fn()),
+                                11 * TRACE_STEP + TRACE_MS + 80));
+  }, delay));
+}
+
 /* Silent while the user is already busy — mid-turn, reading a card, or away —
    and off entirely for anyone who asked for less motion. */
 function markAllowed() {
@@ -2006,15 +2069,19 @@ function markGroupNow() {
   markStation('outer', together);
   markStation('inner', together);
   markPulse(hubRing, together);
+  markProcession(together + MARK_HANDOFF + MARK_MS - TRACE_LEAD);
 }
 
 /* The standing reminder: the same pieces, one station after another, outward
-   to in. A wedge and its number are one station and share a beat. */
+   to in. A wedge and its number are one station and share a beat. Then the
+   pair of lights sets off round both wheels to name the other ten. */
 function markRound() {
   if (!markAllowed()) return;
   markStation('outer', 0);
   markStation('inner', MARK_GAP);
-  markPulse(hubRing, MARK_GAP * 2 + MARK_HANDOFF);   // after the last word
+  const last = MARK_GAP * 2 + MARK_HANDOFF;          // the ball, after the last word
+  markPulse(hubRing, last);
+  markProcession(last + MARK_MS - TRACE_LEAD);
 }
 
 let markTimer = null;
