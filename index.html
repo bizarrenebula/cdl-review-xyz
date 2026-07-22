@@ -329,27 +329,6 @@
   </div>
 </div>
 
-<p class="hint" id="uiHint"></p>
-
-<div class="controls">
-  <div class="control-block">
-    <div class="name" id="uiOuter"></div>
-    <div class="btns">
-      <button type="button" data-ring="outer" data-dir="-1" aria-label="outer left">‹</button>
-      <button type="button" data-ring="outer" data-dir="1" aria-label="outer right">›</button>
-    </div>
-  </div>
-  <div class="control-block">
-    <div class="name" id="uiInner"></div>
-    <div class="btns">
-      <button type="button" data-ring="inner" data-dir="-1" aria-label="inner left">‹</button>
-      <button type="button" data-ring="inner" data-dir="1" aria-label="inner right">›</button>
-    </div>
-  </div>
-</div>
-
-<footer><span id="uiFooter"></span><br><a id="deuterLink" class="deuter-link" href="https://bizarrenebula.github.io/deuter/" target="_blank" rel="noopener"></a></footer>
-
 <div class="overlay" id="overlay" role="dialog" aria-modal="true">
   <div class="modal">
     <button class="close" id="closeModal" aria-label="Close">×</button>
@@ -1136,11 +1115,6 @@ function applyLanguage(newLang) {
   document.getElementById('uiSubtitle').textContent = T().subtitle;
   document.getElementById('uiAlignment').textContent = T().alignment;
   document.getElementById('readMoreBtn').textContent = T().readMore;
-  document.getElementById('uiOuter').textContent = T().outer;
-  document.getElementById('uiInner').textContent = T().inner;
-  document.getElementById('uiHint').textContent = T().hint;
-  document.getElementById('uiFooter').textContent = T().footer;
-  document.getElementById('deuterLink').textContent = T().deuterLink;
   buildRing(outerG, 'outer');
   buildRing(innerG, 'inner');
   applyRotation('outer');
