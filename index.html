@@ -74,7 +74,21 @@
     font-family: 'Marcellus', serif; font-weight: 400;
     font-size: clamp(1.4rem, 4vw, 2.2rem);
     letter-spacing: .12em; text-transform: uppercase;
-    color: var(--brass);
+    color: var(--gold-ink);
+    /* Breathes on the same 3.2s as the answer in the ball, and starts on the
+       same beat, so the title and the result pulse together. */
+    text-shadow: 0 1px 3px rgba(4,3,14,.9), 0 0 18px rgba(211,169,95,.5);
+    animation: title-breathe 3.2s ease-in-out 1s infinite;
+  }
+  @keyframes title-breathe {
+    0%, 100% { color: var(--gold-ink);
+               text-shadow: 0 1px 3px rgba(4,3,14,.9), 0 0 18px rgba(211,169,95,.5); }
+    50%      { color: var(--gold-lit);
+               text-shadow: 0 1px 3px rgba(4,3,14,.9), 0 0 26px rgba(255,214,140,.85),
+                            0 0 52px rgba(211,169,95,.6); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    header h1 { animation: none; }
   }
   header p {
     margin-top: .5rem; font-size: .92rem; font-weight: 300; font-style: italic;
