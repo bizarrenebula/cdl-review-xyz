@@ -96,6 +96,9 @@
   svg { width: 100%; height: 100%; display: block; overflow: visible; }
   .ring-group { cursor: grab; }
   .ring-group:active { cursor: grabbing; }
+  /* Promoted only while turning: a permanent layer would cost memory for a
+     filtered subtree that is usually still. */
+  body.spinning .ring-group { will-change: transform; }
 
   .sector-outer, .sector-inner {
     fill: var(--ring-outer);
@@ -376,6 +379,23 @@
         drop-shadow(0 0 18px var(--seg-color))
         drop-shadow(0 0 33px var(--seg-color));
     }
+
+    /* ---- in motion: strip everything the GPU has to redraw each frame ----
+       Four stacked drop-shadows across 24 rotating paths is what stutters on a
+       phone; one cheap halo carries the neon read while the wheel is turning
+       and the full glow returns the moment it settles. */
+    body.spinning .sector-outer, body.spinning .sector-inner {
+      filter: drop-shadow(0 0 4px var(--seg-color));
+      transition: none;
+    }
+    body.spinning .sector-outer.active, body.spinning .sector-inner.active {
+      filter: drop-shadow(0 0 7px var(--seg-color));
+    }
+    body.spinning .lp-num { stroke: none; }
+    /* The ball is not what is moving — stop paying for it mid-turn. */
+    body.spinning .hub-mist span,
+    body.spinning .hub.lit { animation-play-state: paused; }
+    body.spinning .hub-mist { filter: blur(6px); }
   }
   .hub button:hover, .hub button:focus-visible {
     background: var(--brass); color: var(--sky-deep); outline: none;
@@ -1278,38 +1298,51 @@ function easeRoll(t) {
   return -0.055 + 1.055 * (1 + (back + 1) * u * u * u + back * u * u);
 }
 
+const isSmall = () => matchMedia('(max-width: 520px)').matches;
+
+/* While a wheel is in motion the page goes into a lighter drawing mode
+   (see `body.spinning` in the CSS): on phones the neon halos are the most
+   expensive thing on screen, and re-rasterising 24 of them every frame is what
+   made the turn stutter. Ref-counted, since both rings can move at once. */
+let spinners = 0;
+function setSpinning(on) {
+  spinners = Math.max(0, spinners + (on ? 1 : -1));
+  document.body.classList.toggle('spinning', spinners > 0);
+}
+function beginSpin(s) { if (!s.spinning) { s.spinning = true; setSpinning(true); } }
+function endSpin(s)   { if (s.spinning)  { s.spinning = false; setSpinning(false); } }
+
 function animateTo(ring, target, dur, ease) {
   const s = state[ring];
   if (s.raf) cancelAnimationFrame(s.raf);
   s.target = target;
   const from = s.angle, delta = target - from;
-  if (!delta || reduceMotion()) {
-    s.raf = null; s.target = null;
+  const finish = () => {
+    s.raf = null; s.target = null; endSpin(s);
     s.angle = target; applyRotation(ring); updateHub();
-    return;
-  }
+  };
+  if (!delta || reduceMotion()) { finish(); return; }
+  beginSpin(s);
   const t0 = performance.now();
   s.raf = requestAnimationFrame(function tick(now) {
     const t = Math.min((now - t0) / dur, 1);
     s.angle = from + delta * ease(t);
     applyRotation(ring);
     if (t < 1) s.raf = requestAnimationFrame(tick);
-    else {
-      s.raf = null; s.target = null;
-      s.angle = target; applyRotation(ring); updateHub();
-    }
+    else finish();
   });
 }
 
 function snap(ring) {
-  animateTo(ring, Math.round(state[ring].angle / STEP) * STEP, 420, easeSettle);
+  animateTo(ring, Math.round(state[ring].angle / STEP) * STEP,
+            isSmall() ? 320 : 420, easeSettle);
 }
 
 /* One notch in `dir`, queued off the pending target so rapid presses stack. */
 function step(ring, dir) {
   const s = state[ring];
   const base = s.target != null ? s.target : Math.round(s.angle / STEP) * STEP;
-  animateTo(ring, base + STEP * dir, 560, easeRoll);
+  animateTo(ring, base + STEP * dir, isSmall() ? 420 : 560, easeRoll);
 }
 
 /* ================= DRAG + TAP ================= */
@@ -1332,6 +1365,7 @@ svg.addEventListener('pointerdown', ev => {
   if (!ring) return;
   const s = state[ring];
   if (s.raf) { cancelAnimationFrame(s.raf); s.raf = null; s.target = null; }
+  beginSpin(s);                       // dragging is motion too — keep it light
   drag = { ring, lastAngle: angle, startX: ev.clientX, startY: ev.clientY, moved: false };
   svg.setPointerCapture(ev.pointerId);
 });
@@ -1352,8 +1386,9 @@ svg.addEventListener('pointermove', ev => {
 function endDrag(ev) {
   if (!drag) return;
   if (drag.moved) {
-    snap(drag.ring);
+    snap(drag.ring);                  // hands the spin flag over to the settle
   } else {
+    endSpin(state[drag.ring]);
     // Treat as a tap: identify the sector under the finger and open its card
     const { angle } = eventInfo(ev);
     const fromTop = (angle + 90 + 360) % 360;
@@ -1363,7 +1398,11 @@ function endDrag(ev) {
   drag = null;
 }
 svg.addEventListener('pointerup', endDrag);
-svg.addEventListener('pointercancel', () => { if (drag && drag.moved) snap(drag.ring); drag = null; });
+svg.addEventListener('pointercancel', () => {
+  if (!drag) return;
+  if (drag.moved) snap(drag.ring); else endSpin(state[drag.ring]);
+  drag = null;
+});
 
 document.querySelectorAll('.control-block button').forEach(btn => {
   btn.addEventListener('click', () => {
