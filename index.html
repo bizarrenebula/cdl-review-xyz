@@ -21,6 +21,9 @@
     /* 4 principle colours from the book */
     --c-red:    #ff4d5e;
     --c-green:  #1fa845;
+    /* the answer's ink: aged gold on parchment, and its lit peak */
+    --gold-ink: #e8c176;
+    --gold-lit: #ffeab8;
     --c-yellow: #ffd84d;
     --c-violet: #b477ff;
   }
@@ -305,10 +308,15 @@
 
   /* Letters arrive one by one, each flaring as it lands, like text writing
      itself onto the page of a spellbook. */
-  .hub .result .w { display: inline-block; }      /* keeps words from breaking mid-letter */
+  /* The fit chooses the breaks, so each line is its own row and must not wrap. */
+  .hub .result .line { display: block; white-space: nowrap; }
   .hub .result .ch {
     display: inline-block; white-space: pre;
-    animation: letter-in .34s cubic-bezier(.2,.7,.3,1) both;
+    /* Land, then breathe. The glow is listed second and starts after the
+       reveal, so it takes over the text-shadow once it begins. */
+    animation:
+      letter-in .34s cubic-bezier(.2,.7,.3,1) both,
+      result-breathe 3.2s ease-in-out 1s infinite;
   }
   /* Each letter condenses out of the mist rather than being typed. */
   @keyframes letter-in {
@@ -319,9 +327,19 @@
            text-shadow: 0 1px 3px rgba(4,3,14,.9), 0 0 11px rgba(255,238,198,.85),
                         0 0 24px rgba(150,110,255,.5); }
     100% { opacity: 1; filter: blur(0); transform: none;
-           color: #fff3d8;
+           color: var(--gold-ink);
            text-shadow: 0 1px 3px rgba(4,3,14,.95), 0 0 6px rgba(4,3,14,.9),
-                        0 0 14px rgba(211,169,95,.45); }
+                        0 0 15px rgba(211,169,95,.5); }
+  }
+  /* The answer keeps glowing, slow enough to read as breathing rather than
+     blinking. Starts from letter-in's end state so the handover is seamless. */
+  @keyframes result-breathe {
+    0%, 100% { color: var(--gold-ink);
+               text-shadow: 0 1px 3px rgba(4,3,14,.95), 0 0 6px rgba(4,3,14,.9),
+                            0 0 15px rgba(211,169,95,.5); }
+    50%      { color: var(--gold-lit);
+               text-shadow: 0 1px 3px rgba(4,3,14,.95), 0 0 8px rgba(4,3,14,.9),
+                            0 0 20px rgba(255,214,140,.85), 0 0 40px rgba(211,169,95,.6); }
   }
 
   @keyframes rim-fade {
@@ -364,12 +382,13 @@
      (fitHubText) so the block grows until its corners touch the inner circle. */
   .hub .result {
     font-size: clamp(.62rem, 1.8vw, .8rem);   /* fallback until JS measures */
-    color: #fff3d8; font-weight: 500; line-height: 1.24;
-    width: 100%; text-wrap: pretty;
-    /* dark halo first for legibility over the mist, then the glass glow */
+    font-family: 'Marcellus', serif;          /* the book's voice, not the UI's */
+    color: var(--gold-ink); line-height: 1.24;
+    width: 100%;
+    /* dark halo first for legibility over the mist, then the gold */
     text-shadow:
       0 1px 3px rgba(4,3,14,.95), 0 0 6px rgba(4,3,14,.9),
-      0 0 14px rgba(211,169,95,.45);
+      0 0 15px rgba(211,169,95,.5);
   }
   .hub button {
     margin-top: .25rem;
@@ -1123,11 +1142,12 @@ function textWidth100(text, cls) {
   return w;
 }
 
-/* Width of a space and of a hyphen, per class — lines are costed by summing
-   their atoms rather than measuring every candidate string, which keeps the
-   search to a handful of DOM measurements per label. */
-function spaceWidth100(cls) {
-  return textWidth100('n n', cls) - 2 * textWidth100('n', cls);
+/* Lines are costed by summing their atoms rather than measuring every candidate
+   string, which keeps the search to a handful of measurements. `measure` gives
+   a string's width at font-size 100 — the SVG labels measure with a hidden text
+   node, the hub with a canvas; everything below works off either. */
+function spaceWidth100(measure) {
+  return measure('n n') - 2 * measure('n');
 }
 
 /* ---- Hyphenation ----
@@ -1173,7 +1193,7 @@ function hyphenPoints(word) {
 
 /* A label as the smallest pieces a line may end on. `brk` says how the piece
    joins the one before it: a space between words, a hyphen inside one. */
-function atomize(name, hyphenate, cls) {
+function atomize(name, hyphenate, measure) {
   const atoms = [];
   name.split(/\s+/).filter(Boolean).forEach((word, wi) => {
     const pts = hyphenate && word.length >= HYPH_MIN ? hyphenPoints(word) : [];
@@ -1182,7 +1202,7 @@ function atomize(name, hyphenate, cls) {
     for (const p of pts) { pieces.push(word.slice(start, p)); start = p; }
     pieces.push(word.slice(start));
     pieces.forEach((t, pi) => atoms.push({
-      t, w: textWidth100(t, cls),
+      t, w: measure(t),
       brk: pi > 0 ? 'hyphen' : (wi > 0 ? 'space' : 'none')
     }));
   });
@@ -1191,27 +1211,27 @@ function atomize(name, hyphenate, cls) {
 
 /* Atoms [from, to) as one line, carrying its own width. A line that stops
    mid-word takes the hyphen — and the hyphen's width. */
-function lineOf(atoms, from, to, cls) {
+function lineOf(atoms, from, to, measure) {
   let text = '', w = 0;
   for (let k = from; k < to; k++) {
-    if (k > from && atoms[k].brk === 'space') { text += ' '; w += spaceWidth100(cls); }
+    if (k > from && atoms[k].brk === 'space') { text += ' '; w += spaceWidth100(measure); }
     text += atoms[k].t;
     w += atoms[k].w;
   }
   if (to < atoms.length && atoms[to].brk === 'hyphen') {
     text += '-';
-    w += textWidth100('-', cls);
+    w += measure('-');
   }
   return { text, w };
 }
 
 /* Every way of breaking the atoms into `n` contiguous lines. */
-function lineSplits(atoms, n, cls) {
-  if (n === 1) return [[lineOf(atoms, 0, atoms.length, cls)]];
+function lineSplits(atoms, n, measure) {
+  if (n === 1) return [[lineOf(atoms, 0, atoms.length, measure)]];
   const out = [];
   for (let i = 1; i <= atoms.length - n + 1; i++) {
-    const head = lineOf(atoms, 0, i, cls);
-    for (const rest of lineSplits(atoms.slice(i), n - 1, cls)) out.push([head, ...rest]);
+    const head = lineOf(atoms, 0, i, measure);
+    for (const rest of lineSplits(atoms.slice(i), n - 1, measure)) out.push([head, ...rest]);
   }
   return out;
 }
@@ -1251,10 +1271,10 @@ const LBL_MAXLINES = 3;
    nothing is allowed to exceed it by more than this. */
 const LBL_SPREAD = 1.45;
 
-function searchFit(atoms, r1, r2, cls) {
-  let best = { size: 0, lines: [lineOf(atoms, 0, atoms.length, cls)], center: (r1 + r2) / 2 };
+function searchFit(atoms, r1, r2, measure) {
+  let best = { size: 0, lines: [lineOf(atoms, 0, atoms.length, measure)], center: (r1 + r2) / 2 };
   for (let n = 1; n <= Math.min(LBL_MAXLINES, atoms.length); n++) {
-    for (const lines of lineSplits(atoms, n, cls)) {
+    for (const lines of lineSplits(atoms, n, measure)) {
       let lo = 5, hi = 48, at = null;
       for (let i = 0; i < 11; i++) {
         const mid = (lo + hi) / 2;
@@ -1271,9 +1291,10 @@ function searchFit(atoms, r1, r2, cls) {
    buys real size, so it has to beat the plain fit by HYPH_GAIN — otherwise
    "Mutter" would happily set itself as "Mut-/ter" to gain a few points. */
 function fitLabel(name, r1, r2, cls) {
-  let best = searchFit(atomize(name, false, cls), r1, r2, cls);
+  const measure = t => textWidth100(t, cls);
+  let best = searchFit(atomize(name, false, measure), r1, r2, measure);
   if (name.split(/\s+/).some(w => w.length >= HYPH_MIN)) {
-    const hyph = searchFit(atomize(name, true, cls), r1, r2, cls);
+    const hyph = searchFit(atomize(name, true, measure), r1, r2, measure);
     if (hyph.size > best.size * HYPH_GAIN) best = hyph;
   }
   if (!best.size) best.size = 6;   // nothing fit: set it small and let it be
@@ -1451,102 +1472,141 @@ function updateHub() {
   writeResult(REFLECT[lang](LP()[e].area, LP()[p].label, r + 1));
 }
 
-/* Sets the hub text one letter at a time. Words are wrapped so line breaking
-   still happens between words, not between letters. */
+/* ---- The result inside the ball ---------------------------------------
+   Same rules as the sectors — atoms, hyphenation, largest size that fits —
+   against a circle instead of a wedge. A line's room here depends on how far
+   it sits from the middle: (w/2)² + y² ≤ limit², so the middle lines may run
+   wide while the top and bottom ones must be short. That is what fills a
+   circle, and it is why the breaks are searched per line rather than left to
+   the browser's wrapping. */
 const resultEl = document.getElementById('resultText');
+const readMoreEl = document.getElementById('readMoreBtn');
 /* Budget: LEAD + BUDGET + the .34s each letter takes ≈ 940ms, so the sentence
    is always fully formed inside a second however long it is. */
 const LETTER_MS = 17, LETTER_LEAD = 60, LETTER_BUDGET = 540;
+const FIT_MARGIN = .93;      // fraction of the radius the text may reach
+const FIT_SAFETY = .98;      // canvas advance vs. rendered inline-blocks
+const FIT_LH = 1.24;         // line height, matching the CSS
+const FIT_MAXLINES = 6;
 
+/* Canvas measurement: no layout at all, and it reads the element's real font.
+   Built once per fit — the style read is the expensive part, not measureText. */
+let hubCtx = null;
+function hubMeasureFn() {
+  const cs = getComputedStyle(resultEl);
+  if (!hubCtx) hubCtx = document.createElement('canvas').getContext('2d');
+  hubCtx.font = `${cs.fontStyle} ${cs.fontWeight} 100px ${cs.fontFamily}`;
+  const cache = new Map();
+  return t => {
+    if (!cache.has(t)) cache.set(t, hubCtx.measureText(t).width);
+    return cache.get(t);
+  };
+}
+
+/* Greedily fill `limits.length` lines, each with its own width allowance.
+   Returns null if the atoms do not all land inside them. */
+function fillLines(atoms, size, limits, measure) {
+  const lines = [];
+  let from = 0;
+  for (let j = 0; j < limits.length && from < atoms.length; j++) {
+    let to = from + 1, line = lineOf(atoms, from, to, measure);
+    while (to < atoms.length) {
+      const next = lineOf(atoms, from, to + 1, measure);
+      if (next.w * size / 100 > limits[j]) break;
+      line = next; to++;
+    }
+    if (line.w * size / 100 > limits[j]) return null;   // one atom already too wide
+    lines.push(line);
+    from = to;
+  }
+  return from >= atoms.length ? lines : null;
+}
+
+/* Width available to each of `n` lines, given the button parked underneath. */
+function hubLimits(n, size, limit, btnH, gap) {
+  const lead = FIT_LH * size;
+  const total = n * lead + (btnH ? gap + btnH : 0);
+  const limits = [];
+  for (let j = 0; j < n; j++) {
+    const y = -total / 2 + lead * (j + .5);
+    const far = Math.abs(y) + lead / 2;                 // the line's outer edge
+    const room = limit * limit - far * far;
+    if (room <= 0) return null;
+    limits.push(2 * Math.sqrt(room) * FIT_SAFETY);
+  }
+  return { limits, total };
+}
+
+function fitHubBlock(text, R) {
+  const limit = R * FIT_MARGIN;
+  const gap = parseFloat(getComputedStyle(hubEl).rowGap) || 0;
+  const btnW = readMoreEl.offsetWidth, btnH = readMoreEl.offsetHeight;
+  const measure = hubMeasureFn();
+  const plain = atomize(text, false, measure);
+  const hyph = atomize(text, true, measure);
+
+  const attempt = (atoms, size) => {
+    for (let n = 1; n <= FIT_MAXLINES; n++) {
+      const shape = hubLimits(n, size, limit, btnH, gap);
+      if (!shape) continue;
+      // the button sits at the bottom of the stack and must clear the rim too
+      if ((btnW / 2) ** 2 + (shape.total / 2) ** 2 > limit * limit) continue;
+      const lines = fillLines(atoms, size, shape.limits, measure);
+      if (lines) return lines;
+    }
+    return null;
+  };
+  const search = atoms => {
+    let lo = R * .05, hi = R * .34, at = null;
+    for (let i = 0; i < 12; i++) {
+      const mid = (lo + hi) / 2;
+      const lines = attempt(atoms, mid);
+      if (lines) { lo = mid; at = lines; } else hi = mid;
+    }
+    return at ? { size: lo, lines: at } : null;
+  };
+
+  const plainFit = search(plain);
+  const hyphFit = search(hyph);
+  // hyphenation only earns its keep if it buys real size
+  if (hyphFit && (!plainFit || hyphFit.size > plainFit.size * HYPH_GAIN)) return hyphFit;
+  return plainFit || { size: R * .05, lines: [{ text }] };
+}
+
+/* Sets the hub text one letter at a time, on the lines the fit chose. */
+let resultText = '';
 function writeResult(text) {
-  /* Spans are built even when motion is reduced — the CSS drops the animation,
-     and the per-word boxes are what fitHubText measures against the circle. */
-  const frag = document.createDocumentFragment();
+  resultText = text;
+  const R = Math.min(hubEl.clientWidth, hubEl.clientHeight) / 2;
+  if (!R) return;
+  const fit = fitHubBlock(text, R);
+  resultEl.style.fontSize = fit.size.toFixed(2) + 'px';
+
   /* The cadence is derived, not fixed: a long sentence tightens its stagger so
      the whole reveal always lands inside LETTER_BUDGET. */
   const ticks = text.replace(/\s+/g, ' ').length;
   const gap = Math.min(LETTER_MS, LETTER_BUDGET / Math.max(1, ticks - 1));
+  const frag = document.createDocumentFragment();
   let i = 0;
-  text.split(/(\s+)/).forEach(chunk => {
-    if (!chunk) return;
-    if (/^\s+$/.test(chunk)) {                       // real text node: the wrap point
-      frag.appendChild(document.createTextNode(chunk));
-      i++;                                           // a beat's pause between words
-      return;
-    }
-    const word = document.createElement('span');
-    word.className = 'w';
-    for (const ch of chunk) {
+  fit.lines.forEach(line => {
+    const row = document.createElement('span');
+    row.className = 'line';
+    /* Spans are built even when motion is reduced — the CSS drops the
+       animation and they simply render. */
+    for (const ch of line.text) {
       const letter = document.createElement('span');
       letter.className = 'ch';
       letter.textContent = ch;
       letter.style.animationDelay = (LETTER_LEAD + i++ * gap).toFixed(1) + 'ms';
-      word.appendChild(letter);
+      row.appendChild(letter);
     }
-    frag.appendChild(word);
+    frag.appendChild(row);
   });
   resultEl.textContent = '';
   resultEl.appendChild(frag);
-  fitHubText();
 }
 
-/* ---- Fit the result to the hub ----------------------------------------
-   The hub is a circle, so a text block only fits if every corner of every
-   word box (and of the button) stays inside it. We try a handful of column
-   widths — a narrower column wraps into more, shorter lines, which can carry
-   a bigger face inside a circle — and for each one binary-search the largest
-   font size that still fits. Widest type wins. */
-const readMoreEl = document.getElementById('readMoreBtn');
-const FIT_WIDTHS = [.62, .74, .86, 1];
-const FIT_MARGIN = .90;                 // fraction of the radius text may reach
-
-/* Box of `el` in hub coordinates. Walks the offsetParent chain because .result
-   is positioned (it sits above the mist), so word spans offset from it, not
-   from the hub. Uses offset* rather than rects: the letters carry a scale()
-   during the reveal, and transforms must not distort the measurement. */
-function boxIn(el) {
-  let x = 0, y = 0, n = el;
-  while (n && n !== hubEl) { x += n.offsetLeft; y += n.offsetTop; n = n.offsetParent; }
-  return [x, y, el.offsetWidth, el.offsetHeight];
-}
-
-function hubBoxes() {
-  const words = resultEl.querySelectorAll('.w');
-  const list = words.length ? Array.from(words, boxIn) : [boxIn(resultEl)];
-  list.push(boxIn(readMoreEl));
-  return list;
-}
-
-function hubFits(cx, cy, limit) {
-  return hubBoxes().every(([x, y, w, h]) => {
-    const dx = Math.max(Math.abs(x - cx), Math.abs(x + w - cx));
-    const dy = Math.max(Math.abs(y - cy), Math.abs(y + h - cy));
-    return dx * dx + dy * dy <= limit * limit;
-  });
-}
-
-function fitHubText() {
-  const W = hubEl.clientWidth, H = hubEl.clientHeight;
-  if (!W || !H) return;
-  const cx = W / 2, cy = H / 2;
-  const R = Math.min(W, H) / 2;
-  const limit = R * FIT_MARGIN;
-  const MIN = R * .055, MAX = R * .30;
-
-  let best = { size: MIN, width: FIT_WIDTHS[FIT_WIDTHS.length - 1] };
-  for (const width of FIT_WIDTHS) {
-    resultEl.style.width = (width * 100) + '%';
-    let lo = MIN, hi = MAX;
-    for (let n = 0; n < 8; n++) {
-      const mid = (lo + hi) / 2;
-      resultEl.style.fontSize = mid + 'px';
-      if (hubFits(cx, cy, limit)) lo = mid; else hi = mid;
-    }
-    if (lo > best.size) best = { size: lo, width };
-  }
-  resultEl.style.width = (best.width * 100) + '%';
-  resultEl.style.fontSize = best.size.toFixed(2) + 'px';
-}
+function fitHubText() { if (resultText) writeResult(resultText); }
 
 let fitRaf = null;
 window.addEventListener('resize', () => {
@@ -1561,8 +1621,7 @@ if (document.fonts) document.fonts.ready.then(() => {
   buildRing(innerG, 'inner');
   applyRotation('outer');
   applyRotation('inner');
-  updateHub();
-  fitHubText();
+  updateHub();                  // rewrites and refits the hub text
 });
 
 /* ================= ROTATION MOTION ================= */
