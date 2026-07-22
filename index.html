@@ -149,26 +149,93 @@
   .label-inner { font-size: 13px; }
   .active-label { fill: #fff; }
 
+  /* ============ THE CRYSTAL BALL ============
+     Glass sphere: a dark refracting interior, mist drifting inside it, and a
+     specular sheen laid over the top so the text reads as if suspended within. */
   .hub {
     position: absolute; left: 50%; top: 50%;
     transform: translate(-50%, -50%);
     width: 42%; height: 42%; border-radius: 50%;
-    overflow: hidden;
-    background: radial-gradient(circle at 50% 35%, #1e1a42, var(--hub) 75%);
-    border: 1px solid var(--brass-dim);
-    box-shadow: 0 0 40px rgba(211,169,95,.12) inset, 0 0 30px rgba(0,0,0,.6),
-                0 0 26px rgba(211,169,95,.16);
+    overflow: hidden; isolation: isolate;
+    /* No specular flares — the sphere is modelled by shading alone: light from
+       the upper left, falling off to a dark rim, with a little bounce below. */
+    background:
+      radial-gradient(circle at 38% 30%,
+        #3b3170 0%, #2a2358 22%, #1c1848 48%, #120f31 74%, #08061a 100%),
+      var(--hub);
+    border: 1px solid rgba(211,169,95,.42);
+    box-shadow:
+      inset 0 0 42px rgba(6,4,18,.9),          /* rim shadow: rounds the ball */
+      inset -10px -12px 34px rgba(6,4,18,.55), /* terminator, away from the light */
+      inset 0 -14px 30px rgba(180,119,255,.13),/* bounce light off the base */
+      0 0 30px rgba(0,0,0,.6),
+      0 0 26px rgba(211,169,95,.16);
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
     text-align: center; padding: 4%; gap: .35rem;
+  }
+  /* Text and button ride above the mist, below the glass sheen. */
+  .hub .result, .hub button { position: relative; z-index: 2; }
+
+  /* ---- mist curling inside the sphere ---- */
+  .hub-mist {
+    position: absolute; inset: -18%; z-index: 0;
+    pointer-events: none; opacity: .5;
+    filter: blur(14px);
+    transition: opacity .8s ease;
+  }
+  .hub-mist span {
+    position: absolute; display: block; border-radius: 50%;
+    mix-blend-mode: screen;
+    transform-origin: 50% 50%;
+    will-change: transform;
+  }
+  .hub-mist span:nth-child(1) {
+    inset: 8% 20% 30% 8%;
+    background: radial-gradient(circle, rgba(180,119,255,.75), transparent 68%);
+    animation: mist-a 19s ease-in-out infinite;
+  }
+  .hub-mist span:nth-child(2) {
+    inset: 26% 6% 10% 28%;
+    background: radial-gradient(circle, rgba(77,255,200,.4), transparent 66%);
+    animation: mist-b 25s ease-in-out infinite;
+  }
+  .hub-mist span:nth-child(3) {
+    inset: 20% 24% 24% 22%;
+    background: radial-gradient(circle, rgba(255,216,120,.42), transparent 62%);
+    animation: mist-c 31s ease-in-out infinite;
+  }
+  @keyframes mist-a {
+    0%,100% { transform: translate(0,0) scale(1); }
+    33%     { transform: translate(12%, 9%) scale(1.18); }
+    66%     { transform: translate(-9%, 6%) scale(.9); }
+  }
+  @keyframes mist-b {
+    0%,100% { transform: translate(0,0) scale(1.05); }
+    40%     { transform: translate(-13%, -8%) scale(.88); }
+    75%     { transform: translate(7%, -12%) scale(1.2); }
+  }
+  @keyframes mist-c {
+    0%,100% { transform: translate(0,0) scale(.95) rotate(0deg); }
+    50%     { transform: translate(6%, -6%) scale(1.22) rotate(180deg); }
+  }
+
+  /* Depth pooled behind the words, so the text has something dark to sit on. */
+  .hub::after {
+    content: ''; position: absolute; inset: 0; border-radius: 50%;
+    z-index: 1; pointer-events: none;
+    background: radial-gradient(circle at 50% 50%,
+      rgba(5,4,16,.66) 0%, rgba(5,4,16,.45) 40%, transparent 72%);
   }
 
   /* ---- Result reveal: a hairline of light draws once around the rim while the
          text resolves out of a blur. Quiet, no fireworks. ---- */
   .hub-reveal {
-    position: absolute; inset: 0; border-radius: 50%;
+    position: absolute; inset: 0; border-radius: 50%; z-index: 1;
     pointer-events: none; overflow: hidden;
   }
+  /* The ball clouds over while it answers. */
+  .hub.pulse .hub-mist { opacity: .95; transition: opacity .35s ease; }
   /* Outer element carries the annulus (the rim); inner one carries the sweep,
      so each animates a single, simple mask. */
   .hub-reveal .rim {
@@ -194,10 +261,18 @@
      the warmest thing on the board. */
   .hub.lit { animation: hub-breathe 4.5s ease-in-out infinite; }
   @keyframes hub-breathe {
-    0%, 100% { box-shadow: 0 0 40px rgba(211,169,95,.12) inset, 0 0 30px rgba(0,0,0,.6),
-                           0 0 26px rgba(211,169,95,.16); }
-    50%      { box-shadow: 0 0 56px rgba(211,169,95,.24) inset, 0 0 30px rgba(0,0,0,.6),
-                           0 0 46px rgba(211,169,95,.34); }
+    0%, 100% { box-shadow:
+                 inset 0 0 34px rgba(8,6,22,.85),
+                 inset 0 -14px 30px rgba(180,119,255,.16),
+                 inset 0 10px 26px rgba(214,226,255,.07),
+                 0 0 30px rgba(0,0,0,.6),
+                 0 0 26px rgba(211,169,95,.16); }
+    50%      { box-shadow:
+                 inset 0 0 30px rgba(8,6,22,.7),
+                 inset 0 -18px 38px rgba(180,119,255,.3),
+                 inset 0 10px 26px rgba(214,226,255,.1),
+                 0 0 30px rgba(0,0,0,.6),
+                 0 0 48px rgba(211,169,95,.34); }
   }
 
   .hub.pulse .rim   { animation: rim-fade 1.15s linear; }
@@ -211,13 +286,18 @@
     display: inline-block; white-space: pre;
     animation: letter-in .4s cubic-bezier(.2,.7,.3,1) both;
   }
+  /* Each letter condenses out of the mist rather than being typed. */
   @keyframes letter-in {
-    0%   { opacity: 0; filter: blur(6px); transform: translateY(2px) scale(1.35);
-           color: #fff6e2; text-shadow: 0 0 12px rgba(255,238,198,.95), 0 0 26px rgba(211,169,95,.7); }
+    0%   { opacity: 0; filter: blur(7px); transform: translateY(3px) scale(1.4);
+           color: #fff6e2; text-shadow: 0 0 16px rgba(255,238,198,.95), 0 0 30px rgba(150,110,255,.8); }
     55%  { opacity: 1; filter: blur(0); transform: none;
-           color: #fff6e2; text-shadow: 0 0 9px rgba(255,238,198,.8), 0 0 18px rgba(211,169,95,.45); }
+           color: #fff6e2;
+           text-shadow: 0 1px 3px rgba(4,3,14,.9), 0 0 11px rgba(255,238,198,.85),
+                        0 0 24px rgba(150,110,255,.5); }
     100% { opacity: 1; filter: blur(0); transform: none;
-           color: var(--brass); text-shadow: 0 0 0 rgba(211,169,95,0); }
+           color: #fff3d8;
+           text-shadow: 0 1px 3px rgba(4,3,14,.95), 0 0 6px rgba(4,3,14,.9),
+                        0 0 14px rgba(211,169,95,.45); }
   }
 
   @keyframes rim-fade {
@@ -238,11 +318,16 @@
     .hub.pulse .rim, .hub.pulse .rim i, .hub.pulse .veil, .hub .result .ch {
       animation: none;
     }
-    /* No breathing, but keep the lit hub brighter than its resting state. */
+    /* No breathing or drifting mist, but keep the lit ball brighter at rest. */
+    .hub-mist span { animation: none; }
     .hub.lit {
       animation: none;
-      box-shadow: 0 0 48px rgba(211,169,95,.18) inset, 0 0 30px rgba(0,0,0,.6),
-                  0 0 36px rgba(211,169,95,.25);
+      box-shadow:
+        inset 0 0 32px rgba(8,6,22,.8),
+        inset 0 -16px 34px rgba(180,119,255,.24),
+        inset 0 10px 26px rgba(214,226,255,.09),
+        0 0 30px rgba(0,0,0,.6),
+        0 0 36px rgba(211,169,95,.25);
     }
   }
   .hub .eyebrow { display: none; }
@@ -255,8 +340,12 @@
      (fitHubText) so the block grows until its corners touch the inner circle. */
   .hub .result {
     font-size: clamp(.62rem, 1.8vw, .8rem);   /* fallback until JS measures */
-    color: var(--brass); line-height: 1.24;
+    color: #fff3d8; font-weight: 500; line-height: 1.24;
     width: 100%; text-wrap: pretty;
+    /* dark halo first for legibility over the mist, then the glass glow */
+    text-shadow:
+      0 1px 3px rgba(4,3,14,.95), 0 0 6px rgba(4,3,14,.9),
+      0 0 14px rgba(211,169,95,.45);
   }
   .hub button {
     margin-top: .25rem;
@@ -269,6 +358,7 @@
   }
   @media (max-width: 520px) {
     .hub { padding: 3%; gap: .2rem; }
+    .hub-mist { filter: blur(9px); }        /* smaller ball, cheaper blur */
     .hub .eyebrow { display: none; }
     .hub .match { font-size: .68rem; }
     .hub button { font-size: .56rem; padding: .3em .8em; }
@@ -443,6 +533,7 @@
   </svg>
 
   <div class="hub" id="hub">
+    <div class="hub-mist" aria-hidden="true"><span></span><span></span><span></span></div>
     <div class="hub-reveal" aria-hidden="true">
       <div class="veil"></div>
       <div class="rim"><i></i></div>
@@ -1115,12 +1206,20 @@ const readMoreEl = document.getElementById('readMoreBtn');
 const FIT_WIDTHS = [.62, .74, .86, 1];
 const FIT_MARGIN = .90;                 // fraction of the radius text may reach
 
+/* Box of `el` in hub coordinates. Walks the offsetParent chain because .result
+   is positioned (it sits above the mist), so word spans offset from it, not
+   from the hub. Uses offset* rather than rects: the letters carry a scale()
+   during the reveal, and transforms must not distort the measurement. */
+function boxIn(el) {
+  let x = 0, y = 0, n = el;
+  while (n && n !== hubEl) { x += n.offsetLeft; y += n.offsetTop; n = n.offsetParent; }
+  return [x, y, el.offsetWidth, el.offsetHeight];
+}
+
 function hubBoxes() {
   const words = resultEl.querySelectorAll('.w');
-  const list = words.length
-    ? Array.from(words, w => [w.offsetLeft, w.offsetTop, w.offsetWidth, w.offsetHeight])
-    : [[resultEl.offsetLeft, resultEl.offsetTop, resultEl.offsetWidth, resultEl.offsetHeight]];
-  list.push([readMoreEl.offsetLeft, readMoreEl.offsetTop, readMoreEl.offsetWidth, readMoreEl.offsetHeight]);
+  const list = words.length ? Array.from(words, boxIn) : [boxIn(resultEl)];
+  list.push(boxIn(readMoreEl));
   return list;
 }
 
