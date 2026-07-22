@@ -1098,8 +1098,8 @@ const WEDGE_RAD = STEP * Math.PI / 180;    // angular width of one sector
 const LBL_PAD = 9;          // clearance from the two arcs, user units
 const LBL_LEAD = 1.12;      // line spacing, as a multiple of the font size
 const LBL_HALFCAP = .38;    // half the cap height, in em
-const LBL_SIDE = .86;       // fraction of the arc the line may use
-const LBL_EASE = .93;       // final trim, so nothing sits tight to an edge
+const LBL_SIDE = .88;       // fraction of the arc the line may use
+const LBL_EASE = .95;       // final trim, so nothing sits tight to an edge
 
 let measurer = null;
 const textWidths = new Map();
@@ -1123,14 +1123,95 @@ function textWidth100(text, cls) {
   return w;
 }
 
-/* Every way of breaking the words into `n` contiguous lines. */
-function lineSplits(words, n) {
-  if (n === 1) return [[words.join(' ')]];
-  const out = [];
-  for (let i = 1; i <= words.length - n + 1; i++) {
-    for (const rest of lineSplits(words.slice(i), n - 1)) {
-      out.push([words.slice(0, i).join(' '), ...rest]);
+/* Width of a space and of a hyphen, per class — lines are costed by summing
+   their atoms rather than measuring every candidate string, which keeps the
+   search to a handful of DOM measurements per label. */
+function spaceWidth100(cls) {
+  return textWidth100('n n', cls) - 2 * textWidth100('n', cls);
+}
+
+/* ---- Hyphenation ----
+   Break between the vowel groups of a word: a lone consonant goes with the
+   following syllable (Kommuni-kation), and out of a cluster only the last
+   consonant travels (Selbst-verwirk-lichung, Mitar-beiter). That is the German
+   rule, and it behaves for English and Cyrillic too. Both halves keep at least
+   HYPH_EDGE letters, which is what stops orphans like "…bei-/ter". */
+const VOWELS = 'aeiouyäöüàáâãåæèéêëìíîïòóôõøùúûаеёиоуыэюяіїє';
+const DIGRAPHS = ['sch', 'ch', 'ph', 'th', 'sh', 'ck'];   // never split these
+const HYPH_MIN = 9;      // shorter words are never broken
+const HYPH_EDGE = 4;     // letters that must stay on each side
+const HYPH_PIECES = 3;   // most pieces one word may become
+const HYPH_GAIN = 1.12;  // only hyphenate if it buys this much size
+
+function hyphenPoints(word) {
+  const w = word.toLowerCase();
+  const isV = c => VOWELS.includes(c);
+  const pts = [];
+  let i = 0;
+  while (i < w.length) {
+    if (!isV(w[i])) { i++; continue; }
+    let j = i; while (j < w.length && isV(w[j])) j++;      // end of the vowels
+    let k = j; while (k < w.length && !isV(w[k])) k++;     // end of the consonants
+    if (k < w.length && k > j) {
+      /* What travels to the next line: a trailing digraph whole, else the one
+         last consonant. Without this, Partner-schaft breaks as Partnersc-haft. */
+      const cluster = w.slice(j, k);
+      let onset = 1;
+      for (const d of DIGRAPHS) if (cluster.endsWith(d)) { onset = d.length; break; }
+      const cut = Math.max(j, k - onset);
+      if (cut >= HYPH_EDGE && word.length - cut >= HYPH_EDGE) pts.push(cut);
     }
+    i = j;
+  }
+  if (pts.length <= HYPH_PIECES - 1) return pts;
+  const keep = [];                          // thin out, keeping them spread
+  for (let n = 1; n <= HYPH_PIECES - 1; n++) {
+    keep.push(pts[Math.round((pts.length - 1) * n / HYPH_PIECES)]);
+  }
+  return [...new Set(keep)];
+}
+
+/* A label as the smallest pieces a line may end on. `brk` says how the piece
+   joins the one before it: a space between words, a hyphen inside one. */
+function atomize(name, hyphenate, cls) {
+  const atoms = [];
+  name.split(/\s+/).filter(Boolean).forEach((word, wi) => {
+    const pts = hyphenate && word.length >= HYPH_MIN ? hyphenPoints(word) : [];
+    let start = 0;
+    const pieces = [];
+    for (const p of pts) { pieces.push(word.slice(start, p)); start = p; }
+    pieces.push(word.slice(start));
+    pieces.forEach((t, pi) => atoms.push({
+      t, w: textWidth100(t, cls),
+      brk: pi > 0 ? 'hyphen' : (wi > 0 ? 'space' : 'none')
+    }));
+  });
+  return atoms;
+}
+
+/* Atoms [from, to) as one line, carrying its own width. A line that stops
+   mid-word takes the hyphen — and the hyphen's width. */
+function lineOf(atoms, from, to, cls) {
+  let text = '', w = 0;
+  for (let k = from; k < to; k++) {
+    if (k > from && atoms[k].brk === 'space') { text += ' '; w += spaceWidth100(cls); }
+    text += atoms[k].t;
+    w += atoms[k].w;
+  }
+  if (to < atoms.length && atoms[to].brk === 'hyphen') {
+    text += '-';
+    w += textWidth100('-', cls);
+  }
+  return { text, w };
+}
+
+/* Every way of breaking the atoms into `n` contiguous lines. */
+function lineSplits(atoms, n, cls) {
+  if (n === 1) return [[lineOf(atoms, 0, atoms.length, cls)]];
+  const out = [];
+  for (let i = 1; i <= atoms.length - n + 1; i++) {
+    const head = lineOf(atoms, 0, i, cls);
+    for (const rest of lineSplits(atoms.slice(i), n - 1, cls)) out.push([head, ...rest]);
   }
   return out;
 }
@@ -1143,13 +1224,12 @@ function lineRadius(c, n, j, size) {
 }
 
 /* Can this block sit at radius `c` (its centre) at this size? */
-function blockFits(lines, size, c, r1, r2, cls) {
+function blockFits(lines, size, c, r1, r2) {
   const rIn = r1 + LBL_PAD, rOut = r2 - LBL_PAD, capH = LBL_HALFCAP * size;
   for (let j = 0; j < lines.length; j++) {
     const rj = lineRadius(c, lines.length, j, size);
     if (rj - capH < rIn || rj + capH > rOut) return false;   // through an arc
-    const w = textWidth100(lines[j], cls) * size / 100;
-    if (w > rj * WEDGE_RAD * LBL_SIDE) return false;         // longer than its arc
+    if (lines[j].w * size / 100 > rj * WEDGE_RAD * LBL_SIDE) return false;
   }
   return true;
 }
@@ -1159,9 +1239,9 @@ function blockFits(lines, size, c, r1, r2, cls) {
    larger face (the arc is longer further out) at the cost of labels sitting
    at different depths around the wheel. Horizontal centring is the arc's own:
    every line is anchored at startOffset 50%. */
-function placeBlock(lines, size, r1, r2, cls) {
+function placeBlock(lines, size, r1, r2) {
   const mid = (r1 + r2) / 2;
-  return blockFits(lines, size, mid, r1, r2, cls) ? mid : null;
+  return blockFits(lines, size, mid, r1, r2) ? mid : null;
 }
 
 /* Biggest type that fits, over every line breaking up to LBL_MAXLINES. */
@@ -1170,19 +1250,31 @@ const LBL_MAXLINES = 3;
    sector full, the ring a mess. So the ring's tightest label sets a floor and
    nothing is allowed to exceed it by more than this. */
 const LBL_SPREAD = 1.45;
-function fitLabel(name, r1, r2, cls) {
-  const words = name.split(/\s+/).filter(Boolean);
-  let best = { size: 0, lines: [name], center: (r1 + r2) / 2 };
-  for (let n = 1; n <= Math.min(LBL_MAXLINES, words.length); n++) {
-    for (const lines of lineSplits(words, n)) {
+
+function searchFit(atoms, r1, r2, cls) {
+  let best = { size: 0, lines: [lineOf(atoms, 0, atoms.length, cls)], center: (r1 + r2) / 2 };
+  for (let n = 1; n <= Math.min(LBL_MAXLINES, atoms.length); n++) {
+    for (const lines of lineSplits(atoms, n, cls)) {
       let lo = 5, hi = 48, at = null;
       for (let i = 0; i < 11; i++) {
         const mid = (lo + hi) / 2;
-        const c = placeBlock(lines, mid, r1, r2, cls);
+        const c = placeBlock(lines, mid, r1, r2);
         if (c === null) hi = mid; else { lo = mid; at = c; }
       }
       if (at !== null && lo > best.size) best = { size: lo, lines, center: at };
     }
+  }
+  return best;
+}
+
+/* Plain word breaking first. Hyphenation is only worth the ugliness when it
+   buys real size, so it has to beat the plain fit by HYPH_GAIN — otherwise
+   "Mutter" would happily set itself as "Mut-/ter" to gain a few points. */
+function fitLabel(name, r1, r2, cls) {
+  let best = searchFit(atomize(name, false, cls), r1, r2, cls);
+  if (name.split(/\s+/).some(w => w.length >= HYPH_MIN)) {
+    const hyph = searchFit(atomize(name, true, cls), r1, r2, cls);
+    if (hyph.size > best.size * HYPH_GAIN) best = hyph;
   }
   if (!best.size) best.size = 6;   // nothing fit: set it small and let it be
   best.size *= LBL_EASE;
@@ -1223,7 +1315,7 @@ function buildRing(group, ring) {
   fits.forEach(f => {
     if (f.size <= cap) return;
     f.size = cap;
-    f.center = placeBlock(f.lines, cap, r1, r2, cls) ?? f.center;
+    f.center = placeBlock(f.lines, cap, r1, r2) ?? f.center;
   });
 
   group.innerHTML = '';
@@ -1282,7 +1374,7 @@ function buildRing(group, ring) {
       tp.setAttribute('href', '#' + id);
       tp.setAttributeNS(XLINK, 'xlink:href', '#' + id);   // older WebKit
       tp.setAttribute('startOffset', '50%');
-      tp.textContent = line;
+      tp.textContent = line.text;
       text.appendChild(tp);
       group.appendChild(text);
     });
