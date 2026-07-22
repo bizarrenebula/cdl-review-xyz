@@ -197,6 +197,42 @@
   }
   .mark-glow.mark-pulse { outline: none; animation-name: mark-ring-glow; }
 
+  /* A fourth flavour, for lettering. A glyph has no border to swell — thicken
+     its stroke and it stops being legible — so here the ink itself catches the
+     light: the face brightens to white-gold and throws a halo, then settles
+     back through .lp-num's own transition. Opt in with `mark-ink`. */
+  @keyframes mark-ink {
+    45% {
+      fill: #fff6e0;
+      fill-opacity: 1;
+      stroke: rgba(255,252,244,.95);
+      stroke-width: 2.2px;
+      filter:
+        drop-shadow(0 0 3px #fff)
+        drop-shadow(0 0 10px var(--seg-color, #d3a95f))
+        drop-shadow(0 0 22px var(--seg-color, #d3a95f));
+    }
+  }
+  .mark-ink.mark-pulse { animation-name: mark-ink; }
+
+  /* A fifth flavour, for the words in a wedge. Same idea as `mark-ink` but it
+     leaves the stroke alone: a label's dark stroke is what keeps it readable
+     over the ring, and brightening that would erase the letterforms just as
+     the eye arrives. Only the fill lifts, and the glow behind it. */
+  @keyframes mark-word {
+    45% {
+      fill: #fff;
+      filter:
+        drop-shadow(0 0 4px rgba(255,250,238,.7))
+        drop-shadow(0 0 14px var(--seg-color, #d3a95f))
+        drop-shadow(0 0 30px var(--seg-color, #d3a95f));
+    }
+  }
+  .mark-word.mark-pulse { animation-name: mark-word; }
+  /* The words settle back on their own clock, slower than they lit, so the
+     hand-off from the numeral reads as one movement passing along. */
+  .label-outer, .label-inner { transition: fill .5s ease, filter .5s ease; }
+
   /* ---- The marker's other half: one light running the whole way round a
      group of things, to say they belong together. The path is built in JS
      (markSweepPath) because it traces the union of the two chosen wedges and
@@ -1486,7 +1522,10 @@ function buildRing(group, ring) {
     const lift = isOuter ? 2.6 : 2.2;                 // relief depth, user units
     [['lp-num-lip', lift], ['lp-num-cut', 0]].forEach(([layer, dy]) => {
       const num = document.createElementNS(ns, 'text');
-      num.setAttribute('class', `lp-num ${sizeClass} ${layer}`);
+      /* Only the face takes the marker: lighting the cast shadow as well would
+         light the numeral twice, half a pixel apart. */
+      const flavour = layer === 'lp-num-cut' ? ' mark-ink' : '';
+      num.setAttribute('class', `lp-num ${sizeClass} ${layer}${flavour}`);
       num.dataset.index = i;
       num.style.setProperty('--seg-color', LP_COLORS[i % 4]);   // lights up when selected
       num.setAttribute('transform', `rotate(${i * STEP}, ${CX}, ${CY})`);
@@ -1511,8 +1550,9 @@ function buildRing(group, ring) {
       defs.appendChild(arc);
 
       const text = document.createElementNS(ns, 'text');
-      text.setAttribute('class', cls);
+      text.setAttribute('class', cls + ' mark-word');
       text.dataset.index = i;
+      text.style.setProperty('--seg-color', LP_COLORS[i % 4]);  // its glow, when marked
       text.setAttribute('transform', `rotate(${i * STEP}, ${CX}, ${CY})`);
       text.setAttribute('dominant-baseline', 'central');
       text.style.fontSize = fit.size.toFixed(2) + 'px';
@@ -1830,16 +1870,32 @@ function step(ring, dir) {
      markPulse(el, 480)       one beat, in 480ms
      markPulse(el, 0, false)  one beat even mid-drag (ignores the quiet rules)
 
-   Used here for two jobs. Periodically, the two selected sectors and the ball
+   Used here for two jobs. Periodically, the two selected wedges and the ball
    pulse in turn, outer → inner → centre, walking the eye the way the result is
-   read — "you are on these". And when the result changes they are marked as
-   one instead: a single light runs the whole way round the pair and the ball
-   together, then all three pulse at the same instant. */
+   read — "you are on these". And when the result changes they are all marked
+   as one instead: a single light runs the whole way round the pair and the
+   ball together, then everything pulses at the same instant.
+
+   A station is not one flash but a small movement passing through the wedge:
+   the number lights and rises in front of its label, and then, as it sinks
+   back, the label lights in turn and holds the attention the numeral just let
+   go of. The two overlap on purpose — the light is handed over rather than
+   restarted, which is what stops the return of the numeral from reading as
+   something switching off. */
 const MARK_MS     = 1050;    // one beat; matches --mark-ms in the CSS
 const MARK_GAP    = 480;     // each beat trails the one before it
 const MARK_SWEEP  = 950;     // the light's run around the group
-const MARK_EVERY  = 10000;
+const MARK_EVERY  = 6000;
 const MARK_FIRST  = 2600;    // the first hint, shortly after the page settles
+/* A number goes home the moment its light goes out, on the same 60ms as every
+   other piece. Holding it in front any longer left one numeral standing over
+   its label after the rest of the wheel had gone quiet, which read as a second,
+   smaller highlight rather than the end of the first one. */
+const MARK_LIFT   = MARK_MS + 60;
+/* When the words take over from the numeral. Early enough that the two are
+   briefly lit together — the overlap is the hand-off — and late enough that
+   the number is already on its way down. */
+const MARK_HANDOFF = Math.round(MARK_MS * 0.78);
 
 function markPulse(el, delay = 0, quietly = true) {
   setTimeout(() => {
@@ -1852,10 +1908,57 @@ function markPulse(el, delay = 0, quietly = true) {
   }, delay);
 }
 
-/* The selected wedge of a ring, which is always the one under the marker. */
-function selectedSector(ring) {
+/* The selected wedge of a ring, which is always the one under the marker, and
+   the principle number cut into it. They are marked together, so they are
+   fetched together. */
+function selectedParts(ring) {
   const group = ring === 'outer' ? outerG : innerG;
-  return group.querySelector(`.sector-${ring}[data-index="${selectedIndex(ring)}"]`);
+  const idx = selectedIndex(ring);
+  return {
+    sector: group.querySelector(`.sector-${ring}[data-index="${idx}"]`),
+    num:    group.querySelector(`.lp-num-cut[data-index="${idx}"]`),
+    /* One text element per line of the label, all lit together. */
+    words: [...group.querySelectorAll(`.label-${ring}[data-index="${idx}"]`)]
+  };
+}
+
+/* ---- Lifting a number out from under its label ----
+   The numerals are drawn before the labels so the words read cleanly over
+   them, which also means a label sits on top of the very numeral the marker is
+   trying to light. SVG has no z-index, so for the length of the beat the
+   number is moved to the end of the ring group — in front of everything — and
+   then put back exactly where it was.
+
+   Both copies travel, the cast shadow and the face, or the relief comes apart
+   for a second. Home is defined as "just after my own sector's path" rather
+   than as a remembered sibling: raiseActive may reshuffle the group while the
+   number is away, and following the path is right in every case where a
+   remembered node would be stale. */
+function markLiftNum(ring, delay) {
+  const group = ring === 'outer' ? outerG : innerG;
+  const idx = selectedIndex(ring);
+  const nums = [...group.querySelectorAll(`.lp-num[data-index="${idx}"]`)];
+  if (!nums.length) return;
+  setTimeout(() => {
+    if (!markAllowed() || !nums[0].isConnected) return;
+    nums.forEach(el => group.appendChild(el));        // in front of everything
+    setTimeout(() => {
+      const path = group.querySelector(`.sector-${ring}[data-index="${idx}"]`);
+      if (!path) return;                              // ring was rebuilt under us
+      const after = path.nextSibling;
+      nums.forEach(el => { if (el.parentNode === group) group.insertBefore(el, after); });
+    }, MARK_LIFT);
+  }, delay);
+}
+
+/* One station of the walk: a wedge, its number, and the number brought to the
+   front for as long as the light is on it. */
+function markStation(ring, delay) {
+  const { sector, num, words } = selectedParts(ring);
+  markPulse(sector, delay);
+  markPulse(num, delay);
+  markLiftNum(ring, delay);
+  words.forEach(el => markPulse(el, delay + MARK_HANDOFF));
 }
 
 /* Silent while the user is already busy — mid-turn, reading a card, or away —
@@ -1894,22 +1997,24 @@ function markSweepRun() {
   setTimeout(() => sweepG.classList.remove('run'), MARK_SWEEP + 60);
 }
 
-/* A new result: the light runs the group, then the three flare together. */
+/* A new result: the light runs the group, then all of it flares together —
+   both wedges, both principle numbers, and the ball, on one beat. */
 function markGroupNow() {
   if (!markAllowed()) return;
   markSweepRun();
   const together = MARK_SWEEP - 120;              // land as the light closes
-  markPulse(selectedSector('outer'), together);
-  markPulse(selectedSector('inner'), together);
+  markStation('outer', together);
+  markStation('inner', together);
   markPulse(hubRing, together);
 }
 
-/* The standing reminder: the same three, one after another, outward to in. */
+/* The standing reminder: the same pieces, one station after another, outward
+   to in. A wedge and its number are one station and share a beat. */
 function markRound() {
   if (!markAllowed()) return;
-  markPulse(selectedSector('outer'), 0);
-  markPulse(selectedSector('inner'), MARK_GAP);
-  markPulse(hubRing, MARK_GAP * 2);
+  markStation('outer', 0);
+  markStation('inner', MARK_GAP);
+  markPulse(hubRing, MARK_GAP * 2 + MARK_HANDOFF);   // after the last word
 }
 
 let markTimer = null;
