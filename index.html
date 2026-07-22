@@ -18,6 +18,11 @@
     --ring-outer: #1c1840;
     --ring-inner: #262052;
     --hub:        #14112e;
+    /* 4 principle colours from the book */
+    --c-red:    #ff4d5e;
+    --c-green:  #4dff88;
+    --c-yellow: #ffd84d;
+    --c-violet: #b477ff;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -82,21 +87,47 @@
   .ring-group { cursor: grab; }
   .ring-group:active { cursor: grabbing; }
 
-  .sector-outer { fill: var(--ring-outer); stroke: var(--brass-dim); stroke-width: 1; }
-  .sector-inner { fill: var(--ring-inner); stroke: var(--brass-dim); stroke-width: 1; }
+  .sector-outer, .sector-inner {
+    fill: var(--ring-outer);
+    stroke: var(--seg-color, var(--brass-dim));
+    stroke-width: 2.4;
+    stroke-linejoin: round;
+    /* neon: the coloured stroke emits light */
+    filter: drop-shadow(0 0 3px var(--seg-color)) drop-shadow(0 0 7px var(--seg-color));
+    transition: fill .3s;
+  }
+  .sector-inner { fill: var(--ring-inner); }
   .sector-outer.active { fill: #3a2f6e; }
   .sector-inner.active { fill: #4a3a86; }
 
+  /* Big number sitting behind the label, scaled within the segment */
+  .lp-num {
+    font-family: 'Marcellus', serif;
+    font-weight: 700;
+    text-anchor: middle;
+    fill: var(--brass);
+    stroke: #3a2b0c;              /* darker border around the golden number */
+    stroke-width: 1.4px;
+    paint-order: stroke fill;
+    opacity: .92;
+    pointer-events: none; user-select: none;
+  }
+  .lp-num-outer { font-size: 62px; }
+  .lp-num-inner { font-size: 54px; }
+
+  /* Label text: whitish, with a dark shadow acting as a readable border */
   .label-outer, .label-inner {
-    fill: var(--parchment);
+    fill: #fbf7ec;
     font-family: 'Marcellus', serif;
     text-anchor: middle;
+    paint-order: stroke fill;
+    stroke: rgba(6,4,16,.92);
+    stroke-width: 3px;
     pointer-events: none; user-select: none;
   }
   .label-outer { font-size: 15.5px; letter-spacing: .04em; }
   .label-inner { font-size: 13px; }
-  .active-label { fill: var(--brass); }
-  .lp-num { font-size: 10px; fill: var(--brass-dim); }
+  .active-label { fill: #fff; }
 
   .hub {
     position: absolute; left: 50%; top: 50%;
@@ -110,10 +141,7 @@
     align-items: center; justify-content: center;
     text-align: center; padding: 13%; gap: .3rem;
   }
-  .hub .eyebrow {
-    font-size: .58rem; letter-spacing: .28em;
-    text-transform: uppercase; color: var(--brass-dim);
-  }
+  .hub .eyebrow { display: none; }
   .hub .match {
     font-family: 'Marcellus', serif;
     font-size: clamp(.68rem, 2vw, .92rem);
@@ -296,7 +324,6 @@
 
   <div class="hub">
     <div class="eyebrow" id="uiAlignment"></div>
-    <div class="match" id="matchText"></div>
     <div class="result" id="resultText"></div>
     <button id="readMoreBtn" type="button"></button>
   </div>
@@ -344,7 +371,7 @@ const I18N = {
   de: {
     ui: {
       title: 'Der Code des Lebens',
-      subtitle: 'Richten Sie eine Person und einen Lebensbereich aus — das Rad zeigt, in welchem Ihrer 12 Lebensprinzipien sich das Ereignis widerspiegelt.',
+      subtitle: 'Drehen Sie das äußere Rad nach links und rechts, um die Person zu wählen, und drehen Sie das innere Rad nach links und rechts, um die Kategorie des Ereignisses zu wählen.',
       alignment: 'Ausrichtung',
       readMore: 'Mehr lesen',
       outer: 'Außen · Personen',
@@ -456,7 +483,7 @@ const I18N = {
   en: {
     ui: {
       title: 'The Code of Life',
-      subtitle: 'Align a person and a life area — the wheel shows in which of your 12 life principles the event is mirrored.',
+      subtitle: 'Rotate the outer wheel left and right to select the person, and rotate the inner wheel left and right to select the category of the event.',
       alignment: 'Alignment',
       readMore: 'Read more',
       outer: 'Outer · People',
@@ -568,7 +595,7 @@ const I18N = {
   ru: {
     ui: {
       title: 'Код жизни',
-      subtitle: 'Совместите человека и сферу жизни — колесо покажет, в каком из ваших 12 жизненных принципов отражается событие.',
+      subtitle: 'Поворачивайте внешнее колесо влево и вправо, чтобы выбрать человека, и поворачивайте внутреннее колесо влево и вправо, чтобы выбрать категорию события.',
       alignment: 'Совмещение',
       readMore: 'Подробнее',
       outer: 'Внешний · Люди',
@@ -680,7 +707,7 @@ const I18N = {
   bg: {
     ui: {
       title: 'Кодът на живота',
-      subtitle: 'Подравнете човек и сфера от живота — колелото показва в кой от вашите 12 жизнени принципа се отразява събитието.',
+      subtitle: 'Завъртайте външното колело наляво и надясно, за да изберете човека, и завъртайте вътрешното колело наляво и надясно, за да изберете категорията на събитието.',
       alignment: 'Подравняване',
       readMore: 'Прочети още',
       outer: 'Външен · Хора',
@@ -801,6 +828,7 @@ const LP = () => I18N[lang].lp;
 
 /* ================= GEOMETRY ================= */
 
+const LP_COLORS = ['var(--c-red)','var(--c-green)','var(--c-yellow)','var(--c-violet)'];
 const CX = 350, CY = 350;
 const OUTER_R1 = 252, OUTER_R2 = 344;
 const INNER_R1 = 164, INNER_R2 = 252;
@@ -834,7 +862,6 @@ function buildRing(group, ring) {
   const ns = 'http://www.w3.org/2000/svg';
   const isOuter = ring === 'outer';
   const [r1, r2] = isOuter ? [OUTER_R1, OUTER_R2] : [INNER_R1, INNER_R2];
-  const labelR = isOuter ? 300 : 212;
   const maxLen = isOuter ? 13 : 11;
   group.innerHTML = '';
   LP().forEach((item, i) => {
@@ -843,7 +870,20 @@ function buildRing(group, ring) {
     path.setAttribute('d', sectorPath(r1, r2, start, end));
     path.setAttribute('class', isOuter ? 'sector-outer' : 'sector-inner');
     path.dataset.index = i;
+    path.style.setProperty('--seg-color', LP_COLORS[i % 4]);
     group.appendChild(path);
+
+    // BIG number, centred in the segment's mid-radius, behind the label
+    const midR = (r1 + r2) / 2;
+    const num = document.createElementNS(ns, 'text');
+    num.setAttribute('class', 'lp-num ' + (isOuter ? 'lp-num-outer' : 'lp-num-inner'));
+    num.dataset.index = i;
+    num.setAttribute('transform', `rotate(${i * STEP}, ${CX}, ${CY})`);
+    num.setAttribute('x', CX);
+    num.setAttribute('y', CY - midR);
+    num.setAttribute('dominant-baseline', 'central');
+    num.textContent = i + 1;
+    group.appendChild(num);
 
     const name = isOuter ? item.label : item.area;
     const lines = splitLabel(name, maxLen);
@@ -854,19 +894,10 @@ function buildRing(group, ring) {
     lines.forEach((line, li) => {
       const tspan = document.createElementNS(ns, 'tspan');
       tspan.setAttribute('x', CX);
-      tspan.setAttribute('y', CY - labelR + li * 15 - (lines.length - 1) * 7.5);
+      tspan.setAttribute('y', CY - midR + li * 15 - (lines.length - 1) * 7.5);
       tspan.textContent = line;
       text.appendChild(tspan);
     });
-    // small LP number near the ring edge
-    const num = document.createElementNS(ns, 'text');
-    num.setAttribute('class', 'lp-num');
-    num.setAttribute('text-anchor', 'middle');
-    num.setAttribute('transform', `rotate(${i * STEP}, ${CX}, ${CY})`);
-    num.setAttribute('x', CX);
-    num.setAttribute('y', CY - (isOuter ? r2 - 14 : r1 + 16));
-    num.textContent = i + 1;
-    group.appendChild(num);
     group.appendChild(text);
   });
 }
@@ -902,10 +933,8 @@ function updateHub() {
   innerG.querySelectorAll('.label-inner').forEach(el =>
     el.classList.toggle('active-label', +el.dataset.index === e));
 
-  document.getElementById('matchText').textContent =
-    `${LP()[e].area} · ${LP()[p].label}`;
   document.getElementById('resultText').textContent =
-    `→ ${r + 1}. ${T().lpShort} · ${LP()[r].title}`;
+    REFLECT[lang](LP()[e].area, LP()[p].label, r + 1);
 }
 
 function snap(ring, animate = true) {
@@ -983,6 +1012,22 @@ document.querySelectorAll('.control-block button').forEach(btn => {
   });
 });
 
+/* Keyboard: ←/→ rotate the outer wheel, ↑/↓ rotate the inner wheel */
+document.addEventListener('keydown', ev => {
+  if (overlay.classList.contains('open')) return;      // let Esc handler manage the modal
+  const map = {
+    ArrowLeft:  ['outer',  1],
+    ArrowRight: ['outer', -1],
+    ArrowUp:    ['inner', -1],
+    ArrowDown:  ['inner',  1]
+  };
+  const m = map[ev.key];
+  if (!m) return;
+  ev.preventDefault();
+  state[m[0]].angle += STEP * m[1];
+  snap(m[0]);
+});
+
 /* ================= MODALS ================= */
 
 const overlay = document.getElementById('overlay');
@@ -1009,6 +1054,13 @@ function openCategoryModal(idx, ring) {
 
 /* ---- Original book text rendering ---- */
 
+const REFLECT = {
+  de: (area, label, n) => `Die ${area} Ihrer ${label} spiegelt Ihr ${n}. Lebensprinzip wider.`,
+  en: (area, label, n) => `The ${area.toLowerCase()} of your ${label.toLowerCase()} reflects your ${n}${ordEn(n)} life principle.`,
+  ru: (area, label, n) => `${area} — ${label} — отражает ваш ${n}-й жизненный принцип.`,
+  bg: (area, label, n) => `${area} — ${label} — отразява вашия ${n}-и жизнен принцип.`
+};
+function ordEn(n){ const s=['th','st','nd','rd'], v=n%100; return s[(v-20)%10]||s[v]||s[0]; }
 const BOOK_BTN = {
   de: 'Originaltext aus dem Buch',
   en: 'Original text from the book',
@@ -1054,20 +1106,16 @@ function openResultModal() {
   const p = selectedIndex('outer');
   const e = selectedIndex('inner');
   const r = resultLP(p, e);
-  const item = LP()[r];
+  // eyebrow keeps the formula; title is the reflect-sentence pattern
   document.getElementById('modalEyebrow').textContent =
     `${e + 1} + ${p + 1} − 1 → ${r + 1}. ${T().lpWord}`;
   document.getElementById('modalTitle').textContent =
-    `${LP()[e].area} · ${LP()[p].label} ${T().mirrors} ${r + 1}. ${T().lpWord}`;
-  const body = document.getElementById('modalBody');
-  body.innerHTML =
-    field(T().catKeys, item.keys) +
-    `<button type="button" class="explain-btn" id="explainBtn">${BOOK_BTN[lang]}</button>
-     <div id="explainArea"></div>`;
-  document.getElementById('explainBtn').addEventListener('click', () => {
-    document.getElementById('explainArea').innerHTML = bookHTML(p, e);
-    document.getElementById('explainBtn').remove();
-  });
+    REFLECT[lang](LP()[e].area, LP()[p].label, r + 1);
+  // body: book text from the quotation (motto) down to the Je-mehr…desto block,
+  // WITHOUT the Themen/keys field. bookHTML already omits Themen.
+  const bh = bookHTML(p, e);
+  document.getElementById('modalBody').innerHTML =
+    bh || `<p class="note">${T().bookNote}</p>`;
   overlay.classList.add('open');
   document.getElementById('closeModal').focus();
 }
