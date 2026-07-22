@@ -20,7 +20,7 @@
     --hub:        #14112e;
     /* 4 principle colours from the book */
     --c-red:    #ff4d5e;
-    --c-green:  #4dff88;
+    --c-green:  #1fa845;
     --c-yellow: #ffd84d;
     --c-violet: #b477ff;
   }
@@ -123,20 +123,41 @@
       drop-shadow(0 0 19.5px var(--seg-color));
   }
 
-  /* Big number sitting behind the label, scaled within the segment */
+  /* ---- The principle number, struck into the sector ----
+     Two stacked copies: a dark copy offset downwards reads as the shadow the
+     numeral casts, and the face on top is outlined in gold with a faintly lit
+     interior — brass inlaid in the surface rather than a hole in it. The label
+     floats above with its own halo, so the two never compete. */
   .lp-num {
     font-family: 'Marcellus', serif;
     font-weight: 700;
     text-anchor: middle;
-    fill: var(--brass);
-    stroke: #3a2b0c;              /* darker border around the golden number */
-    stroke-width: 1.4px;
-    paint-order: stroke fill;
-    opacity: .92;
     pointer-events: none; user-select: none;
+    transition: fill .35s ease, stroke .35s ease, filter .35s ease;
   }
-  .lp-num-outer { font-size: 62px; }
-  .lp-num-inner { font-size: 54px; }
+  .lp-num-lip {                                  /* the cast shadow, underneath */
+    fill: rgba(3,2,12,.6);
+    stroke: none;
+  }
+  .lp-num-cut {                                  /* the brass face */
+    fill: rgba(233,238,255,.14);
+    stroke: rgba(211,169,95,.62);
+    stroke-width: 1.5px;
+    paint-order: stroke fill;
+    stroke-linejoin: round;
+  }
+
+  /* Selected: the numeral fills with the sector's own light. */
+  .lp-num-cut.num-active {
+    fill: var(--seg-color);
+    fill-opacity: .92;
+    stroke: rgba(255,246,224,.75);
+    filter: drop-shadow(0 0 3px var(--seg-color)) drop-shadow(0 0 11px var(--seg-color));
+  }
+  .lp-num-lip.num-active { fill: rgba(3,2,12,.75); }
+
+  /* Size is per-number, computed in numSize() — a two-digit number cannot go
+     as wide as a single one where the sector narrows. */
 
   /* Label text: whitish, with a dark shadow acting as a readable border */
   .label-outer, .label-inner {
@@ -287,7 +308,7 @@
   .hub .result .w { display: inline-block; }      /* keeps words from breaking mid-letter */
   .hub .result .ch {
     display: inline-block; white-space: pre;
-    animation: letter-in .4s cubic-bezier(.2,.7,.3,1) both;
+    animation: letter-in .34s cubic-bezier(.2,.7,.3,1) both;
   }
   /* Each letter condenses out of the mist rather than being typed. */
   @keyframes letter-in {
@@ -391,7 +412,7 @@
     body.spinning .sector-outer.active, body.spinning .sector-inner.active {
       filter: drop-shadow(0 0 7px var(--seg-color));
     }
-    body.spinning .lp-num { stroke: none; }
+    body.spinning .lp-num-cut.num-active { filter: none; }
     /* The ball is not what is moving — stop paying for it mid-turn. */
     body.spinning .hub-mist span,
     body.spinning .hub.lit { animation-play-state: paused; }
@@ -1061,24 +1082,154 @@ function sectorPath(r1, r2, a1, a2) {
   const [x3,y3] = polar(r1,a2), [x4,y4] = polar(r1,a1);
   return `M ${x1} ${y1} A ${r2} ${r2} 0 0 1 ${x2} ${y2} L ${x3} ${y3} A ${r1} ${r1} 0 0 0 ${x4} ${y4} Z`;
 }
-function splitLabel(text, maxLen) {
-  if (text.length <= maxLen) return [text];
-  const words = text.split(' ');
-  let l1 = '', l2 = '';
-  for (const w of words) {
-    if ((l1 + ' ' + w).trim().length <= maxLen && !l2) l1 = (l1 + ' ' + w).trim();
-    else l2 = (l2 + ' ' + w).trim();
+/* ---- Fitting a label into its wedge -----------------------------------
+   Everything here is in SVG user units, so one fit serves every screen: the
+   viewBox scales the whole wheel, and text that clears the wedge at 700 units
+   clears it at any rendered size.
+
+   Each line is set on an arc concentric with the ring, so a line's room is
+   simply the arc it sits on — length r·30° — and it needs its cap height to
+   clear both the inner and outer arc. Curved text has no corners to catch on
+   the rim, which is what a straight line had to be shrunk for. */
+
+const NS = 'http://www.w3.org/2000/svg';
+const XLINK = 'http://www.w3.org/1999/xlink';
+const WEDGE_RAD = STEP * Math.PI / 180;    // angular width of one sector
+const LBL_PAD = 9;          // clearance from the two arcs, user units
+const LBL_LEAD = 1.12;      // line spacing, as a multiple of the font size
+const LBL_HALFCAP = .38;    // half the cap height, in em
+const LBL_SIDE = .86;       // fraction of the arc the line may use
+const LBL_EASE = .93;       // final trim, so nothing sits tight to an edge
+
+let measurer = null;
+const textWidths = new Map();
+
+/* Advance width of a string at font-size 100, in user units. Uses a hidden
+   node with the real class so letter-spacing counts. */
+function textWidth100(text, cls) {
+  const key = cls + '|' + text;
+  if (textWidths.has(key)) return textWidths.get(key);
+  if (!measurer) {
+    measurer = document.createElementNS(NS, 'text');
+    measurer.setAttribute('visibility', 'hidden');
+    measurer.setAttribute('x', -9999);
+    svg.appendChild(measurer);
   }
-  return [l1, l2];
+  measurer.setAttribute('class', cls);
+  measurer.style.fontSize = '100px';
+  measurer.textContent = text;
+  const w = measurer.getComputedTextLength();
+  textWidths.set(key, w);
+  return w;
+}
+
+/* Every way of breaking the words into `n` contiguous lines. */
+function lineSplits(words, n) {
+  if (n === 1) return [[words.join(' ')]];
+  const out = [];
+  for (let i = 1; i <= words.length - n + 1; i++) {
+    for (const rest of lineSplits(words.slice(i), n - 1)) {
+      out.push([words.slice(0, i).join(' '), ...rest]);
+    }
+  }
+  return out;
+}
+
+/* Radius of line `j` in a block of `n` lines centred at `c`. Line 0 is the
+   outermost, so the text reads outside-in like the rest of the wheel. */
+function lineRadius(c, n, j, size) {
+  const lead = LBL_LEAD * size;
+  return c + lead * n / 2 - (j + .5) * lead;
+}
+
+/* Can this block sit at radius `c` (its centre) at this size? */
+function blockFits(lines, size, c, r1, r2, cls) {
+  const rIn = r1 + LBL_PAD, rOut = r2 - LBL_PAD, capH = LBL_HALFCAP * size;
+  for (let j = 0; j < lines.length; j++) {
+    const rj = lineRadius(c, lines.length, j, size);
+    if (rj - capH < rIn || rj + capH > rOut) return false;   // through an arc
+    const w = textWidth100(lines[j], cls) * size / 100;
+    if (w > rj * WEDGE_RAD * LBL_SIDE) return false;         // longer than its arc
+  }
+  return true;
+}
+
+/* The block is centred on the ring's mid-radius, full stop — a size only
+   counts as fitting if it fits there. Letting it drift outwards would buy a
+   larger face (the arc is longer further out) at the cost of labels sitting
+   at different depths around the wheel. Horizontal centring is the arc's own:
+   every line is anchored at startOffset 50%. */
+function placeBlock(lines, size, r1, r2, cls) {
+  const mid = (r1 + r2) / 2;
+  return blockFits(lines, size, mid, r1, r2, cls) ? mid : null;
+}
+
+/* Biggest type that fits, over every line breaking up to LBL_MAXLINES. */
+const LBL_MAXLINES = 3;
+/* Left alone, "Mutter" would set at 48 and "Selbstverwirklichung" at 12 — each
+   sector full, the ring a mess. So the ring's tightest label sets a floor and
+   nothing is allowed to exceed it by more than this. */
+const LBL_SPREAD = 1.45;
+function fitLabel(name, r1, r2, cls) {
+  const words = name.split(/\s+/).filter(Boolean);
+  let best = { size: 0, lines: [name], center: (r1 + r2) / 2 };
+  for (let n = 1; n <= Math.min(LBL_MAXLINES, words.length); n++) {
+    for (const lines of lineSplits(words, n)) {
+      let lo = 5, hi = 48, at = null;
+      for (let i = 0; i < 11; i++) {
+        const mid = (lo + hi) / 2;
+        const c = placeBlock(lines, mid, r1, r2, cls);
+        if (c === null) hi = mid; else { lo = mid; at = c; }
+      }
+      if (at !== null && lo > best.size) best = { size: lo, lines, center: at };
+    }
+  }
+  if (!best.size) best.size = 6;   // nothing fit: set it small and let it be
+  best.size *= LBL_EASE;
+  return best;
+}
+
+/* Largest number that still sits inside its segment. Two limits: the ring's
+   radial thickness, and the arc width low in the segment where the sector is
+   narrowest — which is what holds back the two-digit numbers. Constants are
+   Marcellus' digit metrics in em. */
+const NUM_CAP = .70, NUM_ADV = .52;
+function numSize(n, r1, r2) {
+  const digits = String(n).length;
+  const byHeight = (r2 - r1) * .74 / NUM_CAP;
+  const rLo = r1 + (r2 - r1) * .12;
+  const arc = 2 * rLo * Math.sin((STEP / 2) * Math.PI / 180);
+  const byWidth = arc * .84 / (digits * NUM_ADV);
+  return Math.min(byHeight, byWidth);
 }
 
 function buildRing(group, ring) {
   const ns = 'http://www.w3.org/2000/svg';
   const isOuter = ring === 'outer';
   const [r1, r2] = isOuter ? [OUTER_R1, OUTER_R2] : [INNER_R1, INNER_R2];
-  const maxLen = isOuter ? 13 : 11;
+  /* One size for the whole ring, taken from the widest number, so the numerals
+     stay uniform around it — swap to numSize(i + 1, …) per number to let the
+     single digits grow instead. */
+  const numFS = numSize(12, r1, r2);
+
+  /* Fit every label first: the tightest one in the ring caps the rest. */
+  const cls = isOuter ? 'label-outer' : 'label-inner';
+  const fits = LP().map(item => fitLabel(isOuter ? item.label : item.area, r1, r2, cls));
+  /* The floor comes from the second-tightest label, not the tightest: one
+     unbreakable word (Selbstverwirklichung) would otherwise drag the whole
+     ring down to its size. That one label stays smaller than the rest. */
+  const sorted = fits.map(f => f.size).sort((a, b) => a - b);
+  const cap = (sorted[1] ?? sorted[0]) * LBL_SPREAD;
+  fits.forEach(f => {
+    if (f.size <= cap) return;
+    f.size = cap;
+    f.center = placeBlock(f.lines, cap, r1, r2, cls) ?? f.center;
+  });
+
   group.innerHTML = '';
   raised[ring] = -1;            // DOM order is rebuilt, so drop the cached lift
+  const defs = document.createElementNS(NS, 'defs');   // holds the label arcs
+  group.appendChild(defs);
   LP().forEach((item, i) => {
     const start = i * STEP - STEP / 2, end = i * STEP + STEP / 2;
     const path = document.createElementNS(ns, 'path');
@@ -1088,32 +1239,53 @@ function buildRing(group, ring) {
     path.style.setProperty('--seg-color', LP_COLORS[i % 4]);
     group.appendChild(path);
 
-    // BIG number, centred in the segment's mid-radius, behind the label
+    /* BIG number struck at the segment's mid-radius, behind the label.
+       Two copies: the cast shadow first, offset down, then the brass face. */
     const midR = (r1 + r2) / 2;
-    const num = document.createElementNS(ns, 'text');
-    num.setAttribute('class', 'lp-num ' + (isOuter ? 'lp-num-outer' : 'lp-num-inner'));
-    num.dataset.index = i;
-    num.setAttribute('transform', `rotate(${i * STEP}, ${CX}, ${CY})`);
-    num.setAttribute('x', CX);
-    num.setAttribute('y', CY - midR);
-    num.setAttribute('dominant-baseline', 'central');
-    num.textContent = i + 1;
-    group.appendChild(num);
-
-    const name = isOuter ? item.label : item.area;
-    const lines = splitLabel(name, maxLen);
-    const text = document.createElementNS(ns, 'text');
-    text.setAttribute('class', isOuter ? 'label-outer' : 'label-inner');
-    text.dataset.index = i;
-    text.setAttribute('transform', `rotate(${i * STEP}, ${CX}, ${CY})`);
-    lines.forEach((line, li) => {
-      const tspan = document.createElementNS(ns, 'tspan');
-      tspan.setAttribute('x', CX);
-      tspan.setAttribute('y', CY - midR + li * 15 - (lines.length - 1) * 7.5);
-      tspan.textContent = line;
-      text.appendChild(tspan);
+    const sizeClass = isOuter ? 'lp-num-outer' : 'lp-num-inner';
+    const lift = isOuter ? 2.6 : 2.2;                 // relief depth, user units
+    [['lp-num-lip', lift], ['lp-num-cut', 0]].forEach(([layer, dy]) => {
+      const num = document.createElementNS(ns, 'text');
+      num.setAttribute('class', `lp-num ${sizeClass} ${layer}`);
+      num.dataset.index = i;
+      num.style.setProperty('--seg-color', LP_COLORS[i % 4]);   // lights up when selected
+      num.setAttribute('transform', `rotate(${i * STEP}, ${CX}, ${CY})`);
+      num.setAttribute('x', CX);
+      num.setAttribute('y', CY - midR + dy);
+      num.setAttribute('dominant-baseline', 'central');
+      num.setAttribute('font-size', numFS.toFixed(1));
+      num.textContent = i + 1;
+      group.appendChild(num);
     });
-    group.appendChild(text);
+
+    /* Label: one arc per line, each concentric with the ring, so the words
+       curve with the wheel instead of sitting flat across it. */
+    const fit = fits[i];
+    fit.lines.forEach((line, li) => {
+      const rj = lineRadius(fit.center, fit.lines.length, li, fit.size);
+      const id = `lblarc-${ring}-${i}-${li}`;
+      const [ax, ay] = polar(rj, -STEP / 2), [bx, by] = polar(rj, STEP / 2);
+      const arc = document.createElementNS(ns, 'path');
+      arc.setAttribute('id', id);
+      arc.setAttribute('d', `M ${ax} ${ay} A ${rj} ${rj} 0 0 1 ${bx} ${by}`);
+      defs.appendChild(arc);
+
+      const text = document.createElementNS(ns, 'text');
+      text.setAttribute('class', cls);
+      text.dataset.index = i;
+      text.setAttribute('transform', `rotate(${i * STEP}, ${CX}, ${CY})`);
+      text.setAttribute('dominant-baseline', 'central');
+      text.style.fontSize = fit.size.toFixed(2) + 'px';
+      text.style.strokeWidth = Math.max(2, fit.size * .2).toFixed(2) + 'px';
+
+      const tp = document.createElementNS(ns, 'textPath');
+      tp.setAttribute('href', '#' + id);
+      tp.setAttributeNS(XLINK, 'xlink:href', '#' + id);   // older WebKit
+      tp.setAttribute('startOffset', '50%');
+      tp.textContent = line;
+      text.appendChild(tp);
+      group.appendChild(text);
+    });
   });
 }
 
@@ -1175,10 +1347,14 @@ function updateHub() {
     el.classList.toggle('active', +el.dataset.index === p));
   outerG.querySelectorAll('.label-outer').forEach(el =>
     el.classList.toggle('active-label', +el.dataset.index === p));
+  outerG.querySelectorAll('.lp-num').forEach(el =>
+    el.classList.toggle('num-active', +el.dataset.index === p));
   innerG.querySelectorAll('.sector-inner').forEach(el =>
     el.classList.toggle('active', +el.dataset.index === e));
   innerG.querySelectorAll('.label-inner').forEach(el =>
     el.classList.toggle('active-label', +el.dataset.index === e));
+  innerG.querySelectorAll('.lp-num').forEach(el =>
+    el.classList.toggle('num-active', +el.dataset.index === e));
 
   writeResult(REFLECT[lang](LP()[e].area, LP()[p].label, r + 1));
 }
@@ -1186,12 +1362,18 @@ function updateHub() {
 /* Sets the hub text one letter at a time. Words are wrapped so line breaking
    still happens between words, not between letters. */
 const resultEl = document.getElementById('resultText');
-const LETTER_MS = 17, LETTER_LEAD = 93;
+/* Budget: LEAD + BUDGET + the .34s each letter takes ≈ 940ms, so the sentence
+   is always fully formed inside a second however long it is. */
+const LETTER_MS = 17, LETTER_LEAD = 60, LETTER_BUDGET = 540;
 
 function writeResult(text) {
   /* Spans are built even when motion is reduced — the CSS drops the animation,
      and the per-word boxes are what fitHubText measures against the circle. */
   const frag = document.createDocumentFragment();
+  /* The cadence is derived, not fixed: a long sentence tightens its stagger so
+     the whole reveal always lands inside LETTER_BUDGET. */
+  const ticks = text.replace(/\s+/g, ' ').length;
+  const gap = Math.min(LETTER_MS, LETTER_BUDGET / Math.max(1, ticks - 1));
   let i = 0;
   text.split(/(\s+)/).forEach(chunk => {
     if (!chunk) return;
@@ -1206,7 +1388,7 @@ function writeResult(text) {
       const letter = document.createElement('span');
       letter.className = 'ch';
       letter.textContent = ch;
-      letter.style.animationDelay = (LETTER_LEAD + i++ * LETTER_MS) + 'ms';
+      letter.style.animationDelay = (LETTER_LEAD + i++ * gap).toFixed(1) + 'ms';
       word.appendChild(letter);
     }
     frag.appendChild(word);
@@ -1279,7 +1461,17 @@ window.addEventListener('resize', () => {
   if (fitRaf) cancelAnimationFrame(fitRaf);
   fitRaf = requestAnimationFrame(fitHubText);
 });
-if (document.fonts) document.fonts.ready.then(fitHubText);
+/* Everything is measured, so nothing can be trusted until Marcellus is in:
+   the fallback face has different metrics. Re-measure and rebuild once. */
+if (document.fonts) document.fonts.ready.then(() => {
+  textWidths.clear();
+  buildRing(outerG, 'outer');
+  buildRing(innerG, 'inner');
+  applyRotation('outer');
+  applyRotation('inner');
+  updateHub();
+  fitHubText();
+});
 
 /* ================= ROTATION MOTION ================= */
 
