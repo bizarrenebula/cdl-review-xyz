@@ -91,7 +91,9 @@
     header p { margin-top: .9rem; }
     .stage { margin: 1.8rem auto; }
   }
-  svg { width: 100%; height: 100%; display: block; }
+  /* The outer ring reaches r=344 in a 700-unit viewBox, so its halo would be
+     clipped flat by the SVG viewport — let it spill past the edge. */
+  svg { width: 100%; height: 100%; display: block; overflow: visible; }
   .ring-group { cursor: grab; }
   .ring-group:active { cursor: grabbing; }
 
@@ -102,11 +104,21 @@
     stroke-linejoin: round;
     /* neon: the coloured stroke emits light */
     filter: drop-shadow(0 0 3px var(--seg-color)) drop-shadow(0 0 7px var(--seg-color));
-    transition: fill .3s;
+    transition: fill .3s, stroke-width .3s, filter .3s;
   }
   .sector-inner { fill: var(--ring-inner); }
   .sector-outer.active { fill: #3a2f6e; }
   .sector-inner.active { fill: #4a3a86; }
+
+  /* Selected segments burn brighter than the rest of the ring */
+  .sector-outer.active, .sector-inner.active {
+    stroke-width: 3.2;
+    filter:
+      drop-shadow(0 0 1.5px #fff)
+      drop-shadow(0 0 4.5px var(--seg-color))
+      drop-shadow(0 0 10.5px var(--seg-color))
+      drop-shadow(0 0 19.5px var(--seg-color));
+  }
 
   /* Big number sitting behind the label, scaled within the segment */
   .lp-num {
@@ -144,10 +156,94 @@
     overflow: hidden;
     background: radial-gradient(circle at 50% 35%, #1e1a42, var(--hub) 75%);
     border: 1px solid var(--brass-dim);
-    box-shadow: 0 0 40px rgba(211,169,95,.12) inset, 0 0 30px rgba(0,0,0,.6);
+    box-shadow: 0 0 40px rgba(211,169,95,.12) inset, 0 0 30px rgba(0,0,0,.6),
+                0 0 26px rgba(211,169,95,.16);
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
-    text-align: center; padding: 13%; gap: .3rem;
+    text-align: center; padding: 4%; gap: .35rem;
+  }
+
+  /* ---- Result reveal: a hairline of light draws once around the rim while the
+         text resolves out of a blur. Quiet, no fireworks. ---- */
+  .hub-reveal {
+    position: absolute; inset: 0; border-radius: 50%;
+    pointer-events: none; overflow: hidden;
+  }
+  /* Outer element carries the annulus (the rim); inner one carries the sweep,
+     so each animates a single, simple mask. */
+  .hub-reveal .rim {
+    position: absolute; inset: 0; border-radius: 50%; opacity: 0;
+    -webkit-mask: radial-gradient(closest-side, transparent calc(100% - 2.5px), #000 calc(100% - 1.5px));
+            mask: radial-gradient(closest-side, transparent calc(100% - 2.5px), #000 calc(100% - 1.5px));
+  }
+  .hub-reveal .rim i {
+    position: absolute; inset: 0; display: block; border-radius: 50%;
+    background: conic-gradient(from -90deg,
+      rgba(211,169,95,.55), #fff4d6 45%, rgba(211,169,95,.55));
+    -webkit-mask: conic-gradient(from -90deg, #000 0deg, #000 0deg, transparent 14deg);
+            mask: conic-gradient(from -90deg, #000 0deg, #000 0deg, transparent 14deg);
+  }
+  /* A breath of light lifting off the centre as the rim closes. */
+  .hub-reveal .veil {
+    position: absolute; inset: 0; border-radius: 50%; opacity: 0;
+    background: radial-gradient(circle at 50% 50%,
+      rgba(255,241,209,.22), rgba(211,169,95,.1) 45%, transparent 72%);
+  }
+
+  /* Once a pairing has been chosen the hub keeps breathing, so the centre stays
+     the warmest thing on the board. */
+  .hub.lit { animation: hub-breathe 4.5s ease-in-out infinite; }
+  @keyframes hub-breathe {
+    0%, 100% { box-shadow: 0 0 40px rgba(211,169,95,.12) inset, 0 0 30px rgba(0,0,0,.6),
+                           0 0 26px rgba(211,169,95,.16); }
+    50%      { box-shadow: 0 0 56px rgba(211,169,95,.24) inset, 0 0 30px rgba(0,0,0,.6),
+                           0 0 46px rgba(211,169,95,.34); }
+  }
+
+  .hub.pulse .rim   { animation: rim-fade 1.15s linear; }
+  .hub.pulse .rim i { animation: rim-draw .95s cubic-bezier(.4,0,.15,1); }
+  .hub.pulse .veil  { animation: veil-lift 1.1s ease-out .18s; }
+
+  /* Letters arrive one by one, each flaring as it lands, like text writing
+     itself onto the page of a spellbook. */
+  .hub .result .w { display: inline-block; }      /* keeps words from breaking mid-letter */
+  .hub .result .ch {
+    display: inline-block; white-space: pre;
+    animation: letter-in .4s cubic-bezier(.2,.7,.3,1) both;
+  }
+  @keyframes letter-in {
+    0%   { opacity: 0; filter: blur(6px); transform: translateY(2px) scale(1.35);
+           color: #fff6e2; text-shadow: 0 0 12px rgba(255,238,198,.95), 0 0 26px rgba(211,169,95,.7); }
+    55%  { opacity: 1; filter: blur(0); transform: none;
+           color: #fff6e2; text-shadow: 0 0 9px rgba(255,238,198,.8), 0 0 18px rgba(211,169,95,.45); }
+    100% { opacity: 1; filter: blur(0); transform: none;
+           color: var(--brass); text-shadow: 0 0 0 rgba(211,169,95,0); }
+  }
+
+  @keyframes rim-fade {
+    0% { opacity: 0; } 8% { opacity: 1; } 62% { opacity: 1; } 100% { opacity: 0; }
+  }
+  @keyframes rim-draw {
+    from { -webkit-mask: conic-gradient(from -90deg, #000 0deg, #000 0deg, transparent 14deg);
+                   mask: conic-gradient(from -90deg, #000 0deg, #000 0deg, transparent 14deg); }
+    to   { -webkit-mask: conic-gradient(from -90deg, #000 0deg, #000 360deg, transparent 374deg);
+                   mask: conic-gradient(from -90deg, #000 0deg, #000 360deg, transparent 374deg); }
+  }
+  @keyframes veil-lift {
+    0%   { opacity: 0; transform: scale(.72); }
+    40%  { opacity: 1; }
+    100% { opacity: 0; transform: scale(1.06); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hub.pulse .rim, .hub.pulse .rim i, .hub.pulse .veil, .hub .result .ch {
+      animation: none;
+    }
+    /* No breathing, but keep the lit hub brighter than its resting state. */
+    .hub.lit {
+      animation: none;
+      box-shadow: 0 0 48px rgba(211,169,95,.18) inset, 0 0 30px rgba(0,0,0,.6),
+                  0 0 36px rgba(211,169,95,.25);
+    }
   }
   .hub .eyebrow { display: none; }
   .hub .match {
@@ -155,9 +251,12 @@
     font-size: clamp(.68rem, 2vw, .92rem);
     line-height: 1.3; color: var(--parchment);
   }
+  /* Width is deliberately near the full diameter and the size is set from JS
+     (fitHubText) so the block grows until its corners touch the inner circle. */
   .hub .result {
-    font-size: clamp(.62rem, 1.8vw, .8rem);
-    color: var(--brass); line-height: 1.3;
+    font-size: clamp(.62rem, 1.8vw, .8rem);   /* fallback until JS measures */
+    color: var(--brass); line-height: 1.24;
+    width: 100%; text-wrap: pretty;
   }
   .hub button {
     margin-top: .25rem;
@@ -169,16 +268,23 @@
     transition: background .25s, color .25s;
   }
   @media (max-width: 520px) {
-    .hub { padding: 10%; gap: .2rem; }
+    .hub { padding: 3%; gap: .2rem; }
     .hub .eyebrow { display: none; }
     .hub .match { font-size: .68rem; }
-    .hub .result { font-size: .62rem; }
-    .hub button { font-size: .58rem; padding: .35em .9em; }
+    .hub button { font-size: .56rem; padding: .3em .8em; }
     /* Wheel is scaled down here, so boost the glow radius (SVG user units)
        to keep the neon halo visible on mobile */
     .sector-outer, .sector-inner {
       stroke-width: 3.2;
       filter: drop-shadow(0 0 6px var(--seg-color)) drop-shadow(0 0 14px var(--seg-color));
+    }
+    .sector-outer.active, .sector-inner.active {
+      stroke-width: 4.4;
+      filter:
+        drop-shadow(0 0 2.2px #fff)
+        drop-shadow(0 0 7.5px var(--seg-color))
+        drop-shadow(0 0 18px var(--seg-color))
+        drop-shadow(0 0 33px var(--seg-color));
     }
   }
   .hub button:hover, .hub button:focus-visible {
@@ -336,7 +442,11 @@
     <circle cx="350" cy="350" r="164" fill="none" stroke="#d3a95f" stroke-width="1.5" pointer-events="none"/>
   </svg>
 
-  <div class="hub">
+  <div class="hub" id="hub">
+    <div class="hub-reveal" aria-hidden="true">
+      <div class="veil"></div>
+      <div class="rim"><i></i></div>
+    </div>
     <div class="eyebrow" id="uiAlignment"></div>
     <div class="result" id="resultText"></div>
     <button id="readMoreBtn" type="button"></button>
@@ -857,6 +967,7 @@ function buildRing(group, ring) {
   const [r1, r2] = isOuter ? [OUTER_R1, OUTER_R2] : [INNER_R1, INNER_R2];
   const maxLen = isOuter ? 13 : 11;
   group.innerHTML = '';
+  raised[ring] = -1;            // DOM order is rebuilt, so drop the cached lift
   LP().forEach((item, i) => {
     const start = i * STEP - STEP / 2, end = i * STEP + STEP / 2;
     const path = document.createElementNS(ns, 'path');
@@ -913,10 +1024,42 @@ function resultLP(pIdx, eIdx) {
   return (pIdx + eIdx) % 12;
 }
 
+/* SVG has no z-index: the selected segment's wider halo would be painted over
+   by the sectors drawn after it, so lift its whole trio (path, number, label)
+   to the end of the ring group. */
+const raised = { outer: -1, inner: -1 };
+function raiseActive(group, ring, idx) {
+  if (raised[ring] === idx) return;
+  raised[ring] = idx;
+  group.querySelectorAll(`[data-index="${idx}"]`)
+    .forEach(el => group.appendChild(el));
+}
+
+/* The hub announces a new pairing: lamps chase round the rim, then it blooms. */
+const hubEl = document.getElementById('hub');
+let lastPair = null;
+function pulseHub(key) {
+  if (lastPair === key) return;                 // language switch, re-snap to the same notch
+  const first = lastPair === null;
+  lastPair = key;
+  if (first) return;                            // no fanfare on the initial render
+  hubEl.classList.add('lit');                   // stays breathing from here on
+  if (reduceMotion()) return;
+  hubEl.classList.remove('pulse');
+  void hubEl.offsetWidth;                       // restart the animation
+  hubEl.classList.add('pulse');
+}
+hubEl?.addEventListener('animationend', ev => {
+  if (ev.animationName === 'rim-fade') hubEl.classList.remove('pulse');   // last one out
+});
+
 function updateHub() {
   const p = selectedIndex('outer');
   const e = selectedIndex('inner');
   const r = resultLP(p, e);
+  pulseHub(p + ':' + e);
+  raiseActive(outerG, 'outer', p);
+  raiseActive(innerG, 'inner', e);
   outerG.querySelectorAll('.sector-outer').forEach(el =>
     el.classList.toggle('active', +el.dataset.index === p));
   outerG.querySelectorAll('.label-outer').forEach(el =>
@@ -926,25 +1069,148 @@ function updateHub() {
   innerG.querySelectorAll('.label-inner').forEach(el =>
     el.classList.toggle('active-label', +el.dataset.index === e));
 
-  document.getElementById('resultText').textContent =
-    REFLECT[lang](LP()[e].area, LP()[p].label, r + 1);
+  writeResult(REFLECT[lang](LP()[e].area, LP()[p].label, r + 1));
 }
 
-function snap(ring, animate = true) {
-  const s = state[ring];
-  const target = Math.round(s.angle / STEP) * STEP;
-  if (animate && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    const from = s.angle, delta = target - from, t0 = performance.now(), DUR = 260;
-    (function tick(now) {
-      const t = Math.min((now - t0) / DUR, 1);
-      s.angle = from + delta * (1 - Math.pow(1 - t, 3));
-      applyRotation(ring);
-      if (t < 1) requestAnimationFrame(tick);
-      else { s.angle = target; applyRotation(ring); updateHub(); }
-    })(performance.now());
-  } else {
-    s.angle = target; applyRotation(ring); updateHub();
+/* Sets the hub text one letter at a time. Words are wrapped so line breaking
+   still happens between words, not between letters. */
+const resultEl = document.getElementById('resultText');
+const LETTER_MS = 17, LETTER_LEAD = 93;
+
+function writeResult(text) {
+  /* Spans are built even when motion is reduced — the CSS drops the animation,
+     and the per-word boxes are what fitHubText measures against the circle. */
+  const frag = document.createDocumentFragment();
+  let i = 0;
+  text.split(/(\s+)/).forEach(chunk => {
+    if (!chunk) return;
+    if (/^\s+$/.test(chunk)) {                       // real text node: the wrap point
+      frag.appendChild(document.createTextNode(chunk));
+      i++;                                           // a beat's pause between words
+      return;
+    }
+    const word = document.createElement('span');
+    word.className = 'w';
+    for (const ch of chunk) {
+      const letter = document.createElement('span');
+      letter.className = 'ch';
+      letter.textContent = ch;
+      letter.style.animationDelay = (LETTER_LEAD + i++ * LETTER_MS) + 'ms';
+      word.appendChild(letter);
+    }
+    frag.appendChild(word);
+  });
+  resultEl.textContent = '';
+  resultEl.appendChild(frag);
+  fitHubText();
+}
+
+/* ---- Fit the result to the hub ----------------------------------------
+   The hub is a circle, so a text block only fits if every corner of every
+   word box (and of the button) stays inside it. We try a handful of column
+   widths — a narrower column wraps into more, shorter lines, which can carry
+   a bigger face inside a circle — and for each one binary-search the largest
+   font size that still fits. Widest type wins. */
+const readMoreEl = document.getElementById('readMoreBtn');
+const FIT_WIDTHS = [.62, .74, .86, 1];
+const FIT_MARGIN = .90;                 // fraction of the radius text may reach
+
+function hubBoxes() {
+  const words = resultEl.querySelectorAll('.w');
+  const list = words.length
+    ? Array.from(words, w => [w.offsetLeft, w.offsetTop, w.offsetWidth, w.offsetHeight])
+    : [[resultEl.offsetLeft, resultEl.offsetTop, resultEl.offsetWidth, resultEl.offsetHeight]];
+  list.push([readMoreEl.offsetLeft, readMoreEl.offsetTop, readMoreEl.offsetWidth, readMoreEl.offsetHeight]);
+  return list;
+}
+
+function hubFits(cx, cy, limit) {
+  return hubBoxes().every(([x, y, w, h]) => {
+    const dx = Math.max(Math.abs(x - cx), Math.abs(x + w - cx));
+    const dy = Math.max(Math.abs(y - cy), Math.abs(y + h - cy));
+    return dx * dx + dy * dy <= limit * limit;
+  });
+}
+
+function fitHubText() {
+  const W = hubEl.clientWidth, H = hubEl.clientHeight;
+  if (!W || !H) return;
+  const cx = W / 2, cy = H / 2;
+  const R = Math.min(W, H) / 2;
+  const limit = R * FIT_MARGIN;
+  const MIN = R * .055, MAX = R * .30;
+
+  let best = { size: MIN, width: FIT_WIDTHS[FIT_WIDTHS.length - 1] };
+  for (const width of FIT_WIDTHS) {
+    resultEl.style.width = (width * 100) + '%';
+    let lo = MIN, hi = MAX;
+    for (let n = 0; n < 8; n++) {
+      const mid = (lo + hi) / 2;
+      resultEl.style.fontSize = mid + 'px';
+      if (hubFits(cx, cy, limit)) lo = mid; else hi = mid;
+    }
+    if (lo > best.size) best = { size: lo, width };
   }
+  resultEl.style.width = (best.width * 100) + '%';
+  resultEl.style.fontSize = best.size.toFixed(2) + 'px';
+}
+
+let fitRaf = null;
+window.addEventListener('resize', () => {
+  if (fitRaf) cancelAnimationFrame(fitRaf);
+  fitRaf = requestAnimationFrame(fitHubText);
+});
+if (document.fonts) document.fonts.ready.then(fitHubText);
+
+/* ================= ROTATION MOTION ================= */
+
+const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* Settling after a drag: run out and ease into the notch with a hint of overshoot. */
+function easeSettle(t) {
+  const b = 1.1, u = t - 1;
+  return 1 + (b + 1) * u * u * u + b * u * u;
+}
+/* A stepped turn: the wheel winds back a touch, rolls forward, rocks into place. */
+function easeRoll(t) {
+  const WIND = .18, back = 1.2;
+  if (t < WIND) return -0.055 * Math.sin((t / WIND) * Math.PI / 2);
+  const u = (t - WIND) / (1 - WIND) - 1;
+  return -0.055 + 1.055 * (1 + (back + 1) * u * u * u + back * u * u);
+}
+
+function animateTo(ring, target, dur, ease) {
+  const s = state[ring];
+  if (s.raf) cancelAnimationFrame(s.raf);
+  s.target = target;
+  const from = s.angle, delta = target - from;
+  if (!delta || reduceMotion()) {
+    s.raf = null; s.target = null;
+    s.angle = target; applyRotation(ring); updateHub();
+    return;
+  }
+  const t0 = performance.now();
+  s.raf = requestAnimationFrame(function tick(now) {
+    const t = Math.min((now - t0) / dur, 1);
+    s.angle = from + delta * ease(t);
+    applyRotation(ring);
+    if (t < 1) s.raf = requestAnimationFrame(tick);
+    else {
+      s.raf = null; s.target = null;
+      s.angle = target; applyRotation(ring); updateHub();
+    }
+  });
+}
+
+function snap(ring) {
+  animateTo(ring, Math.round(state[ring].angle / STEP) * STEP, 420, easeSettle);
+}
+
+/* One notch in `dir`, queued off the pending target so rapid presses stack. */
+function step(ring, dir) {
+  const s = state[ring];
+  const base = s.target != null ? s.target : Math.round(s.angle / STEP) * STEP;
+  animateTo(ring, base + STEP * dir, 560, easeRoll);
 }
 
 /* ================= DRAG + TAP ================= */
@@ -965,6 +1231,8 @@ svg.addEventListener('pointerdown', ev => {
   if (dist >= INNER_R1 && dist < OUTER_R1) ring = 'inner';
   else if (dist >= OUTER_R1 && dist <= OUTER_R2 + 6) ring = 'outer';
   if (!ring) return;
+  const s = state[ring];
+  if (s.raf) { cancelAnimationFrame(s.raf); s.raf = null; s.target = null; }
   drag = { ring, lastAngle: angle, startX: ev.clientX, startY: ev.clientY, moved: false };
   svg.setPointerCapture(ev.pointerId);
 });
@@ -1000,8 +1268,7 @@ svg.addEventListener('pointercancel', () => { if (drag && drag.moved) snap(drag.
 
 document.querySelectorAll('.control-block button').forEach(btn => {
   btn.addEventListener('click', () => {
-    state[btn.dataset.ring].angle += STEP * (+btn.dataset.dir);
-    snap(btn.dataset.ring);
+    step(btn.dataset.ring, +btn.dataset.dir);
   });
 });
 
@@ -1017,8 +1284,7 @@ document.addEventListener('keydown', ev => {
   const m = map[ev.key];
   if (!m) return;
   ev.preventDefault();
-  state[m[0]].angle += STEP * m[1];
-  snap(m[0]);
+  step(m[0], m[1]);
 });
 
 /* ================= MODALS ================= */
