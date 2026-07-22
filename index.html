@@ -125,9 +125,13 @@
     color: #b9aed9; max-width: 36rem; margin-inline: auto;
   }
 
+  /* The stage is the wheel's own box; the counting ring sits outside it, in
+     the margin left here for it (see `svg { overflow: visible }` below). So
+     the numbers cost the wheel about a tenth of its diameter and the whole
+     composition still takes up what it always did. */
   .stage {
     position: relative;
-    width: min(94vw, 640px, 74vh); aspect-ratio: 1;
+    width: min(84vw, 580px, 66vh); aspect-ratio: 1;
     margin: .6rem auto; z-index: 1;
     touch-action: none;
   }
@@ -138,8 +142,9 @@
     header p { margin-top: .9rem; }
     .stage { margin: 1.8rem auto; }
   }
-  /* The outer ring reaches r=344 in a 700-unit viewBox, so its halo would be
-     clipped flat by the SVG viewport — let it spill past the edge. */
+  /* The outer ring reaches r=344 in a 700-unit viewBox, so its halo — and the
+     counting ring past it — would be clipped flat by the SVG viewport. Let
+     them spill over the edge. */
   svg { width: 100%; height: 100%; display: block; overflow: visible; }
   .ring-group { cursor: grab; }
   .ring-group:active { cursor: grabbing; }
@@ -227,28 +232,10 @@
   }
   .mark-glow.mark-pulse { outline: none; animation-name: mark-ring-glow; }
 
-  /* A fourth flavour, for lettering. A glyph has no border to swell — thicken
-     its stroke and it stops being legible — so here the ink itself catches the
-     light: the face brightens to white-gold and throws a halo, then settles
-     back through .lp-num's own transition. Opt in with `mark-ink`. */
-  @keyframes mark-ink {
-    45% {
-      fill: #fff;
-      fill-opacity: 1;
-      /* The rim stays dark through the flare. Lighting it as well turned the
-         numeral into a white blob at the moment it was meant to be clearest. */
-      stroke: rgba(8,6,20,.35);
-      stroke-width: 1.8px;
-      filter:
-        drop-shadow(0 0 4px rgba(255,255,255,.7))
-        drop-shadow(0 0 12px var(--seg-color, #d3a95f))
-        drop-shadow(0 0 26px var(--seg-color, #d3a95f));
-    }
-  }
-  .mark-ink.mark-pulse { animation-name: mark-ink; }
-
-  /* A fifth flavour, for the words in a wedge. Same idea as `mark-ink` but it
-     leaves the stroke alone: a label's dark stroke is what keeps it readable
+  /* A fourth flavour, for the words in a wedge. A glyph has no border to swell
+     — thicken its stroke and it stops being legible — so here the ink itself
+     catches the light. The stroke is left alone: a label's dark stroke is what
+     keeps it readable
      over the ring, and brightening that would erase the letterforms just as
      the eye arrives. Only the fill lifts, and the glow behind it. */
   @keyframes mark-word {
@@ -262,7 +249,7 @@
   }
   .mark-word.mark-pulse { animation-name: mark-word; }
   /* The words settle back on their own clock, slower than they lit, so the
-     hand-off from the numeral reads as one movement passing along. */
+     light reads as one movement passing along rather than a switch. */
   .label-outer, .label-inner { transition: fill .5s ease, filter .5s ease; }
 
   /* ---- The marker's other half: one light running the whole way round a
@@ -288,53 +275,27 @@
     100% { opacity: 0; stroke-dashoffset: 0; }
   }
 
-  /* ---- The principle number, struck into the sector ----
-     Two stacked copies: a dark copy offset downwards reads as the shadow the
-     numeral casts, and the face on top is outlined in gold with a faintly lit
-     interior — brass inlaid in the surface rather than a hole in it. The label
-     floats above with its own halo, so the two never compete. */
-  .lp-num {
+  /* ---- The counting ring ------------------------------------------------
+     The twelve principle numbers used to be struck into the wedges, one set
+     per wheel, each of them lighting up with its sector — twenty-four numerals
+     competing with the words printed over them. They live outside the wheel
+     now: a single scale on its own circle, clear of the rim and of the
+     needle's tip, reading whichever wheel the hand last touched and turning
+     with it (see numTrack in the JS). Nothing here lights up. It is the ruler
+     the wheel is read against, not another thing on the wheel. */
+  .num-ring { transition: opacity .18s ease; }
+  .num-ring.switching { opacity: 0; }            /* while it changes wheels */
+  .wheel-num {
     font-family: 'Marcellus', serif;
-    font-weight: 700;
+    font-size: 23px;
+    fill: var(--brass);
+    fill-opacity: .85;
     text-anchor: middle;
     pointer-events: none; user-select: none;
-    transition: fill .35s ease, stroke .35s ease, filter .35s ease,
-                opacity .3s ease;
   }
-  /* Dipped while it changes places with its label — see numShift(). */
-  .lp-num.num-settling { opacity: .4; }
-  .lp-num-lip {                                  /* the cast shadow, underneath */
-    fill: rgba(3,2,12,.55);
-    stroke: none;
-  }
-  /* The face is solid. It used to be a 14%-opacity wash, which meant every
-     numeral was really showing the dark copy underneath it plus whatever the
-     sector was doing behind that — so a number over a saturated segment went
-     muddy and some read as nearly black. One opaque fill, and all twelve are
-     the same numeral on every ring. Everything here stays inside the white
-     range: brightness alone separates them, never hue. */
-  .lp-num-cut {
-    fill: #e6eaf6;
-    fill-opacity: 1;
-    stroke: rgba(8,6,20,.55);                    /* a dark rim, so it never merges */
-    stroke-width: 1.5px;
-    paint-order: stroke fill;
-    stroke-linejoin: round;
-  }
-
-  /* Selected: the same numeral, brighter, with the sector's colour thrown
-     around it rather than into it. */
-  .lp-num-cut.num-active {
-    fill: #fff;
-    fill-opacity: 1;
-    stroke: rgba(8,6,20,.4);
-    filter: drop-shadow(0 0 4px rgba(255,255,255,.55))
-            drop-shadow(0 0 12px var(--seg-color));
-  }
-  .lp-num-lip.num-active { fill: rgba(3,2,12,.7); }
-
-  /* Size is per-number, computed in numSize() — a two-digit number cannot go
-     as wide as a single one where the sector narrows. */
+  /* User units, so the numerals shrink with the wheel — on a phone that is a
+     ten-pixel numeral. A little more size buys them back. */
+  @media (max-width: 520px) { .wheel-num { font-size: 27px; } }
 
   /* Label text: whitish, with a dark shadow acting as a readable border */
   .label-outer, .label-inner {
@@ -635,7 +596,6 @@
     body.spinning .sector-outer.active, body.spinning .sector-inner.active {
       filter: drop-shadow(0 0 7px var(--seg-color));
     }
-    body.spinning .lp-num-cut.num-active { filter: none; }
     /* The ball is not what is moving — stop paying for it mid-turn. */
     body.spinning .hub-mist span,
     body.spinning .hub.lit { animation-play-state: paused; }
@@ -796,6 +756,8 @@
     <circle cx="350" cy="350" r="344" fill="none" stroke="#d3a95f" stroke-width="2"/>
     <g id="outerRing" class="ring-group"></g>
     <g id="innerRing" class="ring-group"></g>
+    <!-- The twelve numbers, outside the wheel; built and turned in JS. -->
+    <g id="numRing" class="num-ring" aria-hidden="true"></g>
     <circle cx="350" cy="350" r="252" fill="none" stroke="#d3a95f" stroke-width="1.5" pointer-events="none"/>
     <circle cx="350" cy="350" r="164" fill="none" stroke="#d3a95f" stroke-width="1.5" pointer-events="none"/>
     <!-- Last child, so the marker's sweep runs over everything on the wheel. -->
@@ -1306,6 +1268,7 @@ const STEP = 30;
 const svg = document.getElementById('wheel');
 const outerG = document.getElementById('outerRing');
 const innerG = document.getElementById('innerRing');
+const numRingG = document.getElementById('numRing');
 
 function polar(r, deg) {
   const rad = (deg - 90) * Math.PI / 180;
@@ -1517,28 +1480,10 @@ function fitLabel(name, r1, r2, cls) {
   return best;
 }
 
-/* Largest number that still sits inside its segment. Two limits: the ring's
-   radial thickness, and the arc width low in the segment where the sector is
-   narrowest — which is what holds back the two-digit numbers. Constants are
-   Marcellus' digit metrics in em. */
-const NUM_CAP = .70, NUM_ADV = .52;
-function numSize(n, r1, r2) {
-  const digits = String(n).length;
-  const byHeight = (r2 - r1) * .74 / NUM_CAP;
-  const rLo = r1 + (r2 - r1) * .12;
-  const arc = 2 * rLo * Math.sin((STEP / 2) * Math.PI / 180);
-  const byWidth = arc * .84 / (digits * NUM_ADV);
-  return Math.min(byHeight, byWidth);
-}
-
 function buildRing(group, ring) {
   const ns = 'http://www.w3.org/2000/svg';
   const isOuter = ring === 'outer';
   const [r1, r2] = isOuter ? [OUTER_R1, OUTER_R2] : [INNER_R1, INNER_R2];
-  /* One size for the whole ring, taken from the widest number, so the numerals
-     stay uniform around it — swap to numSize(i + 1, …) per number to let the
-     single digits grow instead. */
-  const numFS = numSize(12, r1, r2);
 
   /* Fit every label first: the tightest one in the ring caps the rest. */
   const cls = isOuter ? 'label-outer' : 'label-inner';
@@ -1566,28 +1511,6 @@ function buildRing(group, ring) {
     path.dataset.index = i;
     path.style.setProperty('--seg-color', LP_COLORS[i % 4]);
     group.appendChild(path);
-
-    /* BIG number struck at the segment's mid-radius, behind the label.
-       Two copies: the cast shadow first, offset down, then the brass face. */
-    const midR = (r1 + r2) / 2;
-    const sizeClass = isOuter ? 'lp-num-outer' : 'lp-num-inner';
-    const lift = isOuter ? 2.6 : 2.2;                 // relief depth, user units
-    [['lp-num-lip', lift], ['lp-num-cut', 0]].forEach(([layer, dy]) => {
-      const num = document.createElementNS(ns, 'text');
-      /* Only the face takes the marker: lighting the cast shadow as well would
-         light the numeral twice, half a pixel apart. */
-      const flavour = layer === 'lp-num-cut' ? ' mark-ink' : '';
-      num.setAttribute('class', `lp-num ${sizeClass} ${layer}${flavour}`);
-      num.dataset.index = i;
-      num.style.setProperty('--seg-color', LP_COLORS[i % 4]);   // lights up when selected
-      num.setAttribute('transform', `rotate(${i * STEP}, ${CX}, ${CY})`);
-      num.setAttribute('x', CX);
-      num.setAttribute('y', CY - midR + dy);
-      num.setAttribute('dominant-baseline', 'central');
-      num.setAttribute('font-size', numFS.toFixed(1));
-      num.textContent = i + 1;
-      group.appendChild(num);
-    });
 
     /* Label: one arc per line, each concentric with the ring, so the words
        curve with the wheel instead of sitting flat across it. */
@@ -1630,18 +1553,87 @@ const state = {
 function applyRotation(ring) {
   const s = state[ring];
   s.group.setAttribute('transform', `rotate(${s.angle}, ${CX}, ${CY})`);
+  if (ring === numTrack) turnNumRing();
 }
 function selectedIndex(ring) {
   return ((Math.round(-state[ring].angle / STEP) % 12) + 12) % 12;
 }
+/* ---- The counting ring -------------------------------------------------
+   Twelve numerals on their own circle outside the wheel, past the rim and
+   past the tip of the needle. They are not a third wheel and they never turn
+   by themselves: they are whichever wheel is being handled, counted off, so a
+   number always stands over the sector it names.
+
+   `numTrack` is the wheel they are currently reading. It changes the moment a
+   hand takes hold of the other one — on the grab, not on the release, because
+   by then the numbers are already being watched. If the two wheels stand at
+   different angles that change is a jump, so the ring dips out and comes back
+   in its new place rather than sliding round to it: a slide would read as the
+   numbers turning of their own accord, which is the one thing they must never
+   look like they are doing. */
+const NUM_RING_R = 382;        // numeral centres, in user units
+const NUM_SWITCH_MS = 180;     // matches the opacity transition in .num-ring
+let numTrack = 'outer';        // the wheel the numbers are reading
+let numPending = null;         // the one they are on their way to, mid-fade
+let numSwitchTimer = null;
+
+function buildNumRing() {
+  numRingG.innerHTML = '';
+  for (let i = 0; i < 12; i++) {
+    const t = document.createElementNS(NS, 'text');
+    t.setAttribute('class', 'wheel-num');
+    t.dataset.index = i;
+    t.setAttribute('transform', `rotate(${i * STEP}, ${CX}, ${CY})`);
+    t.setAttribute('x', CX);
+    t.setAttribute('y', CY - NUM_RING_R);
+    t.setAttribute('dominant-baseline', 'central');
+    t.textContent = i + 1;
+    numRingG.appendChild(t);
+  }
+}
+
+function turnNumRing() {
+  numRingG.setAttribute('transform',
+    `rotate(${state[numTrack].angle}, ${CX}, ${CY})`);
+}
+
+function trackNumRing(ring) {
+  if (ring === (numPending ?? numTrack)) return;    // already going there
+  /* Whatever was in flight is over: the hand moved again. Taking hold of the
+     wheel the ring is already on, mid-fade, has to land here too — otherwise
+     the pending switch fires afterwards and carries the numbers off to the
+     wheel nobody is touching. */
+  clearTimeout(numSwitchTimer);
+  numPending = null;
+  /* Both wheels on the same notch: nothing would move, so there is nothing to
+     hide — the ring just changes what it is following. */
+  if (Math.abs(state[ring].angle - state[numTrack].angle) < .01 || reduceMotion()) {
+    numTrack = ring;
+    numRingG.classList.remove('switching');
+    turnNumRing();
+    return;
+  }
+  numPending = ring;
+  numRingG.classList.add('switching');
+  numSwitchTimer = setTimeout(() => {
+    numTrack = ring;                    // the numbers move while they are out
+    numPending = null;
+    turnNumRing();
+    numRingG.classList.remove('switching');
+  }, NUM_SWITCH_MS);
+}
+
+buildNumRing();
+turnNumRing();
+
 /* The book's formula: LP1 + LP2 - 1, wrapped at 12 (0-based here). */
 function resultLP(pIdx, eIdx) {
   return (pIdx + eIdx) % 12;
 }
 
 /* SVG has no z-index: the selected segment's wider halo would be painted over
-   by the sectors drawn after it, so lift its whole trio (path, number, label)
-   to the end of the ring group. */
+   by the sectors drawn after it, so lift it and its label to the end of the
+   ring group. */
 const raised = { outer: -1, inner: -1 };
 function raiseActive(group, ring, idx) {
   if (raised[ring] === idx) return;
@@ -1680,14 +1672,10 @@ function updateHub() {
     el.classList.toggle('active', +el.dataset.index === p));
   outerG.querySelectorAll('.label-outer').forEach(el =>
     el.classList.toggle('active-label', +el.dataset.index === p));
-  outerG.querySelectorAll('.lp-num').forEach(el =>
-    el.classList.toggle('num-active', +el.dataset.index === p));
   innerG.querySelectorAll('.sector-inner').forEach(el =>
     el.classList.toggle('active', +el.dataset.index === e));
   innerG.querySelectorAll('.label-inner').forEach(el =>
     el.classList.toggle('active-label', +el.dataset.index === e));
-  innerG.querySelectorAll('.lp-num').forEach(el =>
-    el.classList.toggle('num-active', +el.dataset.index === e));
 
   writeResult(REFLECT[lang](LP()[e].area, LP()[p].label, r + 1));
 }
@@ -1906,9 +1894,12 @@ function snap(ring) {
             isSmall() ? 320 : 420, easeSettle);
 }
 
-/* One notch in `dir`, queued off the pending target so rapid presses stack. */
+/* One notch in `dir`, queued off the pending target so rapid presses stack.
+   Buttons and arrow keys come through here, so this is where they hand the
+   counting ring over — the same way a hand on the wheel does. */
 function step(ring, dir) {
   const s = state[ring];
+  trackNumRing(ring);
   const base = s.target != null ? s.target : Math.round(s.angle / STEP) * STEP;
   animateTo(ring, base + STEP * dir, isSmall() ? 420 : 560, easeRoll);
 }
@@ -1929,33 +1920,23 @@ function step(ring, dir) {
    ball together, then everything pulses at the same instant.
 
    A station is not one flash but a small movement passing through the wedge:
-   the number lights and rises in front of its label, and then, as it sinks
-   back, the label lights in turn and holds the attention the numeral just let
-   go of. The two overlap on purpose — the light is handed over rather than
-   restarted, which is what stops the return of the numeral from reading as
-   something switching off. */
+   the wedge lights first and the words follow, taking the attention over as
+   the sector settles. The two overlap on purpose — the light is handed along
+   rather than restarted. */
 const MARK_MS     = 1050;    // one beat; matches --mark-ms in the CSS
 const MARK_GAP    = 480;     // each beat trails the one before it
 const MARK_SWEEP  = 950;     // the light's run around the group
-/* A full round is the walk (2.8s), a breath, then the procession (1.6s) —
-   about 5.3s of movement. The gap is set from what is left over: at 8s the
-   next round arrived while the last one was still settling. */
+/* A full round is a walk of about 2.6s. The gap is set from what is left
+   over: any shorter and the next round arrives while the last is settling. */
 const MARK_EVERY  = 13000;
 const MARK_FIRST  = 2600;    // the first hint, shortly after the page settles
-/* A number goes home the moment its light goes out, on the same 60ms as every
-   other piece. Holding it in front any longer left one numeral standing over
-   its label after the rest of the wheel had gone quiet, which read as a second,
-   smaller highlight rather than the end of the first one. */
-const MARK_LIFT   = MARK_MS + 60;
-/* When the words take over from the numeral. Early enough that the two are
-   briefly lit together — the overlap is the hand-off — and late enough that
-   the number is already on its way down. */
+/* When the words take over from the wedge. Early enough that the two are
+   briefly lit together — the overlap is the hand-off. */
 const MARK_HANDOFF = Math.round(MARK_MS * 0.78);
 
 /* `ms` overrides the length of this one beat. The CSS reads its duration from
    --mark-ms, so setting that on the element is enough to make a single pulse
-   quicker than the rest — which is what the procession below needs, 24 beats
-   at the standard length being a wall of light rather than a chain. */
+   quicker than the rest. */
 function markPulse(el, delay = 0, quietly = true, ms = MARK_MS) {
   setTimeout(() => {
     if (!el || !el.isConnected) return;           // rebuilt out from under us
@@ -1972,127 +1953,22 @@ function markPulse(el, delay = 0, quietly = true, ms = MARK_MS) {
 }
 
 /* The selected wedge of a ring, which is always the one under the marker, and
-   the principle number cut into it. They are marked together, so they are
-   fetched together. */
+   its label. They are marked together, so they are fetched together. */
 function selectedParts(ring) {
   const group = ring === 'outer' ? outerG : innerG;
   const idx = selectedIndex(ring);
   return {
     sector: group.querySelector(`.sector-${ring}[data-index="${idx}"]`),
-    num:    group.querySelector(`.lp-num-cut[data-index="${idx}"]`),
     /* One text element per line of the label, all lit together. */
     words: [...group.querySelectorAll(`.label-${ring}[data-index="${idx}"]`)]
   };
 }
 
-/* ---- Lifting a number out from under its label ----
-   The numerals are drawn before the labels so the words read cleanly over
-   them, which also means a label sits on top of the very numeral the marker is
-   trying to light. SVG has no z-index, so for the length of the beat the
-   number is moved to the end of the ring group — in front of everything — and
-   then put back exactly where it was.
-
-   Both copies travel, the cast shadow and the face, or the relief comes apart
-   for a second. Home is defined as "just after my own sector's path" rather
-   than as a remembered sibling: raiseActive may reshuffle the group while the
-   number is away, and following the path is right in every case where a
-   remembered node would be stale. */
-function liftNum(ring, idx, delay, hold) {
-  const group = ring === 'outer' ? outerG : innerG;
-  const nums = [...group.querySelectorAll(`.lp-num[data-index="${idx}"]`)];
-  if (!nums.length) return;
-  setTimeout(() => {
-    if (!markAllowed() || !nums[0].isConnected) return;
-    numShift(nums, () => nums.forEach(el => group.appendChild(el)));   // to the front
-    setTimeout(() => numShift(nums, () => {
-      const path = group.querySelector(`.sector-${ring}[data-index="${idx}"]`);
-      if (!path) return;                              // ring was rebuilt under us
-      const after = path.nextSibling;
-      nums.forEach(el => { if (el.parentNode === group) group.insertBefore(el, after); });
-    }), hold);
-  }, delay);
-}
-const markLiftNum = (ring, delay) => liftNum(ring, selectedIndex(ring), delay, MARK_LIFT);
-
-/* ---- Changing places without the jump ----
-   Reordering is instantaneous: one frame the numeral is over its label, the
-   next it is beneath it, and at full brightness either direction lands as a
-   flinch. So it dips first — down to a little under half, which is roughly
-   where the label would have been covering it anyway — the move happens at the
-   bottom of the dip where there is least to see, and it comes back up in its
-   new place. The eye reads a fade, not a reorder.
-
-   Both directions use this. Coming forward, the dip runs while the marker's
-   light is rising on the same numeral, so it reads as the number fading up out
-   of the ring rather than jumping out of it. */
-const NUM_SINK = 300;          // matches the opacity transition in .lp-num
-function numShift(els, move) {
-  els.forEach(el => el.classList.add('num-settling'));
-  setTimeout(() => {
-    move();
-    els.forEach(el => el.classList.remove('num-settling'));
-  }, NUM_SINK);
-}
-
-/* One station of the walk: a wedge, its number, and the number brought to the
-   front for as long as the light is on it. */
+/* One station of the walk: a wedge, then its words as the wedge settles. */
 function markStation(ring, delay) {
-  const { sector, num, words } = selectedParts(ring);
+  const { sector, words } = selectedParts(ring);
   markPulse(sector, delay);
-  markPulse(num, delay);
-  markLiftNum(ring, delay);
   words.forEach(el => markPulse(el, delay + MARK_HANDOFF));
-}
-
-/* ---- The procession ----------------------------------------------------
-   Once the walk has finished with the chosen pair, a light sets off around
-   each wheel and touches all twelve numbers in turn — the whole wheel gets
-   named, not just the two under the marker. The two lights travel against
-   each other: the outer counts 1 → 12 one way round, the inner 12 → 1 the
-   other, so they meet twice and the wheel reads as two rings rather than one
-   disc. Each touch is short, because 24 beats at the marker's usual length
-   would be a wall of light instead of a chain.
-
-   Each numeral rises and settles with its own light, rather than the whole
-   ring being lifted for the length of the run. Lifting them as a batch was
-   cheaper, but it meant all twenty-four popped forward the instant the chain
-   began and dropped back together at the end — two events that had nothing to
-   do with the light travelling round, and read as exactly that. Twenty-four
-   small fades spread over three seconds cost little and are the effect. */
-/* Slower and further apart than the first pass. At 620ms a number was lit and
-   gone before it had registered, and the chain read as a flicker running round
-   the ring; at 950 each one is legible as itself and the light still travels.
-   The step has to grow with the beat, or ten numbers are lit at once and the
-   chain becomes a glow rather than a light going somewhere. */
-const TRACE_MS   = 950;      // one number's beat in the chain
-const TRACE_STEP = 135;      // how far behind its neighbour each one follows
-/* The chain used to start 200ms before the walk's last light had faded, which
-   ran the two into each other. It waits now: the pause is what tells the eye
-   the second thing is a separate statement about the whole wheel, rather than
-   the tail of the first one about the chosen pair. */
-const TRACE_WAIT = 900;      // quiet between the walk and the chain
-
-function numFace(ring, i) {
-  const group = ring === 'outer' ? outerG : innerG;
-  return group.querySelector(`.lp-num-cut[data-index="${i}"]`);
-}
-
-let traceTimers = [];
-function markProcession(delay) {
-  traceTimers.forEach(clearTimeout);
-  traceTimers = [];
-  traceTimers.push(setTimeout(() => {
-    if (!markAllowed()) return;
-    /* The lift starts a dip ahead of the light, so the numeral has finished
-       fading forward exactly as its beat begins. */
-    for (let k = 0; k < 12; k++) {
-      const t = k * TRACE_STEP;
-      markPulse(numFace('outer', k),      t + NUM_SINK, true, TRACE_MS);
-      markPulse(numFace('inner', 11 - k), t + NUM_SINK, true, TRACE_MS);
-      liftNum('outer', k,      t, TRACE_MS + 60);
-      liftNum('inner', 11 - k, t, TRACE_MS + 60);
-    }
-  }, delay));
 }
 
 /* Silent while the user is already busy — mid-turn, reading a card, or away —
@@ -2132,7 +2008,7 @@ function markSweepRun() {
 }
 
 /* A new result: the light runs the group, then all of it flares together —
-   both wedges, both principle numbers, and the ball, on one beat. */
+   both wedges and the ball, on one beat. */
 function markGroupNow() {
   if (!markAllowed()) return;
   markSweepRun();
@@ -2140,19 +2016,16 @@ function markGroupNow() {
   markStation('outer', together);
   markStation('inner', together);
   markPulse(hubRing, together);
-  markProcession(together + MARK_HANDOFF + MARK_MS + TRACE_WAIT);
 }
 
 /* The standing reminder: the same pieces, one station after another, outward
-   to in. A wedge and its number are one station and share a beat. Then the
-   pair of lights sets off round both wheels to name the other ten. */
+   to in — outer wedge, inner wedge, then the ball. */
 function markRound() {
   if (!markAllowed()) return;
   markStation('outer', 0);
   markStation('inner', MARK_GAP);
   const last = MARK_GAP * 2 + MARK_HANDOFF;          // the ball, after the last word
   markPulse(hubRing, last);
-  markProcession(last + MARK_MS + TRACE_WAIT);
 }
 
 let markTimer = null;
@@ -2199,6 +2072,7 @@ svg.addEventListener('pointerdown', ev => {
   if (!ring) return;
   const s = state[ring];
   if (s.raf) { cancelAnimationFrame(s.raf); s.raf = null; s.target = null; }
+  trackNumRing(ring);                 // the numbers belong to whatever is held
   beginSpin(s);                       // dragging is motion too — keep it light
   drag = { ring, lastAngle: angle, startX: ev.clientX, startY: ev.clientY, moved: false };
   svg.setPointerCapture(ev.pointerId);
