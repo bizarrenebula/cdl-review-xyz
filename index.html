@@ -1748,7 +1748,6 @@ function buildBaseSectors() {
   })();
 
   const fNum = Math.max(15, Math.min(28, H * 0.032));
-  const fBox = Math.max(8.5, Math.min(13, H * 0.0155));
 
   /* Sample a wedge's outline (inner arc + outer edge) as a polygon, and find
      the polygon's interval at a given x or y — used to size each label box so
@@ -1813,18 +1812,28 @@ function buildBaseSectors() {
        fitted inside the wedge's own outline, clipped to it, and the font shrinks
        until the three lines fit — so no text ever crosses a sector border. */
     const poly = wedgePoly(ia1, ia2, oa1, oa2);
-    const cX = poly.reduce((s, p) => s + p[0], 0) / poly.length;
-    const cY = poly.reduce((s, p) => s + p[1], 0) / poly.length;
+    /* Anchor at the area centroid — it lands in the meatier (outer) part of the
+       wedge, so the box fills the space the vertex-average would leave empty out
+       toward the corners. */
+    let A = 0, cX = 0, cY = 0;
+    for (let j = 0; j < poly.length; j++) {
+      const a = poly[j], b = poly[(j + 1) % poly.length];
+      const cr = a[0] * b[1] - b[0] * a[1];
+      A += cr; cX += (a[0] + b[0]) * cr; cY += (a[1] + b[1]) * cr;
+    }
+    A *= 0.5;
+    if (Math.abs(A) > 1) { cX /= 6 * A; cY /= 6 * A; }
+    else { cX = poly.reduce((s, p) => s + p[0], 0) / poly.length; cY = poly.reduce((s, p) => s + p[1], 0) / poly.length; }
     const vSpan = crossSpan(poly, 'y', cX, cY);
-    let halfH = vSpan ? Math.min(cY - vSpan[0], vSpan[1] - cY) : Math.min(W, H) * 0.13;
+    let halfH = vSpan ? Math.min(cY - vSpan[0], vSpan[1] - cY) : Math.min(W, H) * 0.14;
     let halfW = Infinity;
-    for (let t = -0.72; t <= 0.72; t += 0.36) {
+    for (let t = -0.8; t <= 0.8; t += 0.2) {
       const hs = crossSpan(poly, 'x', cY + halfH * t, cX);
       if (hs) halfW = Math.min(halfW, Math.min(cX - hs[0], hs[1] - cX));
     }
-    if (!isFinite(halfW)) halfW = Math.min(W, H) * 0.12;
-    halfW = Math.min(halfW * 0.9, Math.min(W, H) * 0.2);
-    halfH = Math.min(halfH * 0.92, Math.min(W, H) * 0.2);
+    if (!isFinite(halfW)) halfW = Math.min(W, H) * 0.13;
+    halfW = Math.min(halfW * 0.95, Math.min(W, H) * 0.34);
+    halfH = Math.min(halfH * 0.95, Math.min(W, H) * 0.34);
 
     const clip = document.createElementNS(ns, 'clipPath');
     clip.setAttribute('id', 'bsclip-' + i);
@@ -1861,13 +1870,18 @@ function buildBaseSectors() {
     fo.appendChild(box);
     baseSvg.appendChild(fo);
 
-    /* Shrink the font until the three lines fit inside the box. */
-    let fs = Math.min(fBox, halfH * 0.44);
-    box.style.fontSize = fs.toFixed(2) + 'px';
-    for (let it = 0; it < 12 && content.offsetHeight > halfH * 2 && fs > 5.5; it++) {
-      fs *= 0.9;
-      box.style.fontSize = fs.toFixed(2) + 'px';
+    /* Grow the font so the text fills the box as much as it can without
+       spilling past the wedge (in height or width). Binary search the largest
+       size that still fits. */
+    const boxH2 = halfH * 2, boxW2 = halfW * 2;
+    let lo = 6, hi = 34;
+    for (let it = 0; it < 8; it++) {
+      const mid = (lo + hi) / 2;
+      box.style.fontSize = mid.toFixed(2) + 'px';
+      if (content.offsetHeight <= boxH2 && content.scrollWidth <= boxW2) lo = mid;
+      else hi = mid;
     }
+    box.style.fontSize = lo.toFixed(2) + 'px';
 
     /* The principle number, out near the rectangle edge on the outer mid-angle. */
     const [imx, imy] = pol(Rin, (ia1 + ia2) / 2);
