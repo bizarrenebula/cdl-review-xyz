@@ -1737,7 +1737,6 @@ function buildBaseSectors() {
 
   baseSvg.setAttribute('viewBox', `0 0 ${W} ${H}`);
   baseSvg.innerHTML = '';
-  const MIN_BASE_FONT = 11;
   for (let i = 0; i < 12; i++) {
     const pIdx = wedgePrincipleIndex(i);           // which principle sits in this wedge
     const item = LP()[pIdx];
@@ -1793,15 +1792,19 @@ function buildBaseSectors() {
       const boxTop = bandTop + padY;
       const boxBottom = bandTop + bandH - padY;
 
-      /* Centre on the subsection itself and use nearly all of its width. The
-         sector clip remains the final guard along diagonal boundaries. */
+      /* Use the intersection of the sector at several heights, not just its
+         centreline. This yields a rectangle whose corners remain inside even
+         on diagonal sectors, so no glyphs are lost to the sector clip. */
       const centerY = (boxTop + boxBottom) / 2;
-      const centerSpan = horizontalSpan(poly, centerY);
-      if (!centerSpan) return;
-      const centerX = (centerSpan[0] + centerSpan[1]) / 2;
-      const boxW = (centerSpan[1] - centerSpan[0]) * 0.99;
+      const spans = [];
+      for (let s = 0; s <= 10; s++)
+        spans.push(horizontalSpan(poly, boxTop + (boxBottom - boxTop) * s / 10));
+      if (spans.some(span => !span)) return;
+      const left = Math.max(...spans.map(span => span[0])) + 3;
+      const right = Math.min(...spans.map(span => span[1])) - 3;
+      if (right <= left) return;
+      const boxW = right - left;
       const boxH = boxBottom - boxTop;
-      const left = centerX - boxW / 2;
 
       const fo = document.createElementNS(ns, 'foreignObject');
       fo.setAttribute('x', left.toFixed(1));
@@ -1820,7 +1823,7 @@ function buildBaseSectors() {
 
       /* Find this label's limit with normal wrapping. The three limits are
          reconciled below so one sector always has one coherent text size. */
-      let lo = MIN_BASE_FONT, hi = 30;
+      let lo = 5, hi = 30;
       for (let it = 0; it < 9; it++) {
         const mid = (lo + hi) / 2;
         el.style.fontSize = mid.toFixed(2) + 'px';
@@ -1833,8 +1836,7 @@ function buildBaseSectors() {
     /* Adapt per sector: all three labels share the largest size that fits all
        three of this sector's individually positioned rectangles. */
     if (sectorLabels.length) {
-      const sectorSize = Math.max(MIN_BASE_FONT,
-        Math.min(...sectorLabels.map(label => label.maxSize)) * 0.96) * 1.2375;
+      const sectorSize = Math.min(...sectorLabels.map(label => label.maxSize)) * 0.98;
       sectorLabels.forEach(({ el }) => { el.style.fontSize = sectorSize.toFixed(2) + 'px'; });
     }
 
