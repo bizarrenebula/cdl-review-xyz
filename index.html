@@ -1785,7 +1785,7 @@ function buildBaseSectors() {
   baseSvg.setAttribute('viewBox', `0 0 ${W} ${H}`);
   baseSvg.innerHTML = '';
   const labelBoxes = [];
-  const MIN_TEXT_SCALE_X = 0.68;   // trade a little width for much clearer letter height
+  const BASE_TEXT_SIZE = 14;
 
   for (let i = 0; i < 12; i++) {
     const pIdx = wedgePrincipleIndex(i);           // which principle sits in this wedge
@@ -1875,18 +1875,9 @@ function buildBaseSectors() {
     fo.appendChild(box);
     baseSvg.appendChild(fo);
 
-    /* Record each box's individual limit. A modest horizontal condensation is
-       allowed so these very long single lines can use substantially taller,
-       more readable type without being clipped. */
-    const boxH2 = halfH * 2, boxW2 = halfW * 2;
-    let lo = 6, hi = 34;
-    for (let it = 0; it < 8; it++) {
-      const mid = (lo + hi) / 2;
-      box.style.fontSize = mid.toFixed(2) + 'px';
-      if (content.offsetHeight <= boxH2 && content.scrollWidth * MIN_TEXT_SCALE_X <= boxW2) lo = mid;
-      else hi = mid;
-    }
-    labelBoxes.push({ box, content, boxW: boxW2, maxSize: lo });
+    /* Font height is deliberately fixed at a clearly readable size. The long
+       single lines are fitted horizontally after all boxes are in the DOM. */
+    labelBoxes.push({ box, content, boxW: halfW * 2 });
 
     /* The principle number, out near the rectangle edge on the outer mid-angle. */
     const [imx, imy] = pol(Rin, (ia1 + ia2) / 2);
@@ -1903,11 +1894,10 @@ function buildBaseSectors() {
     baseSvg.appendChild(num);
   }
 
-  /* Consistent typography is more important than making short labels larger:
-     all blocks share the biggest size that is safe in every sector. */
-  const sharedSize = Math.min(...labelBoxes.map(entry => entry.maxSize));
+  /* Width must not drive the font back down: keep a real 14px letter height
+     everywhere, then condense only the horizontal axis as much as required. */
   labelBoxes.forEach(({ box, content, boxW }) => {
-    box.style.fontSize = sharedSize.toFixed(2) + 'px';
+    box.style.fontSize = BASE_TEXT_SIZE + 'px';
     const scaleX = Math.min(1, boxW / content.scrollWidth);
     content.style.transform = `scaleX(${scaleX.toFixed(3)})`;
   });
