@@ -822,6 +822,34 @@
       font-style: italic;
       dominant-baseline: central;
     }
+    /* Labels never eat the wedge's pointer events. */
+    .base-area, .base-person, .base-num { pointer-events: none; }
+
+    /* The wedge the pointer sits on (the chosen event). */
+    .base-wedge.event {
+      fill: rgba(58, 47, 110, .55);
+      stroke-width: 3;
+      filter: drop-shadow(0 0 5px var(--seg-color, transparent));
+    }
+    /* Once the wheel has moved, every wedge is a clickable journey-end. */
+    #pcbase.engaged .base-wedge { cursor: pointer; }
+    #pcbase.engaged .base-wedge.hover {
+      fill: rgba(74, 58, 134, .7);
+      stroke-width: 3;
+      filter: drop-shadow(0 0 8px var(--seg-color, transparent));
+    }
+    /* The pointer sector (principle 1) on the wheel, and the person a hovered
+       base wedge projects back to. */
+    #pcbase .pointer-sector { stroke-width: 3.4; }
+    #pcbase .sector-outer.projected {
+      fill: #4a3a86;
+      stroke-width: 3.4;
+      filter:
+        drop-shadow(0 0 2px #fff)
+        drop-shadow(0 0 6px var(--seg-color))
+        drop-shadow(0 0 14px var(--seg-color));
+    }
+    #pcbase .label-outer.projected { fill: #fff; }
   }
 </style>
 </head>
@@ -1731,16 +1759,18 @@ function radialTextRot(A) {
    base at the home position — principle 1 at 9 o'clock, reading horizontally.
    Rotating the wheel then slides the sectors across the base underneath. */
 const WHEEL_ANGLE = p => ((20 - p) % 12) * 30 + STEP / 2;   // home centre for principle p
+let pcWheelLabels = [];        // {el, A, tx, ty} — kept so labels can be re-orientated on turn
 function buildWheelPc(group) {
   group.innerHTML = '';
   raised.outer = -1;
+  pcWheelLabels = [];
   const R_OUT = OUTER_R2, R_IN = 58, rMid = (R_IN + R_OUT) / 2;
   const avail = (R_OUT - R_IN) * 0.84;      // radial room for a label
   LP().forEach((item, p) => {
     const A = WHEEL_ANGLE(p);
     const sec = document.createElementNS(NS, 'path');
     sec.setAttribute('d', sectorPath(R_IN, R_OUT, A - STEP / 2, A + STEP / 2));
-    sec.setAttribute('class', 'sector-outer');
+    sec.setAttribute('class', p === 0 ? 'sector-outer pointer-sector' : 'sector-outer');
     sec.dataset.index = p;
     sec.style.setProperty('--seg-color', LP_COLORS[p % 4]);
     group.appendChild(sec);
@@ -1761,6 +1791,62 @@ function buildWheelPc(group) {
     text.style.strokeWidth = Math.max(2, fs * 0.2).toFixed(1) + 'px';
     text.textContent = item.label;
     group.appendChild(text);
+    pcWheelLabels.push({ el: text, A, tx, ty });
+  });
+}
+
+/* Keep the radial labels upright as the wheel turns: the group is rotated by
+   theta, so each label is counter-rotated to land at the upright radial angle
+   for its current position. */
+function orientPcWheel(theta) {
+  pcWheelLabels.forEach(({ el, A, tx, ty }) => {
+    const rot = radialTextRot(A + theta) - theta;
+    el.setAttribute('transform', `rotate(${rot.toFixed(2)}, ${tx.toFixed(2)}, ${ty.toFixed(2)})`);
+  });
+}
+
+const isPcBase = () => matchMedia('(min-width: 900px)').matches;
+
+/* The event (what happened) is the base principle the pointer — the wheel's
+   principle-1 sector — currently sits on. */
+function pcEventIndex() {
+  const k = (((Math.round(state.outer.angle / STEP)) % 12) + 12) % 12;   // notches turned
+  return ((12 - k) % 12 + 12) % 12;
+}
+/* Light the base wedge the pointer sits on, and mark the base as "engaged"
+   (read-more offered on every wedge) once the wheel has left its home spot. */
+function updatePcBase() {
+  if (!baseSvg) return;
+  const e = pcEventIndex();
+  const moved = ((Math.round(state.outer.angle / STEP)) % 12 + 12) % 12 !== 0;
+  baseSvg.querySelectorAll('.base-wedge').forEach(el =>
+    el.classList.toggle('event', +el.dataset.index === e));
+  pcbaseEl?.classList.toggle('engaged', moved);
+}
+
+/* On the base each wedge is where a journey ends. Hovering a wedge lights the
+   person on the wheel that projects onto it (result = person + event − 1);
+   clicking opens the reading for that (person, event) pairing. */
+const wheelPersonForResult = r => ((r - pcEventIndex()) % 12 + 12) % 12;
+if (baseSvg) {
+  baseSvg.addEventListener('mouseover', ev => {
+    const w = ev.target.closest && ev.target.closest('.base-wedge');
+    if (!w || !isPcBase()) return;
+    const p = wheelPersonForResult(+w.dataset.index);
+    w.classList.add('hover');
+    outerG.querySelectorAll('.sector-outer, .label-outer').forEach(el =>
+      el.classList.toggle('projected', +el.dataset.index === p));
+  });
+  baseSvg.addEventListener('mouseout', ev => {
+    const w = ev.target.closest && ev.target.closest('.base-wedge');
+    if (!w) return;
+    w.classList.remove('hover');
+    outerG.querySelectorAll('.projected').forEach(el => el.classList.remove('projected'));
+  });
+  baseSvg.addEventListener('click', ev => {
+    const w = ev.target.closest && ev.target.closest('.base-wedge');
+    if (!w || !isPcBase()) return;
+    openResultModalFor(wheelPersonForResult(+w.dataset.index), pcEventIndex());
   });
 }
 
@@ -1839,6 +1925,7 @@ const state = {
 function applyRotation(ring) {
   const s = state[ring];
   s.group.setAttribute('transform', `rotate(${s.angle}, ${CX}, ${CY})`);
+  if (ring === 'outer' && isPcBase()) orientPcWheel(s.angle);   // keep labels upright
   if (ring === numTrack) turnNumRing();
 }
 function selectedIndex(ring) {
@@ -1947,6 +2034,7 @@ hubEl?.addEventListener('animationend', ev => {
 });
 
 function updateHub() {
+  if (isPcBase()) { updatePcBase(); return; }   // PC reads the result off the base, not the hub
   const p = selectedIndex('outer');
   const e = selectedIndex('inner');
   const r = resultLP(p, e);
@@ -2514,9 +2602,8 @@ function bookHTML(p, e) {
   return html;
 }
 
-function openResultModal() {
-  const p = selectedIndex('outer');
-  const e = selectedIndex('inner');
+/* The result reading for a person (p) and an event (e); result LP = p + e − 1. */
+function openResultModalFor(p, e) {
   const r = resultLP(p, e);
   // eyebrow keeps the formula; title is the reflect-sentence pattern
   document.getElementById('modalEyebrow').textContent =
@@ -2530,6 +2617,9 @@ function openResultModal() {
     bh || `<p class="note">${T().bookNote}</p>`;
   overlay.classList.add('open');
   document.getElementById('closeModal').focus();
+}
+function openResultModal() {
+  openResultModalFor(selectedIndex('outer'), selectedIndex('inner'));
 }
 
 document.getElementById('readMoreBtn').addEventListener('click', openResultModal);
