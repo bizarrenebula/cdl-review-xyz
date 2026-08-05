@@ -26,7 +26,7 @@
 </script>
 <title>Der Code des Lebens — Rad der 12 Lebensprinzipien (Originaltexte)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Spectral:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Roboto+Condensed:wght@400;500&family=Spectral:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
 <style>
   :root {
     --sky:        #100e26;
@@ -840,11 +840,11 @@
       width: 100%; height: 100%; overflow: hidden;
       display: flex; align-items: center; justify-content: center;
       text-align: center; overflow-wrap: anywhere; line-height: 1.12;
-      font-family: 'Spectral', Georgia, serif; color: #cec4e6;
+      font-family: 'Roboto Condensed', 'Arial Narrow', sans-serif; color: #d8d0ea;
     }
     .bs-item.bs-keys {
       color: var(--gold-ink);
-      font-family: 'Marcellus', serif;
+      font-weight: 500;
       letter-spacing: .01em;
     }
 
@@ -1737,7 +1737,6 @@ function buildBaseSectors() {
 
   baseSvg.setAttribute('viewBox', `0 0 ${W} ${H}`);
   baseSvg.innerHTML = '';
-  const MIN_BASE_FONT = 11;
   for (let i = 0; i < 12; i++) {
     const pIdx = wedgePrincipleIndex(i);           // which principle sits in this wedge
     const item = LP()[pIdx];
@@ -1785,8 +1784,6 @@ function buildBaseSectors() {
       { cls: 'bs-item bs-line', text: item.people },
       { cls: 'bs-item bs-line', text: item.body }
     ];
-    const sectorLabels = [];
-
     labels.forEach((label, row) => {
       const bandTop = usableTop + row * bandH;
       const padY = Math.max(2, Math.min(5, bandH * 0.04));
@@ -1819,25 +1816,17 @@ function buildBaseSectors() {
       fo.appendChild(el);
       baseSvg.appendChild(fo);
 
-      /* Find this label's limit with normal wrapping. The three limits are
-         reconciled below so one sector always has one coherent text size. */
-      let lo = MIN_BASE_FONT, hi = 30;
+      /* Maximize every label independently: a short body label no longer has
+         to inherit the smaller size required by a long people description. */
+      let lo = 9, hi = 36;
       for (let it = 0; it < 9; it++) {
         const mid = (lo + hi) / 2;
         el.style.fontSize = mid.toFixed(2) + 'px';
         if (el.scrollWidth <= boxW && el.scrollHeight <= boxH) lo = mid;
         else hi = mid;
       }
-      sectorLabels.push({ el, maxSize: lo });
+      el.style.fontSize = (lo * 0.98).toFixed(2) + 'px';
     });
-
-    /* Adapt per sector: all three labels share the largest size that fits all
-       three of this sector's individually positioned rectangles. */
-    if (sectorLabels.length) {
-      const sectorSize = Math.max(MIN_BASE_FONT,
-        Math.min(...sectorLabels.map(label => label.maxSize)) * 0.96) * 1.05;
-      sectorLabels.forEach(({ el }) => { el.style.fontSize = sectorSize.toFixed(2) + 'px'; });
-    }
 
     /* The principle number, out near the rectangle edge on the outer mid-angle. */
     const [imx, imy] = pol(Rin, (ia1 + ia2) / 2);
