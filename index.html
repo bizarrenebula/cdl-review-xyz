@@ -847,7 +847,6 @@
       font-family: 'Marcellus', serif;
       letter-spacing: .01em;
     }
-    .bs-item b { color: var(--seg-color, var(--brass)); font-weight: 400; }
 
     /* The wedge the pointer sits on (the chosen event). */
     .base-wedge.event {
@@ -1770,7 +1769,7 @@ function buildBaseSectors() {
     const poly = wedgePoly(ia1, ia2, oa1, oa2);
     const ys = poly.map(point => point[1]);
     const yMin = Math.min(...ys), yMax = Math.max(...ys);
-    const yPad = Math.max(8, (yMax - yMin) * 0.045);
+    const yPad = Math.max(2, (yMax - yMin) * 0.015);
     const usableTop = yMin + yPad, usableBottom = yMax - yPad;
     const bandH = (usableBottom - usableTop) / 3;
 
@@ -1782,15 +1781,15 @@ function buildBaseSectors() {
     baseSvg.appendChild(clip);
 
     const labels = [
-      { cls: 'bs-item bs-keys', text: item.keys, icon: '' },
-      { cls: 'bs-item bs-line', text: item.people, icon: '👤' },
-      { cls: 'bs-item bs-line', text: item.body, icon: '🦴' }
+      { cls: 'bs-item bs-keys', text: item.keys },
+      { cls: 'bs-item bs-line', text: item.people },
+      { cls: 'bs-item bs-line', text: item.body }
     ];
     const sectorLabels = [];
 
     labels.forEach((label, row) => {
       const bandTop = usableTop + row * bandH;
-      const padY = Math.max(6, Math.min(14, bandH * 0.1));
+      const padY = Math.max(2, Math.min(5, bandH * 0.04));
       const boxTop = bandTop + padY;
       const boxBottom = bandTop + bandH - padY;
 
@@ -1800,7 +1799,7 @@ function buildBaseSectors() {
       const centerSpan = horizontalSpan(poly, centerY);
       if (!centerSpan) return;
       const centerX = (centerSpan[0] + centerSpan[1]) / 2;
-      const boxW = (centerSpan[1] - centerSpan[0]) * 0.94;
+      const boxW = (centerSpan[1] - centerSpan[0]) * 0.99;
       const boxH = boxBottom - boxTop;
       const left = centerX - boxW / 2;
 
@@ -1815,13 +1814,7 @@ function buildBaseSectors() {
       const el = document.createElement('div');
       el.className = label.cls;
       el.style.setProperty('--seg-color', color);
-      if (label.icon) {
-        const icon = document.createElement('b');
-        icon.textContent = label.icon;
-        el.append(icon, document.createTextNode(' ' + label.text));
-      } else {
-        el.textContent = label.text;
-      }
+      el.textContent = label.text;
       fo.appendChild(el);
       baseSvg.appendChild(fo);
 
@@ -1841,7 +1834,7 @@ function buildBaseSectors() {
        three of this sector's individually positioned rectangles. */
     if (sectorLabels.length) {
       const sectorSize = Math.max(MIN_BASE_FONT,
-        Math.min(...sectorLabels.map(label => label.maxSize)) * 0.96);
+        Math.min(...sectorLabels.map(label => label.maxSize)) * 0.96) * 2;
       sectorLabels.forEach(({ el }) => { el.style.fontSize = sectorSize.toFixed(2) + 'px'; });
     }
 
