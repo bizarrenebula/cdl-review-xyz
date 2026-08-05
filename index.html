@@ -797,6 +797,26 @@
     #pcbase .wheel-guide { display: none; }
     /* Radial person labels sit flat (no arc), read centre->edge, stay upright. */
     #pcbase .wheel-person-pc { letter-spacing: 0; }
+    /* Principle number on each wheel sector, near the rim. */
+    #pcbase .wheel-num-pc {
+      font-family: 'Marcellus', serif;
+      font-size: 19px;
+      fill: var(--seg-color, var(--brass));
+      paint-order: stroke;
+      stroke: rgba(4, 3, 14, .75);
+      stroke-width: 3px;
+      stroke-linejoin: round;
+      pointer-events: none;
+    }
+    /* The pointer arrow on principle 1 (the selector). Turns with the wheel. */
+    #pcbase .wheel-pointer {
+      fill: #ffe9b0;
+      stroke: #d3a95f;
+      stroke-width: 1;
+      filter: drop-shadow(0 0 3px rgba(255, 233, 176, .95))
+              drop-shadow(0 0 7px rgba(211, 169, 95, .7));
+      pointer-events: none;
+    }
 
     /* The wedge shapes and their labels (built in JS). */
     .base-wedge {
@@ -1759,13 +1779,15 @@ function radialTextRot(A) {
    base at the home position — principle 1 at 9 o'clock, reading horizontally.
    Rotating the wheel then slides the sectors across the base underneath. */
 const WHEEL_ANGLE = p => ((20 - p) % 12) * 30 + STEP / 2;   // home centre for principle p
-let pcWheelLabels = [];        // {el, A, tx, ty} — kept so labels can be re-orientated on turn
+let pcWheelLabels = [];        // {el, A, tx, ty} — kept so labels stay upright as the wheel turns
 function buildWheelPc(group) {
   group.innerHTML = '';
   raised.outer = -1;
   pcWheelLabels = [];
-  const R_OUT = OUTER_R2, R_IN = 58, rMid = (R_IN + R_OUT) / 2;
-  const avail = (R_OUT - R_IN) * 0.84;      // radial room for a label
+  const R_OUT = OUTER_R2, R_IN = 58;
+  const rNum = R_OUT - 15;                    // principle number, near the rim
+  const rMid = (R_IN + (R_OUT - 34)) / 2;     // label centred, leaving the rim for the number
+  const avail = (R_OUT - 34 - R_IN) * 0.86;   // radial room for a label
   LP().forEach((item, p) => {
     const A = WHEEL_ANGLE(p);
     const sec = document.createElementNS(NS, 'path');
@@ -1777,7 +1799,7 @@ function buildWheelPc(group) {
 
     const [tx, ty] = polar(rMid, A);
     const w100 = textWidth100(item.label, 'label-outer');
-    const fs = Math.max(9, Math.min(21, avail / (w100 / 100)));
+    const fs = Math.max(9, Math.min(20, avail / (w100 / 100)));
     const text = document.createElementNS(NS, 'text');
     text.setAttribute('class', 'label-outer wheel-person-pc mark-word');
     text.dataset.index = p;
@@ -1786,13 +1808,38 @@ function buildWheelPc(group) {
     text.setAttribute('y', ty.toFixed(2));
     text.setAttribute('text-anchor', 'middle');
     text.setAttribute('dominant-baseline', 'central');
-    text.setAttribute('transform', `rotate(${radialTextRot(A).toFixed(2)}, ${tx.toFixed(2)}, ${ty.toFixed(2)})`);
     text.style.fontSize = fs.toFixed(1) + 'px';
     text.style.strokeWidth = Math.max(2, fs * 0.2).toFixed(1) + 'px';
     text.textContent = item.label;
     group.appendChild(text);
     pcWheelLabels.push({ el: text, A, tx, ty });
+
+    /* Principle number near the rim, kept upright with the labels. */
+    const [nx, ny] = polar(rNum, A);
+    const num = document.createElementNS(NS, 'text');
+    num.setAttribute('class', 'wheel-num-pc');
+    num.dataset.index = p;
+    num.style.setProperty('--seg-color', LP_COLORS[p % 4]);
+    num.setAttribute('x', nx.toFixed(2));
+    num.setAttribute('y', ny.toFixed(2));
+    num.setAttribute('text-anchor', 'middle');
+    num.setAttribute('dominant-baseline', 'central');
+    num.textContent = p + 1;
+    group.appendChild(num);
+    pcWheelLabels.push({ el: num, A, tx: nx, ty: ny });
   });
+
+  /* The pointer: an arrow on principle 1 (the selector), pointing radially
+     outward. It lives in the wheel group, so it turns with the wheel and always
+     shows which base wedge principle 1 is aimed at. */
+  const A0 = WHEEL_ANGLE(0);
+  const [tipx, tipy] = polar(R_OUT + 22, A0);
+  const b1 = polar(R_OUT + 3, A0 - 3.2), b2 = polar(R_OUT + 3, A0 + 3.2);
+  const arrow = document.createElementNS(NS, 'path');
+  arrow.setAttribute('class', 'wheel-pointer');
+  arrow.setAttribute('d', `M ${tipx.toFixed(2)} ${tipy.toFixed(2)} L ${b1[0].toFixed(2)} ${b1[1].toFixed(2)} L ${b2[0].toFixed(2)} ${b2[1].toFixed(2)} Z`);
+  group.appendChild(arrow);
+  orientPcWheel(state.outer.angle);           // set upright immediately
 }
 
 /* Keep the radial labels upright as the wheel turns: the group is rotated by
