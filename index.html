@@ -786,9 +786,12 @@
     }
 
     /* One wheel on the base: hide the inner (life-area) ring and the counting
-       ring; the outer person ring and the hub stay. */
+       ring. The centre result is removed too — the result is now read off the
+       base, so the middle of the wheel is left clear. */
     #pcbase #innerRing,
     #pcbase #numRing { display: none; }
+    #pcbase .hub,
+    #pcbase .hub-ring { display: none; }
 
     /* The wedge shapes and their labels (built in JS). */
     .base-wedge {
@@ -1585,11 +1588,16 @@ function fitLabel(name, r1, r2, cls) {
    wedges read large, the ones the circle nearly touches (top and bottom) read
    as thin split slivers, exactly like a wheel laid on a rectangular chart.
 
-   Wedge i (principle i+1) spans [i·30°, (i+1)·30°] clockwise from the top, so a
-   boundary sits at the top and two principles split it (12 on the left of the
-   top, 1 on the right). Each wedge carries the principle colour on its border,
-   the inner-wheel life-area text, and a person from the outer wheel. Geometry
-   is in the rectangle's own pixels, rebuilt on resize. */
+   Geometry wedge i spans [i·30°, (i+1)·30°] clockwise from the top, so a
+   boundary sits at the top and two principles split it. The principle placed in
+   each wedge follows the chart on the reference: principle 1 sits at 9 o'clock
+   and the numbers increase counter-clockwise (1,2,3 down the left side, 4 at
+   the bottom, 7 at the right, 10 at the top). So wedge i carries principle
+   index (20 − i) mod 12 — e.g. wedge 8 (the 9-o'clock wedge) is principle 1,
+   and principles 10 and 9 split the top. Each wedge carries the principle
+   colour on its border, the inner-wheel life-area text, and a person from the
+   outer wheel. Geometry is in the rectangle's own pixels, rebuilt on resize. */
+const wedgePrincipleIndex = i => (20 - i) % 12;   // reference (astrological) order
 const baseSvg = document.getElementById('baseSvg');
 const pcbaseEl = document.getElementById('pcbase');
 
@@ -1630,7 +1638,10 @@ function buildBaseSectors() {
   baseSvg.setAttribute('viewBox', `0 0 ${W} ${H}`);
   baseSvg.innerHTML = '';
 
-  LP().forEach((item, i) => {
+  for (let i = 0; i < 12; i++) {
+    const pIdx = wedgePrincipleIndex(i);           // which principle sits in this wedge
+    const item = LP()[pIdx];
+    const color = LP_COLORS[pIdx % 4];
     const a1 = i * 30, a2 = a1 + 30, am = a1 + 15;
     const [i1x, i1y] = pol(Rin, a1);
     const [i2x, i2y] = pol(Rin, a2);
@@ -1648,8 +1659,8 @@ function buildBaseSectors() {
     const wedge = document.createElementNS(ns, 'path');
     wedge.setAttribute('class', 'base-wedge');
     wedge.setAttribute('d', d);
-    wedge.dataset.index = i;
-    wedge.style.setProperty('--seg-color', LP_COLORS[i % 4]);
+    wedge.dataset.index = pIdx;
+    wedge.style.setProperty('--seg-color', color);
     baseSvg.appendChild(wedge);
 
     /* Label centred in the visible (outer) part of the wedge. */
@@ -1663,7 +1674,7 @@ function buildBaseSectors() {
     label.setAttribute('text-anchor', 'middle');
     label.setAttribute('x', tx);
     label.setAttribute('y', ty);
-    label.style.setProperty('--seg-color', LP_COLORS[i % 4]);
+    label.style.setProperty('--seg-color', color);
 
     const areaT = document.createElementNS(ns, 'tspan');
     areaT.setAttribute('class', 'base-area');
@@ -1691,10 +1702,10 @@ function buildBaseSectors() {
     num.setAttribute('x', numX);
     num.setAttribute('y', numY);
     num.style.fontSize = fNum.toFixed(1) + 'px';
-    num.style.setProperty('--seg-color', LP_COLORS[i % 4]);
-    num.textContent = i + 1;
+    num.style.setProperty('--seg-color', color);
+    num.textContent = pIdx + 1;
     baseSvg.appendChild(num);
-  });
+  }
 }
 
 function buildRing(group, ring) {
