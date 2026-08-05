@@ -835,22 +835,19 @@
     /* Labels never eat the wedge's pointer events. */
     .base-area, .base-person, .base-num { pointer-events: none; }
 
-    /* The per-sector text block (description, people, body). Each item starts
-       on a new line and wraps naturally inside its centred rectangle. */
-    .bs-box {
+    /* Each of the three sector labels gets its own one-line rectangle. */
+    .bs-item {
       width: 100%; height: 100%; overflow: hidden;
       display: flex; align-items: center; justify-content: center;
-      text-align: center; line-height: 1.16;
+      text-align: center; white-space: nowrap; line-height: 1;
       font-family: 'Spectral', Georgia, serif; color: #cec4e6;
     }
-    .bs-box .bs-content { display: flex; flex-direction: column; gap: .35em; width: 100%; }
-    .bs-box .bs-keys {
+    .bs-item.bs-keys {
       color: var(--gold-ink);
       font-family: 'Marcellus', serif;
       letter-spacing: .01em;
     }
-    .bs-box .bs-line { font-size: .92em; }
-    .bs-box .bs-line b { color: var(--seg-color, var(--brass)); font-weight: 400; }
+    .bs-item b { color: var(--seg-color, var(--brass)); font-weight: 400; }
 
     /* The wedge the pointer sits on (the chosen event). */
     .base-wedge.event {
@@ -1725,19 +1722,18 @@ function buildBaseSectors() {
     p.push(rectHit(oa1));
     return p;
   };
-  const crossSpan = (poly, axis, fixed, ref) => {   // interval (containing ref) across the polygon
+  const horizontalSpan = (poly, y) => {
     const hits = [];
     for (let j = 0; j < poly.length; j++) {
       const a = poly[j], b = poly[(j + 1) % poly.length];
-      const f1 = axis === 'x' ? a[1] : a[0], f2 = axis === 'x' ? b[1] : b[0];
-      const c1 = axis === 'x' ? a[0] : a[1], c2 = axis === 'x' ? b[0] : b[1];
-      if ((f1 <= fixed && f2 > fixed) || (f2 <= fixed && f1 > fixed))
-        hits.push(c1 + (c2 - c1) * (fixed - f1) / (f2 - f1));
+      if ((a[1] <= y && b[1] > y) || (b[1] <= y && a[1] > y))
+        hits.push(a[0] + (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1]));
     }
     hits.sort((m, n) => m - n);
+    let widest = null;
     for (let j = 0; j + 1 < hits.length; j += 2)
-      if (ref >= hits[j] - 0.5 && ref <= hits[j + 1] + 0.5) return [hits[j], hits[j + 1]];
-    return null;
+      if (!widest || hits[j + 1] - hits[j] > widest[1] - widest[0]) widest = [hits[j], hits[j + 1]];
+    return widest;
   };
 
   baseSvg.setAttribute('viewBox', `0 0 ${W} ${H}`);
@@ -1768,32 +1764,16 @@ function buildBaseSectors() {
     wedge.style.setProperty('--seg-color', color);
     baseSvg.appendChild(wedge);
 
-    /* Label block, mirroring the book's chart: keywords, people and biological
-       correspondence. The three items remain three single lines inside the
-       largest conservative rectangle centred on this irregular wedge. */
+    /* Treat the three subelements as independent one-line labels. Each gets a
+       third of the sector's vertical range and searches that band for the
+       widest safe horizontal strip, so diagonal and corner sectors can use
+       their broad outer space instead of sharing one narrow rectangle. */
     const poly = wedgePoly(ia1, ia2, oa1, oa2);
-    /* Anchor at the area centroid — it lands in the meatier (outer) part of the
-       wedge, so the box fills the space the vertex-average would leave empty out
-       toward the corners. */
-    let A = 0, cX = 0, cY = 0;
-    for (let j = 0; j < poly.length; j++) {
-      const a = poly[j], b = poly[(j + 1) % poly.length];
-      const cr = a[0] * b[1] - b[0] * a[1];
-      A += cr; cX += (a[0] + b[0]) * cr; cY += (a[1] + b[1]) * cr;
-    }
-    A *= 0.5;
-    if (Math.abs(A) > 1) { cX /= 6 * A; cY /= 6 * A; }
-    else { cX = poly.reduce((s, p) => s + p[0], 0) / poly.length; cY = poly.reduce((s, p) => s + p[1], 0) / poly.length; }
-    const vSpan = crossSpan(poly, 'y', cX, cY);
-    let halfH = vSpan ? Math.min(cY - vSpan[0], vSpan[1] - cY) : Math.min(W, H) * 0.14;
-    let halfW = Infinity;
-    for (let t = -0.8; t <= 0.8; t += 0.2) {
-      const hs = crossSpan(poly, 'x', cY + halfH * t, cX);
-      if (hs) halfW = Math.min(halfW, Math.min(cX - hs[0], hs[1] - cX));
-    }
-    if (!isFinite(halfW)) halfW = Math.min(W, H) * 0.13;
-    halfW = Math.min(halfW * 0.95, Math.min(W, H) * 0.34);
-    halfH = Math.min(halfH * 0.95, Math.min(W, H) * 0.34);
+    const ys = poly.map(point => point[1]);
+    const yMin = Math.min(...ys), yMax = Math.max(...ys);
+    const yPad = Math.max(8, (yMax - yMin) * 0.045);
+    const usableTop = yMin + yPad, usableBottom = yMax - yPad;
+    const bandH = (usableBottom - usableTop) / 3;
 
     const clip = document.createElementNS(ns, 'clipPath');
     clip.setAttribute('id', 'bsclip-' + i);
@@ -1802,46 +1782,67 @@ function buildBaseSectors() {
     clip.appendChild(clipP);
     baseSvg.appendChild(clip);
 
-    const fo = document.createElementNS(ns, 'foreignObject');
-    fo.setAttribute('x', (cX - halfW).toFixed(1));
-    fo.setAttribute('y', (cY - halfH).toFixed(1));
-    fo.setAttribute('width', (halfW * 2).toFixed(1));
-    fo.setAttribute('height', (halfH * 2).toFixed(1));
-    fo.setAttribute('pointer-events', 'none');
-    fo.setAttribute('clip-path', 'url(#bsclip-' + i + ')');
-    const box = document.createElement('div');
-    box.className = 'bs-box';
-    box.style.setProperty('--seg-color', color);
-    const content = document.createElement('div');
-    content.className = 'bs-content';
-    const kEl = document.createElement('div');
-    kEl.className = 'bs-keys';
-    kEl.textContent = item.keys;
-    const pEl = document.createElement('div');
-    pEl.className = 'bs-line';
-    const pIco = document.createElement('b'); pIco.textContent = '👤';
-    pEl.append(pIco, document.createTextNode(' ' + item.people));
-    const bEl = document.createElement('div');
-    bEl.className = 'bs-line';
-    const bIco = document.createElement('b'); bIco.textContent = '🦴';
-    bEl.append(bIco, document.createTextNode(' ' + item.body));
-    content.append(kEl, pEl, bEl);
-    box.appendChild(content);
-    fo.appendChild(box);
-    baseSvg.appendChild(fo);
+    const labels = [
+      { cls: 'bs-item bs-keys', text: item.keys, icon: '' },
+      { cls: 'bs-item bs-line', text: item.people, icon: '👤' },
+      { cls: 'bs-item bs-line', text: item.body, icon: '🦴' }
+    ];
 
-    /* Each of the three semantic items starts on its own line and may wrap
-       naturally within the rectangle. Grow this sector independently until
-       either dimension reaches the available space. */
-    const boxH = halfH * 2, boxW = halfW * 2;
-    let lo = 7, hi = 34;
-    for (let it = 0; it < 9; it++) {
-      const mid = (lo + hi) / 2;
-      box.style.fontSize = mid.toFixed(2) + 'px';
-      if (content.scrollHeight <= boxH && content.scrollWidth <= boxW) lo = mid;
-      else hi = mid;
-    }
-    box.style.fontSize = (lo * 0.96).toFixed(2) + 'px';
+    labels.forEach((label, row) => {
+      const bandTop = usableTop + row * bandH;
+      const sampleHalfH = Math.max(5, Math.min(14, bandH * 0.22));
+      let best = null;
+
+      /* Test several baselines and keep the widest rectangle whose top, centre
+         and bottom all stay inside this sector. */
+      for (let s = 0; s <= 18; s++) {
+        const y = bandTop + sampleHalfH +
+          (bandH - sampleHalfH * 2) * s / 18;
+        const spans = [
+          horizontalSpan(poly, y - sampleHalfH),
+          horizontalSpan(poly, y),
+          horizontalSpan(poly, y + sampleHalfH)
+        ];
+        if (spans.some(span => !span)) continue;
+        const left = Math.max(...spans.map(span => span[0])) + 8;
+        const right = Math.min(...spans.map(span => span[1])) - 8;
+        if (right > left && (!best || right - left > best.right - best.left))
+          best = { left, right, y };
+      }
+      if (!best) return;
+
+      const fo = document.createElementNS(ns, 'foreignObject');
+      fo.setAttribute('x', best.left.toFixed(1));
+      fo.setAttribute('y', (best.y - sampleHalfH).toFixed(1));
+      fo.setAttribute('width', (best.right - best.left).toFixed(1));
+      fo.setAttribute('height', (sampleHalfH * 2).toFixed(1));
+      fo.setAttribute('pointer-events', 'none');
+      fo.setAttribute('clip-path', 'url(#bsclip-' + i + ')');
+
+      const el = document.createElement('div');
+      el.className = label.cls;
+      el.style.setProperty('--seg-color', color);
+      if (label.icon) {
+        const icon = document.createElement('b');
+        icon.textContent = label.icon;
+        el.append(icon, document.createTextNode(' ' + label.text));
+      } else {
+        el.textContent = label.text;
+      }
+      fo.appendChild(el);
+      baseSvg.appendChild(fo);
+
+      /* Maximize this subelement alone. It remains a normal, unscaled line. */
+      const boxW = best.right - best.left, boxH = sampleHalfH * 2;
+      let lo = 6, hi = 32;
+      for (let it = 0; it < 9; it++) {
+        const mid = (lo + hi) / 2;
+        el.style.fontSize = mid.toFixed(2) + 'px';
+        if (el.scrollWidth <= boxW && el.scrollHeight <= boxH) lo = mid;
+        else hi = mid;
+      }
+      el.style.fontSize = (lo * 0.96).toFixed(2) + 'px';
+    });
 
     /* The principle number, out near the rectangle edge on the outer mid-angle. */
     const [imx, imy] = pol(Rin, (ia1 + ia2) / 2);
