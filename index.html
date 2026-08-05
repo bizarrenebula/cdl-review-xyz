@@ -721,6 +721,105 @@
   .impulse .lead { font-style: italic; font-size: .9rem; margin-bottom: .3rem; }
   .impulse ul { margin: .1rem 0 .7rem 1.2rem; }
   .impulse li { font-size: .88rem; line-height: 1.5; margin-bottom: .15rem; }
+
+  /* ============ PC LAYOUT — one wheel on a rectangular base ============
+     Phones/tablets keep the two-wheel stage exactly as before: the .pcbase
+     wrapper uses `display: contents`, so it vanishes from layout and .stage
+     flows under the header as it always did. The side sector columns are
+     display:none until we hit the desktop breakpoint.
+
+     On a wide screen the area below the title becomes one rectangle (the
+     "base"): a single wheel — the outer / person ring — is centred so its top
+     and bottom touch the long sides of the rectangle, and the twelve
+     principles are split into six boxes down each side, filling the space the
+     circle leaves. */
+  .pcbase { display: contents; }
+  .base-col { display: none; }
+
+  @media (min-width: 900px) {
+    /* Title pinned to the top; the base fills everything under it. */
+    body { justify-content: flex-start; }
+    header { padding: 1.6rem 1rem .6rem; }
+
+    .pcbase {
+      display: flex;
+      flex: 1 1 auto;
+      width: min(100%, 1500px);
+      align-self: center;
+      align-items: stretch;
+      justify-content: center;
+      gap: clamp(8px, 1.2vw, 22px);
+      padding: clamp(8px, 1.2vw, 22px);
+      margin: 0 auto .7rem;
+      border: 1px solid rgba(211, 169, 95, .35);
+      border-radius: 12px;
+      background: rgba(20, 17, 46, .32);
+      box-shadow: inset 0 0 60px -20px rgba(211, 169, 95, .25);
+      min-height: 0;
+    }
+
+    /* The wheel: height drives its size, so its diameter equals the base
+       height and the wheel meets the top and bottom of the rectangle. */
+    #pcbase .stage {
+      height: 100%;
+      width: auto;
+      aspect-ratio: 1;
+      max-width: 100%;
+      flex: 0 0 auto;
+      margin: 0;
+    }
+
+    /* One wheel on the base: hide the inner (life-area) ring and the counting
+       ring; the outer person ring and the hub stay. */
+    #pcbase #innerRing,
+    #pcbase #numRing { display: none; }
+
+    /* Six boxes down each side, splitting the leftover width evenly. */
+    .base-col {
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 0;
+      min-width: 0;
+      gap: clamp(6px, .9vh, 14px);
+    }
+    .base-sector {
+      flex: 1 1 0;
+      min-height: 0;
+      display: flex;
+      align-items: center;
+      gap: .55rem;
+      padding: .4rem .8rem;
+      border: 2px solid var(--seg-color, var(--brass-dim));
+      border-radius: 9px;
+      background: rgba(28, 24, 64, .5);
+      color: var(--parchment);
+      overflow: hidden;
+      transition: background .3s, box-shadow .3s;
+      /* the principle colour glows faintly off the border */
+      box-shadow: inset 0 0 12px -6px var(--seg-color, transparent),
+                  0 0 6px -3px var(--seg-color, transparent);
+    }
+    .base-col-right .base-sector { flex-direction: row-reverse; text-align: right; }
+    .base-sector.active {
+      background: rgba(58, 47, 110, .6);
+      box-shadow: inset 0 0 16px -4px var(--seg-color, transparent),
+                  0 0 14px -2px var(--seg-color, transparent);
+    }
+    .base-sector .bs-num {
+      flex: 0 0 auto;
+      min-width: 1.5em;
+      text-align: center;
+      font-family: 'Marcellus', serif;
+      font-size: clamp(1rem, 1.3vw, 1.5rem);
+      color: var(--seg-color, var(--brass));
+      text-shadow: 0 0 8px var(--seg-color, transparent);
+    }
+    .base-sector .bs-label {
+      font-size: clamp(.74rem, .95vw, 1.05rem);
+      line-height: 1.18;
+      letter-spacing: .01em;
+    }
+  }
 </style>
 </head>
 <body>
@@ -743,6 +842,8 @@
   <p id="uiSubtitle"></p>
 </header>
 
+<div class="pcbase" id="pcbase">
+<div class="base-col base-col-left" id="baseLeft" aria-hidden="true"></div>
 <div class="stage" id="stage">
   <div class="needle" aria-hidden="true"></div>
   <svg viewBox="0 0 700 700" id="wheel" role="img">
@@ -775,6 +876,8 @@
     <button id="readMoreBtn" type="button"></button>
   </div>
   <div class="hub-ring mark-glow" id="hubRing" aria-hidden="true"></div>
+</div>
+<div class="base-col base-col-right" id="baseRight" aria-hidden="true"></div>
 </div>
 
 <div class="overlay" id="overlay" role="dialog" aria-modal="true">
@@ -1480,6 +1583,43 @@ function fitLabel(name, r1, r2, cls) {
   return best;
 }
 
+/* ---- The base (PC only) ------------------------------------------------
+   The twelve principle sectors that surround the single wheel, six down each
+   side. They are the same twelve wedges as the outer ring, unrolled into the
+   left and right gutters of the base rectangle. The right column runs 1..6
+   from top to bottom; the left column runs 12..7 from top to bottom, so the
+   numbers read as one clockwise ring around the wheel (top-right down the
+   right side, across the bottom, up the left side, back to the top).
+
+   Each box carries the principle colour on its border and, for now, the same
+   person text as the wedge it mirrors on the wheel. */
+const baseLeft  = document.getElementById('baseLeft');
+const baseRight = document.getElementById('baseRight');
+const BASE_RIGHT_IDX = [0, 1, 2, 3, 4, 5];
+const BASE_LEFT_IDX  = [11, 10, 9, 8, 7, 6];
+
+function baseSectorEl(i) {
+  const div = document.createElement('div');
+  div.className = 'base-sector';
+  div.dataset.index = i;
+  div.style.setProperty('--seg-color', LP_COLORS[i % 4]);
+  const num = document.createElement('span');
+  num.className = 'bs-num';
+  num.textContent = i + 1;
+  const label = document.createElement('span');
+  label.className = 'bs-label';
+  label.textContent = LP()[i].label;
+  div.append(num, label);
+  return div;
+}
+function buildBaseSectors() {
+  if (!baseLeft || !baseRight) return;
+  baseLeft.innerHTML = '';
+  baseRight.innerHTML = '';
+  BASE_LEFT_IDX.forEach(i => baseLeft.appendChild(baseSectorEl(i)));
+  BASE_RIGHT_IDX.forEach(i => baseRight.appendChild(baseSectorEl(i)));
+}
+
 function buildRing(group, ring) {
   const ns = 'http://www.w3.org/2000/svg';
   const isOuter = ring === 'outer';
@@ -1677,6 +1817,10 @@ function updateHub() {
   innerG.querySelectorAll('.label-inner').forEach(el =>
     el.classList.toggle('active-label', +el.dataset.index === e));
 
+  /* On the base, light the principle box that mirrors the selected person. */
+  document.querySelectorAll('.base-sector').forEach(el =>
+    el.classList.toggle('active', +el.dataset.index === p));
+
   writeResult(REFLECT[lang](LP()[e].area, LP()[p].label, r + 1));
 }
 
@@ -1827,6 +1971,7 @@ if (document.fonts) document.fonts.ready.then(() => {
   textWidths.clear();
   buildRing(outerG, 'outer');
   buildRing(innerG, 'inner');
+  buildBaseSectors();
   applyRotation('outer');
   applyRotation('inner');
   updateHub();                  // rewrites and refits the hub text
@@ -2249,6 +2394,7 @@ function applyLanguage(newLang) {
   document.getElementById('soundLabel').textContent = T().sound;
   buildRing(outerG, 'outer');
   buildRing(innerG, 'inner');
+  buildBaseSectors();
   applyRotation('outer');
   applyRotation('inner');
   updateHub();
