@@ -865,6 +865,22 @@
     /* Labels never eat the wedge's pointer events. */
     .base-area, .base-person, .base-num { pointer-events: none; }
 
+    /* The per-sector text block (description, people, body) — the same three
+       lines the book's chart shows. Wrapped inside a foreignObject. */
+    .bs-box {
+      width: 100%; height: 100%; overflow: hidden;
+      display: flex; flex-direction: column; justify-content: center;
+      gap: .35em; text-align: center; line-height: 1.16;
+      font-family: 'Spectral', Georgia, serif; color: #cec4e6;
+    }
+    .bs-box .bs-keys {
+      color: var(--gold-ink);
+      font-family: 'Marcellus', serif;
+      letter-spacing: .01em;
+    }
+    .bs-box .bs-line { font-size: .92em; }
+    .bs-box .bs-line b { color: var(--seg-color, var(--brass)); font-weight: 400; }
+
     /* The wedge the pointer sits on (the chosen event). */
     .base-wedge.event {
       fill: rgba(58, 47, 110, .55);
@@ -1730,9 +1746,10 @@ function buildBaseSectors() {
     return b;
   })();
 
-  const fArea   = Math.max(11, Math.min(21, H * 0.024));
-  const fPerson = fArea * 0.78;
-  const fNum    = Math.max(15, Math.min(28, H * 0.032));
+  const fNum = Math.max(15, Math.min(28, H * 0.032));
+  const fBox = Math.max(8.5, Math.min(13, H * 0.0155));
+  const boxW = Math.min(W, H) * 0.29, boxH = Math.min(W, H) * 0.27;
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
   baseSvg.setAttribute('viewBox', `0 0 ${W} ${H}`);
   baseSvg.innerHTML = '';
@@ -1763,35 +1780,41 @@ function buildBaseSectors() {
     wedge.style.setProperty('--seg-color', color);
     baseSvg.appendChild(wedge);
 
-    /* Label between the wheel rim and the outer edge, along the wedge's middle. */
+    /* Label between the wheel rim and the outer edge, along the wedge's middle.
+       The three lines mirror the book's chart: the principle's keywords, the
+       people it stands for, and the biological (body) correspondence. Rendered
+       through a foreignObject so the text wraps. */
     const [imx, imy] = pol(Rin, (ia1 + ia2) / 2);
     const [omx, omy] = rectHit((oa1 + oa2) / 2);
-    const tx = imx * 0.46 + omx * 0.54, ty = imy * 0.46 + omy * 0.54;
-    const label = document.createElementNS(ns, 'text');
-    label.setAttribute('text-anchor', 'middle');
-    label.setAttribute('x', tx);
-    label.setAttribute('y', ty);
-    label.style.setProperty('--seg-color', color);
+    const tx = imx * 0.44 + omx * 0.56, ty = imy * 0.44 + omy * 0.56;
 
-    const areaT = document.createElementNS(ns, 'tspan');
-    areaT.setAttribute('class', 'base-area');
-    areaT.setAttribute('x', tx);
-    areaT.setAttribute('dy', '-0.35em');
-    areaT.style.fontSize = fArea.toFixed(1) + 'px';
-    areaT.textContent = item.area;
-
-    const personT = document.createElementNS(ns, 'tspan');
-    personT.setAttribute('class', 'base-person');
-    personT.setAttribute('x', tx);
-    personT.setAttribute('dy', '1.4em');
-    personT.style.fontSize = fPerson.toFixed(1) + 'px';
-    personT.textContent = item.label;
-
-    label.append(areaT, personT);
-    baseSvg.appendChild(label);
+    const fo = document.createElementNS(ns, 'foreignObject');
+    fo.setAttribute('x', clamp(tx - boxW / 2, 2, W - boxW - 2).toFixed(1));
+    fo.setAttribute('y', clamp(ty - boxH / 2, 2, H - boxH - 2).toFixed(1));
+    fo.setAttribute('width', boxW.toFixed(1));
+    fo.setAttribute('height', boxH.toFixed(1));
+    fo.setAttribute('pointer-events', 'none');
+    const box = document.createElement('div');
+    box.className = 'bs-box';
+    box.style.setProperty('--seg-color', color);
+    box.style.fontSize = fBox.toFixed(1) + 'px';
+    const kEl = document.createElement('div');
+    kEl.className = 'bs-keys';
+    kEl.textContent = item.keys;
+    const pEl = document.createElement('div');
+    pEl.className = 'bs-line';
+    const pIco = document.createElement('b'); pIco.textContent = '👤';
+    pEl.append(pIco, document.createTextNode(' ' + item.people));
+    const bEl = document.createElement('div');
+    bEl.className = 'bs-line';
+    const bIco = document.createElement('b'); bIco.textContent = '🦴';
+    bEl.append(bIco, document.createTextNode(' ' + item.body));
+    box.append(kEl, pEl, bEl);
+    fo.appendChild(box);
+    baseSvg.appendChild(fo);
 
     /* The principle number, out near the rectangle edge on the outer mid-angle. */
-    const numX = omx * 0.86 + imx * 0.14, numY = omy * 0.86 + imy * 0.14;
+    const numX = omx * 0.88 + imx * 0.12, numY = omy * 0.88 + imy * 0.12;
     const num = document.createElementNS(ns, 'text');
     num.setAttribute('class', 'base-num');
     num.setAttribute('text-anchor', 'middle');
