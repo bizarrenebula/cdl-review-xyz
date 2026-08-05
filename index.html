@@ -1784,6 +1784,7 @@ function buildBaseSectors() {
       { cls: 'bs-item bs-line', text: item.people },
       { cls: 'bs-item bs-line', text: item.body }
     ];
+    const sectorLabels = [];
     labels.forEach((label, row) => {
       const bandTop = usableTop + row * bandH;
       const padY = Math.max(2, Math.min(5, bandH * 0.04));
@@ -1816,8 +1817,8 @@ function buildBaseSectors() {
       fo.appendChild(el);
       baseSvg.appendChild(fo);
 
-      /* Maximize every label independently: a short body label no longer has
-         to inherit the smaller size required by a long people description. */
+      /* Measure each label independently, then reconcile the three limits to
+         one coherent font size for this sector. */
       let lo = 9, hi = 36;
       for (let it = 0; it < 9; it++) {
         const mid = (lo + hi) / 2;
@@ -1825,8 +1826,13 @@ function buildBaseSectors() {
         if (el.scrollWidth <= boxW && el.scrollHeight <= boxH) lo = mid;
         else hi = mid;
       }
-      el.style.fontSize = (lo * 0.98).toFixed(2) + 'px';
+      sectorLabels.push({ el, maxSize: lo });
     });
+
+    if (sectorLabels.length) {
+      const sectorSize = Math.min(...sectorLabels.map(label => label.maxSize)) * 0.98;
+      sectorLabels.forEach(({ el }) => { el.style.fontSize = sectorSize.toFixed(2) + 'px'; });
+    }
 
     /* The principle number, out near the rectangle edge on the outer mid-angle. */
     const [imx, imy] = pol(Rin, (ia1 + ia2) / 2);
