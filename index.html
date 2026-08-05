@@ -1834,7 +1834,7 @@ function buildBaseSectors() {
        three of this sector's individually positioned rectangles. */
     if (sectorLabels.length) {
       const sectorSize = Math.max(MIN_BASE_FONT,
-        Math.min(...sectorLabels.map(label => label.maxSize)) * 0.96) * 1.125;
+        Math.min(...sectorLabels.map(label => label.maxSize)) * 0.96) * 1.2375;
       sectorLabels.forEach(({ el }) => { el.style.fontSize = sectorSize.toFixed(2) + 'px'; });
     }
 
