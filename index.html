@@ -1678,20 +1678,37 @@ function buildBaseSectors() {
     if (dy < -1e-9) t = Math.min(t, (0 - cy) / dy);
     return [cx + dx * t, cy + dy * t];
   };
-  /* Equal sectors need an equal outer radius: uniform 30° wedges can only be
-     equal in area if their outer edge is a circle, so the base is an even ring
-     around the wheel (a rectangle's corners are what made them unequal). The
-     ring is as large as the shorter half-dimension allows. */
-  const Rmax = Math.min(W, H) / 2 - 12;
-  const rMid = (Rin + Rmax) / 2;
-  const rNum = Rmax - Math.max(14, (Rmax - Rin) * 0.16);
-
-  const annSector = (r1, r2, a1, a2) => {
-    const [p1x, p1y] = pol(r1, a1), [p2x, p2y] = pol(r1, a2);
-    const [p3x, p3y] = pol(r2, a2), [p4x, p4y] = pol(r2, a1);
-    return `M ${p1x} ${p1y} A ${r1} ${r1} 0 0 1 ${p2x} ${p2y} `
-         + `L ${p3x} ${p3y} A ${r2} ${r2} 0 0 0 ${p4x} ${p4y} Z`;
+  const corners = [[0, 0], [W, 0], [W, H], [0, H]];
+  const angOf = (px, py) => {
+    const a = Math.atan2(px - cx, -(py - cy)) * 180 / Math.PI;
+    return (a % 360 + 360) % 360;
   };
+  const rDist = d => {                            // centre-to-edge distance at angle d
+    const [x, y] = rectHit(d);
+    return Math.hypot(x - cx, y - cy);
+  };
+
+  /* Twelve equal-area outer slices of the rectangle. Every wedge keeps a
+     uniform inner edge (30° at the wheel rim, so the spokes still meet the
+     wheel and the pointer/projection stay aligned), but its outer edge fans out
+     to these angles, so each wedge holds an equal 1/12 of the rectangle: the
+     thin top and bottom wedges widen outward and the big side wedges give up
+     the room. The pattern is found by walking the perimeter and cutting each
+     time the swept area passes another twelfth. */
+  const bounds = (() => {
+    const N = 2160, dphi = 360 / N, step = (W * H) / 12;
+    const b = [0]; let acc = 0, k = 1;
+    for (let s = 0; s < N && k < 12; s++) {
+      const dA = 0.5 * rDist(s * dphi + dphi / 2) ** 2 * (dphi * Math.PI / 180);
+      while (k < 12 && acc + dA >= step * k) {
+        b.push((s + (step * k - acc) / dA) * dphi);
+        k++;
+      }
+      acc += dA;
+    }
+    b.push(360);
+    return b;
+  })();
 
   const fArea   = Math.max(11, Math.min(21, H * 0.024));
   const fPerson = fArea * 0.78;
@@ -1704,17 +1721,32 @@ function buildBaseSectors() {
     const pIdx = wedgePrincipleIndex(i);           // which principle sits in this wedge
     const item = LP()[pIdx];
     const color = LP_COLORS[pIdx % 4];
-    const a1 = i * 30, a2 = a1 + 30, am = a1 + 15;
+    const ia1 = i * 30, ia2 = ia1 + 30;            // uniform inner arc (aligned to the wheel)
+    const oa1 = bounds[i], oa2 = bounds[i + 1];    // equal-area outer span
+    const [i1x, i1y] = pol(Rin, ia1);
+    const [i2x, i2y] = pol(Rin, ia2);
+    const [o2x, o2y] = rectHit(oa2);
+    const [o1x, o1y] = rectHit(oa1);
+    const cs = corners
+      .map(([px, py]) => [px, py, angOf(px, py)])
+      .filter(c => c[2] > oa1 + 0.01 && c[2] < oa2 - 0.01)
+      .sort((p, q) => q[2] - p[2]);               // walk oa2 -> oa1, so descending
+
+    let d = `M ${i1x} ${i1y} A ${Rin} ${Rin} 0 0 1 ${i2x} ${i2y} L ${o2x} ${o2y} `;
+    cs.forEach(c => { d += `L ${c[0]} ${c[1]} `; });
+    d += `L ${o1x} ${o1y} Z`;
 
     const wedge = document.createElementNS(ns, 'path');
     wedge.setAttribute('class', 'base-wedge');
-    wedge.setAttribute('d', annSector(Rin, Rmax, a1, a2));
+    wedge.setAttribute('d', d);
     wedge.dataset.index = pIdx;
     wedge.style.setProperty('--seg-color', color);
     baseSvg.appendChild(wedge);
 
-    /* Label centred in the ring, horizontal. */
-    const [tx, ty] = pol(rMid, am);
+    /* Label between the wheel rim and the outer edge, along the wedge's middle. */
+    const [imx, imy] = pol(Rin, (ia1 + ia2) / 2);
+    const [omx, omy] = rectHit((oa1 + oa2) / 2);
+    const tx = imx * 0.46 + omx * 0.54, ty = imy * 0.46 + omy * 0.54;
     const label = document.createElementNS(ns, 'text');
     label.setAttribute('text-anchor', 'middle');
     label.setAttribute('x', tx);
@@ -1738,8 +1770,8 @@ function buildBaseSectors() {
     label.append(areaT, personT);
     baseSvg.appendChild(label);
 
-    /* The principle number, near the outer edge of the ring. */
-    const [numX, numY] = pol(rNum, am);
+    /* The principle number, out near the rectangle edge on the outer mid-angle. */
+    const numX = omx * 0.86 + imx * 0.14, numY = omy * 0.86 + imy * 0.14;
     const num = document.createElementNS(ns, 'text');
     num.setAttribute('class', 'base-num');
     num.setAttribute('text-anchor', 'middle');
