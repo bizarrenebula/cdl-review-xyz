@@ -839,7 +839,7 @@
     .bs-item {
       width: 100%; height: 100%; overflow: hidden;
       display: flex; align-items: center; justify-content: center;
-      text-align: center; white-space: nowrap; line-height: 1;
+      text-align: center; overflow-wrap: anywhere; line-height: 1.12;
       font-family: 'Spectral', Georgia, serif; color: #cec4e6;
     }
     .bs-item.bs-keys {
@@ -1787,10 +1787,11 @@ function buildBaseSectors() {
       { cls: 'bs-item bs-line', text: item.people, icon: '👤' },
       { cls: 'bs-item bs-line', text: item.body, icon: '🦴' }
     ];
+    const sectorLabels = [];
 
     labels.forEach((label, row) => {
       const bandTop = usableTop + row * bandH;
-      const sampleHalfH = Math.max(5, Math.min(14, bandH * 0.22));
+      const sampleHalfH = Math.max(10, Math.min(30, bandH * 0.38));
       let best = null;
 
       /* Test several baselines and keep the widest rectangle whose top, centre
@@ -1832,17 +1833,25 @@ function buildBaseSectors() {
       fo.appendChild(el);
       baseSvg.appendChild(fo);
 
-      /* Maximize this subelement alone. It remains a normal, unscaled line. */
+      /* Find this label's limit with normal wrapping. The three limits are
+         reconciled below so one sector always has one coherent text size. */
       const boxW = best.right - best.left, boxH = sampleHalfH * 2;
-      let lo = 6, hi = 32;
+      let lo = 7, hi = 30;
       for (let it = 0; it < 9; it++) {
         const mid = (lo + hi) / 2;
         el.style.fontSize = mid.toFixed(2) + 'px';
         if (el.scrollWidth <= boxW && el.scrollHeight <= boxH) lo = mid;
         else hi = mid;
       }
-      el.style.fontSize = (lo * 0.96).toFixed(2) + 'px';
+      sectorLabels.push({ el, maxSize: lo });
     });
+
+    /* Adapt per sector: all three labels share the largest size that fits all
+       three of this sector's individually positioned rectangles. */
+    if (sectorLabels.length) {
+      const sectorSize = Math.min(...sectorLabels.map(label => label.maxSize)) * 0.96;
+      sectorLabels.forEach(({ el }) => { el.style.fontSize = sectorSize.toFixed(2) + 'px'; });
+    }
 
     /* The principle number, out near the rectangle edge on the outer mid-angle. */
     const [imx, imy] = pol(Rin, (ia1 + ia2) / 2);
