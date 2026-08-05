@@ -777,10 +777,10 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      height: 70%;
+      height: 60%;
       width: auto;
       aspect-ratio: 1;
-      max-width: 70%;
+      max-width: 60%;
       margin: 0;
       z-index: 2;
     }
@@ -1678,15 +1678,24 @@ function buildBaseSectors() {
     if (dy < -1e-9) t = Math.min(t, (0 - cy) / dy);
     return [cx + dx * t, cy + dy * t];
   };
-  const corners = [[0, 0], [W, 0], [W, H], [0, H]];
-  const angOf = (px, py) => {
-    const a = Math.atan2(px - cx, -(py - cy)) * 180 / Math.PI;
-    return (a % 360 + 360) % 360;
+  /* Equal sectors need an equal outer radius: uniform 30° wedges can only be
+     equal in area if their outer edge is a circle, so the base is an even ring
+     around the wheel (a rectangle's corners are what made them unequal). The
+     ring is as large as the shorter half-dimension allows. */
+  const Rmax = Math.min(W, H) / 2 - 12;
+  const rMid = (Rin + Rmax) / 2;
+  const rNum = Rmax - Math.max(14, (Rmax - Rin) * 0.16);
+
+  const annSector = (r1, r2, a1, a2) => {
+    const [p1x, p1y] = pol(r1, a1), [p2x, p2y] = pol(r1, a2);
+    const [p3x, p3y] = pol(r2, a2), [p4x, p4y] = pol(r2, a1);
+    return `M ${p1x} ${p1y} A ${r1} ${r1} 0 0 1 ${p2x} ${p2y} `
+         + `L ${p3x} ${p3y} A ${r2} ${r2} 0 0 0 ${p4x} ${p4y} Z`;
   };
 
-  const fArea   = Math.max(11, Math.min(21, H * 0.025));
+  const fArea   = Math.max(11, Math.min(21, H * 0.024));
   const fPerson = fArea * 0.78;
-  const fNum    = Math.max(15, Math.min(30, H * 0.036));
+  const fNum    = Math.max(15, Math.min(28, H * 0.032));
 
   baseSvg.setAttribute('viewBox', `0 0 ${W} ${H}`);
   baseSvg.innerHTML = '';
@@ -1696,33 +1705,16 @@ function buildBaseSectors() {
     const item = LP()[pIdx];
     const color = LP_COLORS[pIdx % 4];
     const a1 = i * 30, a2 = a1 + 30, am = a1 + 15;
-    const [i1x, i1y] = pol(Rin, a1);
-    const [i2x, i2y] = pol(Rin, a2);
-    const [e1x, e1y] = rectHit(a1);
-    const [e2x, e2y] = rectHit(a2);
-    const cs = corners
-      .map(([px, py]) => [px, py, angOf(px, py)])
-      .filter(c => c[2] > a1 + 0.01 && c[2] < a2 - 0.01)
-      .sort((p, q) => q[2] - p[2]);               // walk a2 -> a1, so descending
-
-    let d = `M ${i1x} ${i1y} A ${Rin} ${Rin} 0 0 1 ${i2x} ${i2y} L ${e2x} ${e2y} `;
-    cs.forEach(c => { d += `L ${c[0]} ${c[1]} `; });
-    d += `L ${e1x} ${e1y} Z`;
 
     const wedge = document.createElementNS(ns, 'path');
     wedge.setAttribute('class', 'base-wedge');
-    wedge.setAttribute('d', d);
+    wedge.setAttribute('d', annSector(Rin, Rmax, a1, a2));
     wedge.dataset.index = pIdx;
     wedge.style.setProperty('--seg-color', color);
     baseSvg.appendChild(wedge);
 
-    /* Label centred in the visible (outer) part of the wedge. */
-    const outer = [[e1x, e1y], [e2x, e2y], ...cs.map(c => [c[0], c[1]])];
-    const ox = outer.reduce((s, p) => s + p[0], 0) / outer.length;
-    const oy = outer.reduce((s, p) => s + p[1], 0) / outer.length;
-    const [imx, imy] = pol(Rin, am);
-    const tx = ox * 0.6 + imx * 0.4, ty = oy * 0.6 + imy * 0.4;
-
+    /* Label centred in the ring, horizontal. */
+    const [tx, ty] = pol(rMid, am);
     const label = document.createElementNS(ns, 'text');
     label.setAttribute('text-anchor', 'middle');
     label.setAttribute('x', tx);
@@ -1746,9 +1738,8 @@ function buildBaseSectors() {
     label.append(areaT, personT);
     baseSvg.appendChild(label);
 
-    /* The principle number, out near the rectangle edge on the mid-angle. */
-    const [ex, ey] = rectHit(am);
-    const numX = ex * 0.85 + imx * 0.15, numY = ey * 0.85 + imy * 0.15;
+    /* The principle number, near the outer edge of the ring. */
+    const [numX, numY] = pol(rNum, am);
     const num = document.createElementNS(ns, 'text');
     num.setAttribute('class', 'base-num');
     num.setAttribute('text-anchor', 'middle');
