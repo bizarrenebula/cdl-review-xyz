@@ -4,6 +4,26 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
+<script>
+/* "Request Desktop Site" on a phone only swaps the user-agent — it leaves the
+   layout viewport at device-width because of the meta above, so a width-based
+   breakpoint never fires and the mobile view stays. Detect a touch device whose
+   UA has dropped its "Mobile" token (i.e. desktop mode is on) and widen the
+   viewport, so the >=900px PC layout activates and scales to the screen. Runs
+   before first layout to avoid a mobile flash; harmless on real desktops
+   (no touch) and on phones in normal mode (UA still says "Mobile"). */
+(function () {
+  try {
+    var touch = (navigator.maxTouchPoints || 0) > 1;
+    var desktopUA = !/Mobile/i.test(navigator.userAgent);
+    var smallScreen = Math.min(screen.width, screen.height) < 820;
+    if (touch && desktopUA && smallScreen) {
+      var m = document.querySelector('meta[name=viewport]');
+      if (m) m.setAttribute('content', 'width=1024');
+    }
+  } catch (e) {}
+})();
+</script>
 <title>Der Code des Lebens — Rad der 12 Lebensprinzipien (Originaltexte)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Spectral:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
