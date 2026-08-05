@@ -792,6 +792,11 @@
     #pcbase #numRing { display: none; }
     #pcbase .hub,
     #pcbase .hub-ring { display: none; }
+    /* The top needle and the inner guide rings belong to the two-wheel view. */
+    #pcbase .needle,
+    #pcbase .wheel-guide { display: none; }
+    /* Radial person labels sit flat (no arc), read centre->edge, stay upright. */
+    #pcbase .wheel-person-pc { letter-spacing: 0; }
 
     /* The wedge shapes and their labels (built in JS). */
     .base-wedge {
@@ -857,8 +862,8 @@
     <g id="innerRing" class="ring-group"></g>
     <!-- The twelve numbers, outside the wheel; built and turned in JS. -->
     <g id="numRing" class="num-ring" aria-hidden="true"></g>
-    <circle cx="350" cy="350" r="252" fill="none" stroke="#d3a95f" stroke-width="1.5" pointer-events="none"/>
-    <circle cx="350" cy="350" r="164" fill="none" stroke="#d3a95f" stroke-width="1.5" pointer-events="none"/>
+    <circle class="wheel-guide" cx="350" cy="350" r="252" fill="none" stroke="#d3a95f" stroke-width="1.5" pointer-events="none"/>
+    <circle class="wheel-guide" cx="350" cy="350" r="164" fill="none" stroke="#d3a95f" stroke-width="1.5" pointer-events="none"/>
     <!-- Last child, so the marker's sweep runs over everything on the wheel. -->
     <g id="markSweep" aria-hidden="true"><path pathLength="100"/></g>
   </svg>
@@ -1708,9 +1713,62 @@ function buildBaseSectors() {
   }
 }
 
+/* Rotation (screen degrees) that lays text along the radius at angle A (from
+   the top, clockwise) and keeps it upright — used for the PC wheel's radial
+   person labels. */
+function radialTextRot(A) {
+  const a = A * Math.PI / 180;
+  let deg = Math.atan2(-Math.cos(a), Math.sin(a)) * 180 / Math.PI;   // outward vs +x
+  if (deg >  90) deg -= 180;
+  if (deg < -90) deg += 180;
+  return deg;
+}
+
+/* The PC wheel: one ring of person sectors, drawn as full wedges from a small
+   hub out to the rim, with the person text set radially (centre -> edge) rather
+   than along an arc. Each sector is placed at the same angle as the base wedge
+   for its principle, so principle p on the wheel sits over principle p on the
+   base at the home position — principle 1 at 9 o'clock, reading horizontally.
+   Rotating the wheel then slides the sectors across the base underneath. */
+const WHEEL_ANGLE = p => ((20 - p) % 12) * 30 + STEP / 2;   // home centre for principle p
+function buildWheelPc(group) {
+  group.innerHTML = '';
+  raised.outer = -1;
+  const R_OUT = OUTER_R2, R_IN = 58, rMid = (R_IN + R_OUT) / 2;
+  const avail = (R_OUT - R_IN) * 0.84;      // radial room for a label
+  LP().forEach((item, p) => {
+    const A = WHEEL_ANGLE(p);
+    const sec = document.createElementNS(NS, 'path');
+    sec.setAttribute('d', sectorPath(R_IN, R_OUT, A - STEP / 2, A + STEP / 2));
+    sec.setAttribute('class', 'sector-outer');
+    sec.dataset.index = p;
+    sec.style.setProperty('--seg-color', LP_COLORS[p % 4]);
+    group.appendChild(sec);
+
+    const [tx, ty] = polar(rMid, A);
+    const w100 = textWidth100(item.label, 'label-outer');
+    const fs = Math.max(9, Math.min(21, avail / (w100 / 100)));
+    const text = document.createElementNS(NS, 'text');
+    text.setAttribute('class', 'label-outer wheel-person-pc mark-word');
+    text.dataset.index = p;
+    text.style.setProperty('--seg-color', LP_COLORS[p % 4]);
+    text.setAttribute('x', tx.toFixed(2));
+    text.setAttribute('y', ty.toFixed(2));
+    text.setAttribute('text-anchor', 'middle');
+    text.setAttribute('dominant-baseline', 'central');
+    text.setAttribute('transform', `rotate(${radialTextRot(A).toFixed(2)}, ${tx.toFixed(2)}, ${ty.toFixed(2)})`);
+    text.style.fontSize = fs.toFixed(1) + 'px';
+    text.style.strokeWidth = Math.max(2, fs * 0.2).toFixed(1) + 'px';
+    text.textContent = item.label;
+    group.appendChild(text);
+  });
+}
+
 function buildRing(group, ring) {
   const ns = 'http://www.w3.org/2000/svg';
   const isOuter = ring === 'outer';
+  /* On PC the outer ring becomes the single radial person wheel. */
+  if (isOuter && matchMedia('(min-width: 900px)').matches) { buildWheelPc(group); return; }
   const [r1, r2] = isOuter ? [OUTER_R1, OUTER_R2] : [INNER_R1, INNER_R2];
 
   /* Fit every label first: the tightest one in the ring caps the rest. */
@@ -2049,9 +2107,20 @@ function writeResult(text) {
 function fitHubText() { if (resultText) writeResult(resultText); }
 
 let fitRaf = null;
+let lastPc = matchMedia('(min-width: 900px)').matches;
 window.addEventListener('resize', () => {
   if (fitRaf) cancelAnimationFrame(fitRaf);
-  fitRaf = requestAnimationFrame(() => { fitHubText(); buildBaseSectors(); updateHub(); });
+  fitRaf = requestAnimationFrame(() => {
+    const pc = matchMedia('(min-width: 900px)').matches;
+    if (pc !== lastPc) {           // crossing the breakpoint swaps the wheel renderer
+      lastPc = pc;
+      buildRing(outerG, 'outer');
+      applyRotation('outer');
+    }
+    fitHubText();
+    buildBaseSectors();
+    updateHub();
+  });
 });
 /* Everything is measured, so nothing can be trusted until Marcellus is in:
    the fallback face has different metrics. Re-measure and rebuild once. */
