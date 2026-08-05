@@ -1764,10 +1764,8 @@ function buildBaseSectors() {
     wedge.style.setProperty('--seg-color', color);
     baseSvg.appendChild(wedge);
 
-    /* Treat the three subelements as independent one-line labels. Each gets a
-       third of the sector's vertical range and searches that band for the
-       widest safe horizontal strip, so diagonal and corner sectors can use
-       their broad outer space instead of sharing one narrow rectangle. */
+    /* Divide the sector into three explicit horizontal subsectors. Each label
+       owns one inset rectangle and is centred within it on both axes. */
     const poly = wedgePoly(ia1, ia2, oa1, oa2);
     const ys = poly.map(point => point[1]);
     const yMin = Math.min(...ys), yMax = Math.max(...ys);
@@ -1791,32 +1789,36 @@ function buildBaseSectors() {
 
     labels.forEach((label, row) => {
       const bandTop = usableTop + row * bandH;
-      const sampleHalfH = Math.max(10, Math.min(30, bandH * 0.38));
-      let best = null;
+      const padY = Math.max(6, Math.min(14, bandH * 0.1));
+      const boxTop = bandTop + padY;
+      const boxBottom = bandTop + bandH - padY;
 
-      /* Test several baselines and keep the widest rectangle whose top, centre
-         and bottom all stay inside this sector. */
-      for (let s = 0; s <= 18; s++) {
-        const y = bandTop + sampleHalfH +
-          (bandH - sampleHalfH * 2) * s / 18;
-        const spans = [
-          horizontalSpan(poly, y - sampleHalfH),
-          horizontalSpan(poly, y),
-          horizontalSpan(poly, y + sampleHalfH)
-        ];
-        if (spans.some(span => !span)) continue;
-        const left = Math.max(...spans.map(span => span[0])) + 8;
-        const right = Math.min(...spans.map(span => span[1])) - 8;
-        if (right > left && (!best || right - left > best.right - best.left))
-          best = { left, right, y };
+      /* Approximate the subsection's area centroid from horizontal slices.
+         This centres diagonal and corner subsectors by their actual area, not
+         by the bounding box they happen to occupy. */
+      let weight = 0, weightedX = 0, weightedY = 0;
+      for (let s = 0; s <= 20; s++) {
+        const y = boxTop + (boxBottom - boxTop) * s / 20;
+        const span = horizontalSpan(poly, y);
+        if (!span) continue;
+        const w = span[1] - span[0];
+        weight += w;
+        weightedX += ((span[0] + span[1]) / 2) * w;
+        weightedY += y * w;
       }
-      if (!best) return;
+      if (!weight) return;
+      const centerX = weightedX / weight, centerY = weightedY / weight;
+      const centerSpan = horizontalSpan(poly, centerY);
+      if (!centerSpan) return;
+      const boxW = (centerSpan[1] - centerSpan[0]) * 0.8;
+      const boxH = 2 * Math.min(centerY - boxTop, boxBottom - centerY) * 0.92;
+      const left = centerX - boxW / 2;
 
       const fo = document.createElementNS(ns, 'foreignObject');
-      fo.setAttribute('x', best.left.toFixed(1));
-      fo.setAttribute('y', (best.y - sampleHalfH).toFixed(1));
-      fo.setAttribute('width', (best.right - best.left).toFixed(1));
-      fo.setAttribute('height', (sampleHalfH * 2).toFixed(1));
+      fo.setAttribute('x', left.toFixed(1));
+      fo.setAttribute('y', (centerY - boxH / 2).toFixed(1));
+      fo.setAttribute('width', boxW.toFixed(1));
+      fo.setAttribute('height', boxH.toFixed(1));
       fo.setAttribute('pointer-events', 'none');
       fo.setAttribute('clip-path', 'url(#bsclip-' + i + ')');
 
@@ -1835,7 +1837,6 @@ function buildBaseSectors() {
 
       /* Find this label's limit with normal wrapping. The three limits are
          reconciled below so one sector always has one coherent text size. */
-      const boxW = best.right - best.left, boxH = sampleHalfH * 2;
       let lo = 7, hi = 30;
       for (let it = 0; it < 9; it++) {
         const mid = (lo + hi) / 2;
