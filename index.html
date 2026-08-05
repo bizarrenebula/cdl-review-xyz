@@ -1738,6 +1738,7 @@ function buildBaseSectors() {
 
   baseSvg.setAttribute('viewBox', `0 0 ${W} ${H}`);
   baseSvg.innerHTML = '';
+  const MIN_BASE_FONT = 11;
   for (let i = 0; i < 12; i++) {
     const pIdx = wedgePrincipleIndex(i);           // which principle sits in this wedge
     const item = LP()[pIdx];
@@ -1793,25 +1794,14 @@ function buildBaseSectors() {
       const boxTop = bandTop + padY;
       const boxBottom = bandTop + bandH - padY;
 
-      /* Approximate the subsection's area centroid from horizontal slices.
-         This centres diagonal and corner subsectors by their actual area, not
-         by the bounding box they happen to occupy. */
-      let weight = 0, weightedX = 0, weightedY = 0;
-      for (let s = 0; s <= 20; s++) {
-        const y = boxTop + (boxBottom - boxTop) * s / 20;
-        const span = horizontalSpan(poly, y);
-        if (!span) continue;
-        const w = span[1] - span[0];
-        weight += w;
-        weightedX += ((span[0] + span[1]) / 2) * w;
-        weightedY += y * w;
-      }
-      if (!weight) return;
-      const centerX = weightedX / weight, centerY = weightedY / weight;
+      /* Centre on the subsection itself and use nearly all of its width. The
+         sector clip remains the final guard along diagonal boundaries. */
+      const centerY = (boxTop + boxBottom) / 2;
       const centerSpan = horizontalSpan(poly, centerY);
       if (!centerSpan) return;
-      const boxW = (centerSpan[1] - centerSpan[0]) * 0.8;
-      const boxH = 2 * Math.min(centerY - boxTop, boxBottom - centerY) * 0.92;
+      const centerX = (centerSpan[0] + centerSpan[1]) / 2;
+      const boxW = (centerSpan[1] - centerSpan[0]) * 0.94;
+      const boxH = boxBottom - boxTop;
       const left = centerX - boxW / 2;
 
       const fo = document.createElementNS(ns, 'foreignObject');
@@ -1837,7 +1827,7 @@ function buildBaseSectors() {
 
       /* Find this label's limit with normal wrapping. The three limits are
          reconciled below so one sector always has one coherent text size. */
-      let lo = 7, hi = 30;
+      let lo = MIN_BASE_FONT, hi = 30;
       for (let it = 0; it < 9; it++) {
         const mid = (lo + hi) / 2;
         el.style.fontSize = mid.toFixed(2) + 'px';
@@ -1850,7 +1840,8 @@ function buildBaseSectors() {
     /* Adapt per sector: all three labels share the largest size that fits all
        three of this sector's individually positioned rectangles. */
     if (sectorLabels.length) {
-      const sectorSize = Math.min(...sectorLabels.map(label => label.maxSize)) * 0.96;
+      const sectorSize = Math.max(MIN_BASE_FONT,
+        Math.min(...sectorLabels.map(label => label.maxSize)) * 0.96);
       sectorLabels.forEach(({ el }) => { el.style.fontSize = sectorSize.toFixed(2) + 'px'; });
     }
 
