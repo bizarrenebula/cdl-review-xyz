@@ -28,42 +28,27 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Spectral:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
 <style>
+  /* ====================================================================
+     BLANK VERSION — flat black-on-white.
+     All colour lives in these three tokens; the app is otherwise a
+     line drawing (black strokes/text on white). Redesign colour by
+     editing these and LP_COLORS in the script.
+     ==================================================================== */
   :root {
-    --sky:        #100e26;
-    --sky-deep:   #0a0819;
-    --brass:      #d3a95f;
-    --brass-dim:  #8a7040;
-    --parchment:  #f0e6cf;
-    --ink:        #2a2338;
-    --ring-outer: #1c1840;
-    --ring-inner: #262052;
-    --hub:        #14112e;
-    /* 4 principle colours — the elements: fire, earth, air, water */
-    --c-red:    #ff4d5e;
-    --c-green:  #1fa845;
-    /* the answer's ink: aged gold on parchment, and its lit peak */
-    --gold-ink: #e8c176;
-    --gold-lit: #ffeab8;
-    --c-yellow: #ffd84d;
-    --c-violet: #b477ff;
-    --c-blue:   #2f6fd0;          /* water — replaces violet as the 4th element */
-    /* light page + base theme (the wheel keeps the night sky) */
-    --page-bg:  #edeae2;
-    --page-ink: #1b2440;          /* dark navy text on the light base/page */
+    --paper: #fff;   /* page + every surface */
+    --ink:   #000;   /* text */
+    --line:  #000;   /* borders and strokes */
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     min-height: 100vh;
-    background:
-      radial-gradient(ellipse 90% 70% at 50% -10%, #ffffff 0%, transparent 60%),
-      var(--page-bg);
-    color: var(--page-ink);
+    background: var(--paper);
+    color: var(--ink);
     font-family: 'Spectral', Georgia, serif;
     display: flex; flex-direction: column; align-items: center;
     justify-content: center;
     overflow-x: hidden;
   }
-  .stars { display: none; }          /* the night sky lives only in the wheel now */
   @media (prefers-reduced-motion: reduce) {
     * { transition: none !important; }
   }
@@ -77,14 +62,14 @@
     font-family: 'Spectral', serif;
     font-size: .72rem; letter-spacing: .12em;
     padding: .35em .7em;
-    background: rgba(255,255,255,.7);
-    border: 1px solid rgba(27,36,64,.35);
+    background: var(--paper);
+    border: 1px solid var(--line);
     border-radius: 2rem;
-    color: var(--page-ink); cursor: pointer;
+    color: var(--ink); cursor: pointer;
     transition: all .2s;
   }
   .lang-switch button.active,
-  .lang-switch button:hover { background: var(--page-ink); color: #fff; border-color: var(--page-ink); }
+  .lang-switch button:hover { background: var(--ink); color: var(--paper); border-color: var(--line); }
 
   /* The sound toggle sits opposite the languages, quiet until you look for it.
      Three bars that stand still when muted and drift when the drone is on. */
@@ -92,20 +77,20 @@
     position: fixed; top: .9rem; left: .9rem; z-index: 5;
     display: flex; align-items: center; gap: .42rem;
     padding: .42em .8em .42em .7em;
-    background: rgba(255,255,255,.7);
-    border: 1px solid rgba(27,36,64,.35); border-radius: 2rem;
-    color: var(--page-ink); cursor: pointer;
+    background: var(--paper);
+    border: 1px solid var(--line); border-radius: 2rem;
+    color: var(--ink); cursor: pointer;
     font-family: 'Spectral', serif; font-size: .68rem; letter-spacing: .12em;
     transition: color .3s, border-color .3s, background .3s;
   }
-  .sound:hover, .sound:focus-visible { outline: none; border-color: var(--page-ink); color: var(--page-ink); }
+  .sound:hover, .sound:focus-visible { outline: none; border-color: var(--line); color: var(--ink); }
   .sound i { display: flex; align-items: flex-end; gap: 2px; height: .7rem; }
   .sound i b {
     display: block; width: 2px; height: 30%;
     background: currentColor; border-radius: 1px;
     transition: height .35s ease;
   }
-  .sound.on { color: var(--brass); border-color: var(--brass-dim); }
+  .sound.on { color: var(--ink); border-color: var(--line); }
   .sound.on i b { animation: sound-bar 2.6s ease-in-out infinite; }
   .sound.on i b:nth-child(2) { animation-duration: 3.4s; animation-delay: -.9s; }
   .sound.on i b:nth-child(3) { animation-duration: 4.1s; animation-delay: -1.7s; }
@@ -121,11 +106,11 @@
     font-family: 'Marcellus', serif; font-weight: 400;
     font-size: clamp(1.4rem, 4vw, 2.2rem);
     letter-spacing: .12em; text-transform: uppercase;
-    color: var(--page-ink);
+    color: var(--ink);
   }
   header p {
     margin-top: .5rem; font-size: .92rem; font-weight: 300; font-style: italic;
-    color: rgba(27,36,64,.7); max-width: 36rem; margin-inline: auto;
+    color: var(--ink); max-width: 36rem; margin-inline: auto;
   }
 
   /* The stage is the wheel's own box; the counting ring sits outside it, in
@@ -156,126 +141,10 @@
   body.spinning .ring-group { will-change: transform; }
 
   .sector-outer, .sector-inner {
-    fill: var(--ring-outer);
-    stroke: var(--seg-color, var(--brass-dim));
-    stroke-width: 2.4;
+    fill: var(--paper);
+    stroke: var(--seg-color, var(--line));
+    stroke-width: 1.4;
     stroke-linejoin: round;
-    /* neon: the coloured stroke emits light */
-    filter: drop-shadow(0 0 3px var(--seg-color)) drop-shadow(0 0 7px var(--seg-color));
-    transition: fill .3s, stroke-width .3s, filter .3s;
-  }
-  .sector-inner { fill: var(--ring-inner); }
-  .sector-outer.active { fill: #3a2f6e; }
-  .sector-inner.active { fill: #4a3a86; }
-
-  /* Selected segments burn brighter than the rest of the ring */
-  .sector-outer.active, .sector-inner.active {
-    stroke-width: 3.2;
-    filter:
-      drop-shadow(0 0 1.5px #fff)
-      drop-shadow(0 0 4.5px var(--seg-color))
-      drop-shadow(0 0 10.5px var(--seg-color))
-      drop-shadow(0 0 19.5px var(--seg-color));
-  }
-
-  /* ============ THE MARKER ============================================
-     One gesture for "look here", used everywhere on the page: a white border
-     swells around the thing and falls back. Add the class `mark-pulse` to any
-     element for one beat; JS side is markPulse(el, delay) in the MARKER
-     section, which handles the timing and the cleanup.
-
-       markPulse(document.querySelector('#readMoreBtn'));   // any element
-       markPulse(sectorEl, 480);                            // any SVG shape
-
-     Two flavours, picked by what the element is, because a border means a
-     different property in each world:
-       · SVG shapes  -> the stroke itself brightens and thickens.
-       · HTML boxes  -> an outline swells and drifts outward as it fades.
-     Outline is deliberate: it follows border-radius, is not clipped by the
-     element's own overflow, and leaves box-shadow free for whatever the
-     element already uses it for (the hub's breathing, for one). */
-  :root { --mark-ms: 1.05s; }
-
-  /* Only the mid-frame is declared, so the start and end values are the
-     element's own — the same flare reads correctly on an already-glowing
-     sector and on a dim one, with nothing to snap back from. */
-  @keyframes mark-stroke {
-    45% {
-      stroke: #fff7e4;
-      stroke-width: var(--mark-w, 5.4);
-      filter:
-        drop-shadow(0 0 2px #fff)
-        drop-shadow(0 0 8px var(--seg-color, #d3a95f))
-        drop-shadow(0 0 18px var(--seg-color, #d3a95f))
-        drop-shadow(0 0 30px var(--seg-color, #d3a95f));
-    }
-  }
-  @keyframes mark-ring {
-    0%   { outline-color: rgba(255,247,228,0);   outline-width: 1px; outline-offset: 1px; }
-    45%  { outline-color: rgba(255,247,228,.92); outline-width: 3px; outline-offset: 3px; }
-    100% { outline-color: rgba(255,247,228,0);   outline-width: 3px; outline-offset: 9px; }
-  }
-  .mark-pulse {
-    outline: 1px solid transparent;
-    animation: mark-ring var(--mark-ms) ease-in-out;
-  }
-  svg .mark-pulse { outline: none; animation-name: mark-stroke; }
-
-  /* A third flavour, for an element that has box-shadow to spare: the same
-     ring, but as a spread shadow, which carries a real halo the way outline
-     cannot — and which lands on phone browsers that will not round an outline
-     to a border-radius. Opt in with `mark-glow` alongside `mark-pulse`. */
-  @keyframes mark-ring-glow {
-    0%   { box-shadow: 0 0 0 1px rgba(255,247,228,0),
-                       0 0 8px 0 rgba(255,247,228,0); }
-    45%  { box-shadow: 0 0 0 3px rgba(255,247,228,.92),
-                       0 0 26px 7px rgba(255,240,214,.45); }
-    100% { box-shadow: 0 0 0 9px rgba(255,247,228,0),
-                       0 0 34px 12px rgba(255,240,214,0); }
-  }
-  .mark-glow.mark-pulse { outline: none; animation-name: mark-ring-glow; }
-
-  /* A fourth flavour, for the words in a wedge. A glyph has no border to swell
-     — thicken its stroke and it stops being legible — so here the ink itself
-     catches the light. The stroke is left alone: a label's dark stroke is what
-     keeps it readable
-     over the ring, and brightening that would erase the letterforms just as
-     the eye arrives. Only the fill lifts, and the glow behind it. */
-  @keyframes mark-word {
-    45% {
-      fill: #fff;
-      filter:
-        drop-shadow(0 0 4px rgba(255,250,238,.7))
-        drop-shadow(0 0 14px var(--seg-color, #d3a95f))
-        drop-shadow(0 0 30px var(--seg-color, #d3a95f));
-    }
-  }
-  .mark-word.mark-pulse { animation-name: mark-word; }
-  /* The words settle back on their own clock, slower than they lit, so the
-     light reads as one movement passing along rather than a switch. */
-  .label-outer, .label-inner { transition: fill .5s ease, filter .5s ease; }
-
-  /* ---- The marker's other half: one light running the whole way round a
-     group of things, to say they belong together. The path is built in JS
-     (markSweepPath) because it traces the union of the two chosen wedges and
-     the ball; here it is only lit and moved. pathLength=100 in the markup, so
-     the dash numbers below are percentages of the outline however big it is. */
-  #markSweep path {
-    fill: none;
-    stroke: #fff7e4;
-    stroke-width: 3;
-    stroke-linecap: round;
-    stroke-dasharray: 22 78;
-    opacity: 0;
-    pointer-events: none;
-    filter: drop-shadow(0 0 4px #fff) drop-shadow(0 0 12px rgba(211,169,95,.9));
-  }
-  #markSweep.run path { animation: mark-sweep .95s cubic-bezier(.35,0,.25,1); }
-  @keyframes mark-sweep {
-    0%   { opacity: 0; stroke-dashoffset: 122; }
-    12%  { opacity: 1; }
-    82%  { opacity: 1; }
-    100% { opacity: 0; stroke-dashoffset: 0; }
   }
 
   /* ---- The counting ring ------------------------------------------------
@@ -291,8 +160,7 @@
   .wheel-num {
     font-family: 'Marcellus', serif;
     font-size: 23px;
-    fill: var(--brass);
-    fill-opacity: .85;
+    fill: var(--ink);
     text-anchor: middle;
     pointer-events: none; user-select: none;
   }
@@ -300,312 +168,66 @@
      ten-pixel numeral. A little more size buys them back. */
   @media (max-width: 520px) { .wheel-num { font-size: 27px; } }
 
-  /* Label text: whitish, with a dark shadow acting as a readable border */
+  /* Label text: black ink on the white wheel. */
   .label-outer, .label-inner {
-    fill: #fbf7ec;
+    fill: var(--ink);
     font-family: 'Marcellus', serif;
     text-anchor: middle;
-    paint-order: stroke fill;
-    stroke: rgba(6,4,16,.92);
-    stroke-width: 3px;
     pointer-events: none; user-select: none;
   }
   .label-outer { font-size: 15.5px; letter-spacing: .04em; }
   .label-inner { font-size: 13px; }
-  .active-label { fill: #fff; }
 
-  /* ============ THE CRYSTAL BALL ============
-     Glass sphere: a dark refracting interior, mist drifting inside it, and a
-     specular sheen laid over the top so the text reads as if suspended within. */
+  /* ============ THE CENTRE DISC ============
+     A plain white disc with a black outline; the result reads inside it. */
   .hub {
     position: absolute; left: 50%; top: 50%;
     transform: translate(-50%, -50%);
     width: 42%; height: 42%; border-radius: 50%;
     overflow: hidden; isolation: isolate;
-    /* No specular flares — the sphere is modelled by shading alone: light from
-       the upper left, falling off to a dark rim, with a little bounce below. */
-    background:
-      radial-gradient(circle at 38% 30%,
-        #3b3170 0%, #2a2358 22%, #1c1848 48%, #120f31 74%, #08061a 100%),
-      var(--hub);
-    border: 1px solid rgba(255,240,214,.66);
-    /* The last three shadows are the ball's answer to a selected sector: a
-       white hairline over the rim and two gold halos, so the centre reads as
-       lit in the same register as the two chosen wedges. */
-    box-shadow:
-      inset 0 0 42px rgba(6,4,18,.9),          /* rim shadow: rounds the ball */
-      inset -10px -12px 34px rgba(6,4,18,.55), /* terminator, away from the light */
-      inset 0 -14px 30px rgba(180,119,255,.13),/* bounce light off the base */
-      0 0 30px rgba(0,0,0,.6),
-      0 0 2px rgba(255,255,255,.5),
-      0 0 14px rgba(211,169,95,.45),
-      0 0 34px rgba(211,169,95,.3);
+    background: var(--paper);
+    border: 1.4px solid var(--line);
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
     text-align: center; padding: 4%; gap: .35rem;
   }
-  /* Text and button ride above the mist, below the glass sheen. */
   .hub .result, .hub button { position: relative; z-index: 2; }
 
-  /* ---- mist curling inside the sphere ---- */
-  .hub-mist {
-    position: absolute; inset: -18%; z-index: 0;
-    pointer-events: none; opacity: .5;
-    filter: blur(14px);
-    transition: opacity .8s ease;
-  }
-  .hub-mist span {
-    position: absolute; display: block; border-radius: 50%;
-    mix-blend-mode: screen;
-    transform-origin: 50% 50%;
-    will-change: transform;
-  }
-  .hub-mist span:nth-child(1) {
-    inset: 8% 20% 30% 8%;
-    background: radial-gradient(circle, rgba(180,119,255,.75), transparent 68%);
-    animation: mist-a 19s ease-in-out infinite;
-  }
-  .hub-mist span:nth-child(2) {
-    inset: 26% 6% 10% 28%;
-    background: radial-gradient(circle, rgba(77,255,200,.4), transparent 66%);
-    animation: mist-b 25s ease-in-out infinite;
-  }
-  .hub-mist span:nth-child(3) {
-    inset: 20% 24% 24% 22%;
-    background: radial-gradient(circle, rgba(255,216,120,.42), transparent 62%);
-    animation: mist-c 31s ease-in-out infinite;
-  }
-  @keyframes mist-a {
-    0%,100% { transform: translate(0,0) scale(1); }
-    33%     { transform: translate(12%, 9%) scale(1.18); }
-    66%     { transform: translate(-9%, 6%) scale(.9); }
-  }
-  @keyframes mist-b {
-    0%,100% { transform: translate(0,0) scale(1.05); }
-    40%     { transform: translate(-13%, -8%) scale(.88); }
-    75%     { transform: translate(7%, -12%) scale(1.2); }
-  }
-  @keyframes mist-c {
-    0%,100% { transform: translate(0,0) scale(.95) rotate(0deg); }
-    50%     { transform: translate(6%, -6%) scale(1.22) rotate(180deg); }
-  }
-
-  /* Depth pooled behind the words, so the text has something dark to sit on. */
-  .hub::after {
-    content: ''; position: absolute; inset: 0; border-radius: 50%;
-    z-index: 1; pointer-events: none;
-    background: radial-gradient(circle at 50% 50%,
-      rgba(5,4,16,.66) 0%, rgba(5,4,16,.45) 40%, transparent 72%);
-  }
-
-  /* ---- Result reveal: a hairline of light draws once around the rim while the
-         text resolves out of a blur. Quiet, no fireworks. ---- */
-  .hub-reveal {
-    position: absolute; inset: 0; border-radius: 50%; z-index: 1;
-    pointer-events: none; overflow: hidden;
-  }
-  /* The ball clouds over while it answers. */
-  .hub.pulse .hub-mist { opacity: .95; transition: opacity .35s ease; }
-  /* Outer element carries the annulus (the rim); inner one carries the sweep,
-     so each animates a single, simple mask. */
-  .hub-reveal .rim {
-    position: absolute; inset: 0; border-radius: 50%; opacity: 0;
-    -webkit-mask: radial-gradient(closest-side, transparent calc(100% - 2.5px), #000 calc(100% - 1.5px));
-            mask: radial-gradient(closest-side, transparent calc(100% - 2.5px), #000 calc(100% - 1.5px));
-  }
-  .hub-reveal .rim i {
-    position: absolute; inset: 0; display: block; border-radius: 50%;
-    background: conic-gradient(from -90deg,
-      rgba(211,169,95,.55), #fff4d6 45%, rgba(211,169,95,.55));
-    -webkit-mask: conic-gradient(from -90deg, #000 0deg, #000 0deg, transparent 14deg);
-            mask: conic-gradient(from -90deg, #000 0deg, #000 0deg, transparent 14deg);
-  }
-  /* A breath of light lifting off the centre as the rim closes. */
-  .hub-reveal .veil {
-    position: absolute; inset: 0; border-radius: 50%; opacity: 0;
-    background: radial-gradient(circle at 50% 50%,
-      rgba(255,241,209,.22), rgba(211,169,95,.1) 45%, transparent 72%);
-  }
-
-  /* Once a pairing has been chosen the hub keeps breathing, so the centre stays
-     the warmest thing on the board. */
-  .hub.lit { animation: hub-breathe 4.5s ease-in-out infinite; }
-  @keyframes hub-breathe {
-    0%, 100% { box-shadow:
-                 inset 0 0 34px rgba(8,6,22,.85),
-                 inset 0 -14px 30px rgba(180,119,255,.16),
-                 inset 0 10px 26px rgba(214,226,255,.07),
-                 0 0 30px rgba(0,0,0,.6),
-                 0 0 2px rgba(255,255,255,.5),
-                 0 0 14px rgba(211,169,95,.45),
-                 0 0 34px rgba(211,169,95,.3); }
-    50%      { box-shadow:
-                 inset 0 0 30px rgba(8,6,22,.7),
-                 inset 0 -18px 38px rgba(180,119,255,.3),
-                 inset 0 10px 26px rgba(214,226,255,.1),
-                 0 0 30px rgba(0,0,0,.6),
-                 0 0 3px rgba(255,255,255,.62),
-                 0 0 20px rgba(211,169,95,.6),
-                 0 0 52px rgba(211,169,95,.42); }
-  }
-
-  /* The ball cannot wear the marker itself: .lit already owns its `animation`
-     property for the breathing, and a second one would replace it. So the
-     marker goes on a bare ring laid over the ball — same circle, nothing in
-     it, nothing else animating it. (The general rule for the marker: if the
-     target already animates, mark an overlay instead of the element.) */
-  .hub-ring {
-    position: absolute; left: 50%; top: 50%;
-    transform: translate(-50%, -50%);
-    width: 42%; height: 42%; border-radius: 50%;
-    pointer-events: none; z-index: 3;
-  }
-
-  .hub.pulse .rim   { animation: rim-fade 1.15s linear; }
-  .hub.pulse .rim i { animation: rim-draw .95s cubic-bezier(.4,0,.15,1); }
-  .hub.pulse .veil  { animation: veil-lift 1.1s ease-out .18s; }
-
-  /* Letters arrive one by one, each flaring as it lands, like text writing
-     itself onto the page of a spellbook. */
-  /* The fit chooses the breaks, so each line is its own row and must not wrap. */
-  .hub .result .line { display: block; white-space: nowrap; }
-  .hub .result .ch {
-    display: inline-block; white-space: pre;
-    /* Land, then breathe. The glow is listed second and starts after the
-       reveal, so it takes over the text-shadow once it begins. */
-    animation:
-      letter-in .34s cubic-bezier(.2,.7,.3,1) both,
-      result-breathe 3.2s ease-in-out 1s infinite;
-  }
-  /* Each letter condenses out of the mist rather than being typed. */
-  @keyframes letter-in {
-    0%   { opacity: 0; filter: blur(7px); transform: translateY(3px) scale(1.4);
-           color: #fff6e2; text-shadow: 0 0 16px rgba(255,238,198,.95), 0 0 30px rgba(150,110,255,.8); }
-    55%  { opacity: 1; filter: blur(0); transform: none;
-           color: #fff6e2;
-           text-shadow: 0 1px 3px rgba(4,3,14,.9), 0 0 11px rgba(255,238,198,.85),
-                        0 0 24px rgba(150,110,255,.5); }
-    100% { opacity: 1; filter: blur(0); transform: none;
-           color: var(--gold-ink);
-           text-shadow: 0 1px 3px rgba(4,3,14,.95), 0 0 6px rgba(4,3,14,.9),
-                        0 0 15px rgba(211,169,95,.5); }
-  }
-  /* The answer keeps glowing, slow enough to read as breathing rather than
-     blinking. Starts from letter-in's end state so the handover is seamless. */
-  @keyframes result-breathe {
-    0%, 100% { color: var(--gold-ink);
-               text-shadow: 0 1px 3px rgba(4,3,14,.95), 0 0 6px rgba(4,3,14,.9),
-                            0 0 15px rgba(211,169,95,.5); }
-    50%      { color: var(--gold-lit);
-               text-shadow: 0 1px 3px rgba(4,3,14,.95), 0 0 8px rgba(4,3,14,.9),
-                            0 0 20px rgba(255,214,140,.85), 0 0 40px rgba(211,169,95,.6); }
-  }
-
-  @keyframes rim-fade {
-    0% { opacity: 0; } 8% { opacity: 1; } 62% { opacity: 1; } 100% { opacity: 0; }
-  }
-  @keyframes rim-draw {
-    from { -webkit-mask: conic-gradient(from -90deg, #000 0deg, #000 0deg, transparent 14deg);
-                   mask: conic-gradient(from -90deg, #000 0deg, #000 0deg, transparent 14deg); }
-    to   { -webkit-mask: conic-gradient(from -90deg, #000 0deg, #000 360deg, transparent 374deg);
-                   mask: conic-gradient(from -90deg, #000 0deg, #000 360deg, transparent 374deg); }
-  }
-  @keyframes veil-lift {
-    0%   { opacity: 0; transform: scale(.72); }
-    40%  { opacity: 1; }
-    100% { opacity: 0; transform: scale(1.06); }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .hub.pulse .rim, .hub.pulse .rim i, .hub.pulse .veil, .hub .result .ch {
-      animation: none;
-    }
-    /* No breathing or drifting mist, but keep the lit ball brighter at rest. */
-    .hub-mist span { animation: none; }
-    .hub.lit {
-      animation: none;
-      box-shadow:
-        inset 0 0 32px rgba(8,6,22,.8),
-        inset 0 -16px 34px rgba(180,119,255,.24),
-        inset 0 10px 26px rgba(214,226,255,.09),
-        0 0 30px rgba(0,0,0,.6),
-        0 0 2px rgba(255,255,255,.5),
-        0 0 16px rgba(211,169,95,.5),
-        0 0 40px rgba(211,169,95,.32);
-    }
-  }
   .hub .eyebrow { display: none; }
   .hub .match {
     font-family: 'Marcellus', serif;
     font-size: clamp(.68rem, 2vw, .92rem);
-    line-height: 1.3; color: var(--parchment);
+    line-height: 1.3; color: var(--ink);
   }
+  /* The fit chooses the breaks, so each line is its own row and must not wrap. */
+  .hub .result .line { display: block; white-space: nowrap; }
   /* Width is deliberately near the full diameter and the size is set from JS
      (fitHubText) so the block grows until its corners touch the inner circle. */
   .hub .result {
     font-size: clamp(.62rem, 1.8vw, .8rem);   /* fallback until JS measures */
     font-family: 'Marcellus', serif;          /* the book's voice, not the UI's */
-    color: var(--gold-ink); line-height: 1.24;
+    color: var(--ink); line-height: 1.24;
     width: 100%;
-    /* dark halo first for legibility over the mist, then the gold */
-    text-shadow:
-      0 1px 3px rgba(4,3,14,.95), 0 0 6px rgba(4,3,14,.9),
-      0 0 15px rgba(211,169,95,.5);
   }
   .hub button {
     margin-top: .25rem;
     font-family: 'Spectral', serif;
     font-size: .66rem; letter-spacing: .14em; text-transform: uppercase;
-    color: var(--brass); background: transparent;
-    border: 1px solid var(--brass-dim); border-radius: 2rem;
+    color: var(--ink); background: var(--paper);
+    border: 1px solid var(--line); border-radius: 2rem;
     padding: .38em 1.1em; cursor: pointer;
     transition: background .25s, color .25s;
   }
   @media (max-width: 520px) {
     .hub { padding: 3%; gap: .2rem; }
-    .hub-mist { filter: blur(9px); }        /* smaller ball, cheaper blur */
     .hub .eyebrow { display: none; }
     .hub .match { font-size: .68rem; }
     .hub button { font-size: .56rem; padding: .3em .8em; }
-    /* Wheel is scaled down here, so boost the glow radius (SVG user units)
-       to keep the neon halo visible on mobile */
-    .sector-outer, .sector-inner {
-      stroke-width: 3.2;
-      filter: drop-shadow(0 0 6px var(--seg-color)) drop-shadow(0 0 14px var(--seg-color));
-      --mark-w: 8.5;              /* wheel is smaller here — flare wider */
-    }
-    /* Everything the marker draws is in SVG user units, so a phone renders it
-       at roughly half the size a desktop does. Scale it back up by hand. */
-    #markSweep path {
-      stroke-width: 6;
-      filter: drop-shadow(0 0 5px #fff) drop-shadow(0 0 16px rgba(211,169,95,.95));
-    }
-    .sector-outer.active, .sector-inner.active {
-      stroke-width: 4.4;
-      filter:
-        drop-shadow(0 0 2.2px #fff)
-        drop-shadow(0 0 7.5px var(--seg-color))
-        drop-shadow(0 0 18px var(--seg-color))
-        drop-shadow(0 0 33px var(--seg-color));
-    }
-
-    /* ---- in motion: strip everything the GPU has to redraw each frame ----
-       Four stacked drop-shadows across 24 rotating paths is what stutters on a
-       phone; one cheap halo carries the neon read while the wheel is turning
-       and the full glow returns the moment it settles. */
-    body.spinning .sector-outer, body.spinning .sector-inner {
-      filter: drop-shadow(0 0 4px var(--seg-color));
-      transition: none;
-    }
-    body.spinning .sector-outer.active, body.spinning .sector-inner.active {
-      filter: drop-shadow(0 0 7px var(--seg-color));
-    }
-    /* The ball is not what is moving — stop paying for it mid-turn. */
-    body.spinning .hub-mist span,
-    body.spinning .hub.lit { animation-play-state: paused; }
-    body.spinning .hub-mist { filter: blur(6px); }
+    .sector-outer, .sector-inner { stroke-width: 2; }
+    body.spinning .sector-outer, body.spinning .sector-inner { transition: none; }
   }
   .hub button:hover, .hub button:focus-visible {
-    background: var(--brass); color: var(--sky-deep); outline: none;
+    background: var(--ink); color: var(--paper); outline: none;
   }
 
   .needle {
@@ -614,13 +236,12 @@
     width: 0; height: 0;
     border-left: 13px solid transparent;
     border-right: 13px solid transparent;
-    border-top: 26px solid var(--brass);
-    filter: drop-shadow(0 3px 5px rgba(0,0,0,.5));
+    border-top: 26px solid var(--line);
     z-index: 2; pointer-events: none;
   }
 
   .hint {
-    z-index: 1; font-size: .78rem; color: #9a8fc4;
+    z-index: 1; font-size: .78rem; color: var(--ink);
     font-style: italic; text-align: center; padding: 0 1rem;
   }
 
@@ -631,26 +252,26 @@
   .control-block { text-align: center; }
   .control-block .name {
     font-size: .66rem; letter-spacing: .22em; text-transform: uppercase;
-    color: #9a8fc4; margin-bottom: .35rem;
+    color: var(--ink); margin-bottom: .35rem;
   }
   .control-block .btns { display: flex; gap: .5rem; justify-content: center; }
   .control-block button {
     width: 2.3rem; height: 2.3rem; border-radius: 50%;
-    border: 1px solid var(--brass-dim); background: transparent;
-    color: var(--brass); font-size: 1rem; cursor: pointer;
+    border: 1px solid var(--line); background: var(--paper);
+    color: var(--ink); font-size: 1rem; cursor: pointer;
     transition: background .2s, color .2s;
   }
   .control-block button:hover, .control-block button:focus-visible {
-    background: var(--brass); color: var(--sky-deep); outline: none;
+    background: var(--ink); color: var(--paper); outline: none;
   }
 
   footer {
-    font-size: .7rem; color: #6f65a0;
+    font-size: .7rem; color: var(--ink);
     padding-bottom: 1.5rem; z-index: 1; text-align: center; max-width: 34rem;
   }
   footer a.deuter-link {
     display: inline-block; margin-top: .55rem;
-    color: var(--brass); text-decoration: none;
+    color: var(--ink); text-decoration: none;
     font-size: .78rem; letter-spacing: .04em;
   }
   footer a.deuter-link:hover, footer a.deuter-link:focus-visible {
@@ -660,66 +281,65 @@
   /* ---- modal ---- */
   .overlay {
     position: fixed; inset: 0;
-    background: rgba(8,6,20,.78); backdrop-filter: blur(4px);
+    background: rgba(0,0,0,.5);
     display: none; align-items: center; justify-content: center;
     padding: 1.2rem; z-index: 10;
   }
   .overlay.open { display: flex; }
   .modal {
-    background: var(--parchment); color: var(--ink);
+    background: var(--paper); color: var(--ink);
     max-width: 34rem; width: 100%; max-height: 84vh; overflow-y: auto;
-    border-radius: 6px; border: 1px solid var(--brass);
-    box-shadow: 0 0 0 6px rgba(211,169,95,.15), 0 24px 60px rgba(0,0,0,.6);
+    border-radius: 6px; border: 1px solid var(--line);
     padding: 2.1rem 2.3rem 1.9rem; position: relative;
   }
   .modal .eyebrow {
     font-size: .6rem; letter-spacing: .28em;
-    text-transform: uppercase; color: #8a7040;
+    text-transform: uppercase; color: var(--ink);
   }
   .modal h2 {
     font-family: 'Marcellus', serif; font-weight: 400;
-    font-size: 1.35rem; margin: .35rem 0 .9rem; color: #3b2f14;
+    font-size: 1.35rem; margin: .35rem 0 .9rem; color: var(--ink);
   }
   .modal .rule {
     height: 1px;
-    background: linear-gradient(90deg, transparent, var(--brass), transparent);
+    background: var(--line);
     margin-bottom: 1rem;
   }
   .modal p { font-size: .92rem; line-height: 1.6; margin-bottom: .8rem; }
   .modal .field { margin-bottom: .75rem; }
   .modal .field .k {
     font-size: .62rem; letter-spacing: .2em; text-transform: uppercase;
-    color: #8a7040; margin-bottom: .15rem;
+    color: var(--ink); margin-bottom: .15rem;
   }
   .modal .field .v { font-size: .9rem; line-height: 1.55; }
   .modal .close {
     position: absolute; top: .7rem; right: .85rem;
     background: none; border: none; font-size: 1.5rem; line-height: 1;
-    color: #8a7040; cursor: pointer;
+    color: var(--ink); cursor: pointer;
   }
   .modal .close:hover { color: var(--ink); }
   .modal .note {
-    font-size: .78rem; font-style: italic; color: #7a6a45;
-    border-top: 1px dashed #c9b98a; padding-top: .7rem; margin-top: .4rem;
+    font-size: .78rem; font-style: italic; color: var(--ink);
+    border-top: 1px dashed var(--line); padding-top: .7rem; margin-top: .4rem;
   }
   .explain-btn {
     display: block; margin: 1rem auto .2rem;
     font-family: 'Spectral', serif;
     font-size: .78rem; letter-spacing: .16em; text-transform: uppercase;
-    color: #6b5426; background: transparent;
-    border: 1px solid var(--brass-dim); border-radius: 2rem;
+    color: var(--ink); background: var(--paper);
+    border: 1px solid var(--line); border-radius: 2rem;
     padding: .5em 1.5em; cursor: pointer;
     transition: background .25s, color .25s;
   }
   .explain-btn:hover, .explain-btn:focus-visible {
-    background: var(--brass); color: var(--sky-deep); outline: none;
+    background: var(--ink); color: var(--paper); outline: none;
   }
-  .motto { font-style: italic; text-align: center; color: #6b5426;
+  .motto { font-style: italic; text-align: center; color: var(--ink);
     font-size: .92rem; margin-bottom: .4rem; }
-  .impulse { margin-top: 1rem; padding-top: .8rem; border-top: 1px dashed #c9b98a; }
+  .impulse { margin-top: 1rem; padding-top: .8rem; border-top: 1px dashed var(--line); }
   .impulse .k {
     font-size: .62rem; letter-spacing: .2em; text-transform: uppercase;
-    color: #8a7040; margin-bottom: .35rem;
+    color: var(--ink); margin-bottom: .35rem;
   }
   .impulse .lead { font-style: italic; font-size: .9rem; margin-bottom: .3rem; }
   .impulse ul { margin: .1rem 0 .7rem 1.2rem; }
@@ -756,10 +376,9 @@
       width: 100%;
       align-self: center;
       margin: 0 auto .5rem;
-      border: 1px solid rgba(211, 169, 95, .35);
+      border: 1px solid var(--line);
       border-radius: 12px;
-      background: rgba(20, 17, 46, .32);
-      box-shadow: inset 0 0 60px -20px rgba(211, 169, 95, .25);
+      background: var(--paper);
       min-height: 0;
       overflow: hidden;
     }
@@ -793,8 +412,7 @@
        base, so the middle of the wheel is left clear. */
     #pcbase #innerRing,
     #pcbase #numRing { display: none; }
-    #pcbase .hub,
-    #pcbase .hub-ring { display: none; }
+    #pcbase .hub { display: none; }
     /* The top needle and the inner guide rings belong to the two-wheel view. */
     #pcbase .needle,
     #pcbase .wheel-guide { display: none; }
@@ -804,42 +422,36 @@
     #pcbase .wheel-num-pc {
       font-family: 'Marcellus', serif;
       font-size: 19px;
-      fill: var(--seg-color, var(--brass));
-      paint-order: stroke;
-      stroke: rgba(4, 3, 14, .75);
-      stroke-width: 3px;
-      stroke-linejoin: round;
+      fill: var(--ink);
       pointer-events: none;
     }
     /* The pointer arrow on principle 1 (the selector). Turns with the wheel. */
     #pcbase .wheel-pointer {
-      fill: #ffe9b0;
-      stroke: #d3a95f;
+      fill: var(--ink);
+      stroke: var(--line);
       stroke-width: 1;
-      filter: drop-shadow(0 0 3px rgba(255, 233, 176, .95))
-              drop-shadow(0 0 7px rgba(211, 169, 95, .7));
       pointer-events: none;
     }
 
     /* The wedge shapes and their labels (built in JS). */
     .base-wedge {
-      fill: rgba(255, 255, 255, .62);
-      stroke: color-mix(in srgb, var(--seg-color, var(--brass-dim)) 82%, #2a2438);
+      fill: var(--paper);
+      stroke: var(--line);
       stroke-width: 2;
       stroke-linejoin: round;
     }
     .base-num {
       font-family: 'Marcellus', serif;
-      fill: var(--page-ink);
+      fill: var(--ink);
       dominant-baseline: central;
     }
     .base-area {
       font-family: 'Marcellus', serif;
-      fill: var(--page-ink);
+      fill: var(--ink);
       dominant-baseline: central;
     }
     .base-person {
-      fill: rgba(27, 36, 64, .8);
+      fill: var(--ink);
       font-style: italic;
       dominant-baseline: central;
     }
@@ -852,110 +464,26 @@
       width: 100%; height: 100%; overflow: hidden;
       display: flex; align-items: center; justify-content: center;
       text-align: center; line-height: 1.16;
-      font-family: 'Spectral', Georgia, serif; color: var(--page-ink);
+      font-family: 'Spectral', Georgia, serif; color: var(--ink);
     }
     .bs-box .bs-content { display: flex; flex-direction: column; gap: .35em; width: 100%; }
     .bs-box .bs-keys {
-      color: var(--page-ink);
+      color: var(--ink);
       font-family: 'Marcellus', serif;
       letter-spacing: .01em;
       font-weight: 600;
     }
     .bs-box .bs-line { font-size: .92em; }
-    .bs-box .bs-line b {
-      color: color-mix(in srgb, var(--seg-color, var(--brass)) 70%, #1b2440);
-      font-weight: 600;
-    }
+    .bs-box .bs-line b { color: var(--ink); font-weight: 600; }
+    /* The person/bone glyphs are colour emoji — flatten them to black silhouettes. */
+    .bs-box .bs-line b { filter: brightness(0); }
 
     /* Once the wheel has moved, every wedge is a clickable journey-end. */
     #pcbase.engaged .base-wedge { cursor: pointer; }
-    #pcbase .pointer-sector { stroke-width: 3.4; }
   }
-
-  /* ====================================================================
-     FLAT MONOCHROME
-     Black text on a white background everywhere; black borders for the
-     base and the wheel; no special visual effects (no glows, gradients,
-     drop-shadows, the crystal-ball shading, mist, or breathing).
-     One block, appended last and marked !important, so it overrides the
-     styled theme above without touching it — easy to lift later.
-     ==================================================================== */
-  :root {
-    --sky:#fff; --sky-deep:#fff; --ring-outer:#fff; --ring-inner:#fff; --hub:#fff;
-    --parchment:#fff; --page-bg:#fff; --page-ink:#000;
-    --brass:#000; --brass-dim:#000; --gold-ink:#000; --gold-lit:#000; --ink:#000;
-  }
-  body { background:#fff !important; color:#000 !important; }
-
-  /* Drop every decorative / effect layer. */
-  .stars, .hub-mist, .hub-reveal, .hub-ring, #markSweep { display:none !important; }
-  .hub::after, .hub::before { content:none !important; background:none !important; }
-
-  /* Stop every ambient animation (mist, breathing, letter reveal, sweep). */
-  .hub, .hub.lit, .hub.pulse .rim, .hub.pulse .rim i, .hub.pulse .veil,
-  .hub-mist span, .hub .result .ch, header h1 { animation:none !important; }
-
-  /* Wheel sectors: white fill, thin black border, no neon glow. */
-  .sector-outer, .sector-inner,
-  .sector-outer.active, .sector-inner.active {
-    fill:#fff !important; stroke:#000 !important; stroke-width:1.4 !important;
-    filter:none !important;
-  }
-
-  /* Wheel + base text: plain black ink, no halo, no glow. */
-  .label-outer, .label-inner, .active-label,
-  #pcbase .wheel-person-pc, #pcbase .wheel-num-pc,
-  .wheel-num, .base-num, .base-area, .base-person {
-    fill:#000 !important; fill-opacity:1 !important;
-    stroke:none !important; filter:none !important;
-  }
-
-  /* Guide rings and the wheel's rim: black hairlines, no gold. */
-  .wheel-guide { stroke:#000 !important; }
-
-  /* The crystal ball becomes a plain white disc with a black outline. */
-  .hub {
-    background:#fff !important; border:1.4px solid #000 !important;
-    box-shadow:none !important;
-  }
-  .hub .result, .hub .match, .hub .eyebrow, .hub .result .ch {
-    color:#000 !important; text-shadow:none !important; filter:none !important;
-  }
-  .hub button {
-    color:#000 !important; background:#fff !important;
-    border:1px solid #000 !important; text-shadow:none !important;
-  }
-  .hub button:hover, .hub button:focus-visible {
-    background:#000 !important; color:#fff !important;
-  }
-
-  /* The pointer arrow / top needle: solid black. */
-  #pcbase .wheel-pointer { fill:#000 !important; stroke:#000 !important; filter:none !important; }
-  .needle { border-top-color:#000 !important; filter:none !important; }
-
-  /* Base: white rectangle and wedges with black borders and black text. */
-  .pcbase { background:#fff !important; border:1px solid #000 !important; box-shadow:none !important; }
-  .base-wedge, .base-wedge.event, .base-wedge.hover,
-  #pcbase.engaged .base-wedge.hover {
-    fill:#fff !important; stroke:#000 !important; filter:none !important;
-  }
-  .bs-box, .bs-box .bs-content, .bs-box .bs-keys, .bs-box .bs-line,
-  .bs-box .bs-line b { color:#000 !important; }
-  /* The person/bone glyphs are colour emoji — flatten them to black silhouettes. */
-  .bs-box .bs-line b { filter:brightness(0) !important; }
-  #pcbase .sector-outer.projected, #pcbase .label-outer.projected {
-    fill:#fff !important; filter:none !important;
-  }
-  #pcbase .label-outer.projected { fill:#000 !important; }
-
-  /* Modal / chrome: white, black text, no colour. */
-  .modal { box-shadow:none !important; border:1px solid #000 !important; }
-  .hint, .control-block .name, header p { color:#000 !important; }
 </style>
 </head>
 <body>
-
-<div class="stars" id="stars"></div>
 
 <button class="sound" id="soundBtn" type="button" aria-pressed="false">
   <i aria-hidden="true"><b></b><b></b><b></b></i><span id="soundLabel">Klang</span>
@@ -978,35 +506,20 @@
 <div class="stage" id="stage">
   <div class="needle" aria-hidden="true"></div>
   <svg viewBox="0 0 700 700" id="wheel" role="img">
-    <defs>
-      <radialGradient id="glow" cx="50%" cy="50%" r="50%">
-        <stop offset="80%" stop-color="transparent"/>
-        <stop offset="100%" stop-color="rgba(211,169,95,.18)"/>
-      </radialGradient>
-    </defs>
-    <circle cx="350" cy="350" r="348" fill="none"/>
-    <circle cx="350" cy="350" r="344" fill="none" stroke="#000" stroke-width="1.4"/>
+    <circle cx="350" cy="350" r="344" fill="none" stroke="var(--line)" stroke-width="1.4"/>
     <g id="outerRing" class="ring-group"></g>
     <g id="innerRing" class="ring-group"></g>
     <!-- The twelve numbers, outside the wheel; built and turned in JS. -->
     <g id="numRing" class="num-ring" aria-hidden="true"></g>
-    <circle class="wheel-guide" cx="350" cy="350" r="252" fill="none" stroke="#d3a95f" stroke-width="1.5" pointer-events="none"/>
-    <circle class="wheel-guide" cx="350" cy="350" r="164" fill="none" stroke="#d3a95f" stroke-width="1.5" pointer-events="none"/>
-    <!-- Last child, so the marker's sweep runs over everything on the wheel. -->
-    <g id="markSweep" aria-hidden="true"><path pathLength="100"/></g>
+    <circle class="wheel-guide" cx="350" cy="350" r="252" fill="none" stroke="var(--line)" stroke-width="1" pointer-events="none"/>
+    <circle class="wheel-guide" cx="350" cy="350" r="164" fill="none" stroke="var(--line)" stroke-width="1" pointer-events="none"/>
   </svg>
 
   <div class="hub" id="hub">
-    <div class="hub-mist" aria-hidden="true"><span></span><span></span><span></span></div>
-    <div class="hub-reveal" aria-hidden="true">
-      <div class="veil"></div>
-      <div class="rim"><i></i></div>
-    </div>
     <div class="eyebrow" id="uiAlignment"></div>
     <div class="result" id="resultText"></div>
     <button id="readMoreBtn" type="button"></button>
   </div>
-  <div class="hub-ring mark-glow" id="hubRing" aria-hidden="true"></div>
 </div>
 </div>
 
@@ -2088,7 +1601,7 @@ function buildWheelPc(group) {
     const w100 = textWidth100(item.label, 'label-outer');
     const fs = Math.max(9, Math.min(20, avail / (w100 / 100)));
     const text = document.createElementNS(NS, 'text');
-    text.setAttribute('class', 'label-outer wheel-person-pc mark-word');
+    text.setAttribute('class', 'label-outer wheel-person-pc');
     text.dataset.index = p;
     text.style.setProperty('--seg-color', LP_COLORS[p % 4]);
     text.setAttribute('x', tx.toFixed(2));
@@ -2233,9 +1746,9 @@ function buildRing(group, ring) {
       defs.appendChild(arc);
 
       const text = document.createElementNS(ns, 'text');
-      text.setAttribute('class', cls + ' mark-word');
+      text.setAttribute('class', cls);
       text.dataset.index = i;
-      text.style.setProperty('--seg-color', LP_COLORS[i % 4]);  // its glow, when marked
+      text.style.setProperty('--seg-color', LP_COLORS[i % 4]);
       text.setAttribute('transform', `rotate(${i * STEP}, ${CX}, ${CY})`);
       text.setAttribute('dominant-baseline', 'central');
       text.style.fontSize = fit.size.toFixed(2) + 'px';
@@ -2351,24 +1864,13 @@ function raiseActive(group, ring, idx) {
     .forEach(el => group.appendChild(el));
 }
 
-/* The hub announces a new pairing: lamps chase round the rim, then it blooms. */
 const hubEl = document.getElementById('hub');
-let lastPair = null;
-function pulseHub(key) {
-  // Attention/fanfare effects removed by request — the hub no longer pulses or breathes.
-  lastPair = key;
-}
-hubEl?.addEventListener('animationend', ev => {
-  if (ev.animationName === 'rim-fade') hubEl.classList.remove('pulse');   // last one out
-});
 
 function updateHub() {
   if (isPcBase()) { updatePcBase(); return; }   // PC reads the result off the base, not the hub
   const p = selectedIndex('outer');
   const e = selectedIndex('inner');
   const r = resultLP(p, e);
-  pulseHub(p + ':' + e);
-  markOnChange(p + ':' + e);
   raiseActive(outerG, 'outer', p);
   raiseActive(innerG, 'inner', e);
   outerG.querySelectorAll('.sector-outer').forEach(el =>
@@ -2623,139 +2125,6 @@ function step(ring, dir) {
   animateTo(ring, base + STEP * dir, isSmall() ? 420 : 560, easeRoll);
 }
 
-/* ================= THE MARKER =================
-   The page's one way of saying "look here": a white border swells around a
-   thing and falls back. See the MARKER block in the CSS for the two flavours
-   (SVG stroke / HTML outline) — this side is only timing.
-
-     markPulse(el)            one beat, now
-     markPulse(el, 480)       one beat, in 480ms
-     markPulse(el, 0, false)  one beat even mid-drag (ignores the quiet rules)
-
-   Used here for two jobs. Periodically, the two selected wedges and the ball
-   pulse in turn, outer → inner → centre, walking the eye the way the result is
-   read — "you are on these". And when the result changes they are all marked
-   as one instead: a single light runs the whole way round the pair and the
-   ball together, then everything pulses at the same instant.
-
-   A station is not one flash but a small movement passing through the wedge:
-   the wedge lights first and the words follow, taking the attention over as
-   the sector settles. The two overlap on purpose — the light is handed along
-   rather than restarted. */
-const MARK_MS     = 1050;    // one beat; matches --mark-ms in the CSS
-const MARK_GAP    = 480;     // each beat trails the one before it
-const MARK_SWEEP  = 950;     // the light's run around the group
-/* A full round is a walk of about 2.6s. The gap is set from what is left
-   over: any shorter and the next round arrives while the last is settling. */
-const MARK_EVERY  = 13000;
-const MARK_FIRST  = 2600;    // the first hint, shortly after the page settles
-/* When the words take over from the wedge. Early enough that the two are
-   briefly lit together — the overlap is the hand-off. */
-const MARK_HANDOFF = Math.round(MARK_MS * 0.78);
-
-/* `ms` overrides the length of this one beat. The CSS reads its duration from
-   --mark-ms, so setting that on the element is enough to make a single pulse
-   quicker than the rest. */
-function markPulse(el, delay = 0, quietly = true, ms = MARK_MS) {
-  /* Attention-drawing pulses removed by request — no-op. */
-}
-
-/* The selected wedge of a ring, which is always the one under the marker, and
-   its label. They are marked together, so they are fetched together. */
-function selectedParts(ring) {
-  const group = ring === 'outer' ? outerG : innerG;
-  const idx = selectedIndex(ring);
-  return {
-    sector: group.querySelector(`.sector-${ring}[data-index="${idx}"]`),
-    /* One text element per line of the label, all lit together. */
-    words: [...group.querySelectorAll(`.label-${ring}[data-index="${idx}"]`)]
-  };
-}
-
-/* One station of the walk: a wedge, then its words as the wedge settles. */
-function markStation(ring, delay) {
-  const { sector, words } = selectedParts(ring);
-  markPulse(sector, delay);
-  words.forEach(el => markPulse(el, delay + MARK_HANDOFF));
-}
-
-/* Silent while the user is already busy — mid-turn, reading a card, or away —
-   and off entirely for anyone who asked for less motion. */
-function markAllowed() {
-  return false;   // all periodic/attention marks removed by request
-}
-
-/* ---- The sweep: one light around the pair and the ball together ----
-   The outline is the union of the two chosen wedges and the ball, and it is
-   the same shape every time: whatever is selected sits under the marker at the
-   top, so this traces the top wedge from the ball's rim outwards, round the
-   outer edge, back down, then the long way round the ball. Drawn just clear of
-   both (the ball is an HTML element painted over the SVG, so hugging its rim
-   exactly would hide half the stroke). */
-const sweepG = document.getElementById('markSweep');
-const hubRing = document.getElementById('hubRing');
-function markSweepPath() {
-  const a1 = -STEP / 2, a2 = STEP / 2;
-  const rect = hubEl.getBoundingClientRect();
-  const stage = svg.getBoundingClientRect();
-  const rh = (rect.width / stage.width) * 700 / 2 + 5;   // ball's rim, plus air
-  const ro = OUTER_R2 + 4;
-  const [ix, iy] = polar(rh, a1), [ox, oy] = polar(ro, a1);
-  const [px, py] = polar(ro, a2), [qx, qy] = polar(rh, a2);
-  return `M ${ix} ${iy} L ${ox} ${oy} A ${ro} ${ro} 0 0 1 ${px} ${py} ` +
-         `L ${qx} ${qy} A ${rh} ${rh} 0 1 1 ${ix} ${iy} Z`;
-}
-function markSweepRun() {
-  if (!sweepG) return;
-  sweepG.querySelector('path').setAttribute('d', markSweepPath());
-  sweepG.classList.remove('run');
-  sweepG.getBoundingClientRect();
-  sweepG.classList.add('run');
-  setTimeout(() => sweepG.classList.remove('run'), MARK_SWEEP + 60);
-}
-
-/* A new result: the light runs the group, then all of it flares together —
-   both wedges and the ball, on one beat. */
-function markGroupNow() {
-  if (!markAllowed()) return;
-  markSweepRun();
-  const together = MARK_SWEEP - 120;              // land as the light closes
-  markStation('outer', together);
-  markStation('inner', together);
-  markPulse(hubRing, together);
-}
-
-/* The standing reminder: the same pieces, one station after another, outward
-   to in — outer wedge, inner wedge, then the ball. */
-function markRound() {
-  if (!markAllowed()) return;
-  markStation('outer', 0);
-  markStation('inner', MARK_GAP);
-  const last = MARK_GAP * 2 + MARK_HANDOFF;          // the ball, after the last word
-  markPulse(hubRing, last);
-}
-
-let markTimer = null;
-function scheduleMark(delay = MARK_EVERY) {
-  /* Periodic attention reminders removed by request — no-op. */
-}
-/* A new pairing is its own reminder — mark the group at once and restart the
-   clock. Keyed on the pair, so a language switch (same notch, new words) stays
-   quiet. The next periodic round is pushed out past the sweep, so the two
-   never overlap. */
-let lastMarkPair = null;
-function markOnChange(key) {
-  if (lastMarkPair === key) return;
-  const first = lastMarkPair === null;
-  lastMarkPair = key;
-  if (first) return;                    // the initial render gets MARK_FIRST
-  markGroupNow();
-  scheduleMark(MARK_EVERY + MARK_SWEEP);
-}
-/* A backgrounded tab holds its timer but skips the round; pick it up on return. */
-document.addEventListener('visibilitychange', () => {
-  if (!document.hidden) scheduleMark();
-});
 
 /* ================= DRAG + TAP ================= */
 
@@ -2971,18 +2340,6 @@ function applyLanguage(newLang) {
 document.querySelectorAll('.lang-switch button').forEach(btn =>
   btn.addEventListener('click', () => applyLanguage(btn.dataset.lang)));
 
-/* ================= STARS + INIT ================= */
-
-const starsEl = document.getElementById('stars');
-for (let i = 0; i < 60; i++) {
-  const s = document.createElement('span');
-  s.style.left = Math.random() * 100 + '%';
-  s.style.top = Math.random() * 100 + '%';
-  s.style.animationDelay = (Math.random() * 4) + 's';
-  s.style.transform = `scale(${0.5 + Math.random()})`;
-  starsEl.appendChild(s);
-}
-
 /* ================= THE DRONE =================
    There is no audio file. A recording of something this slow would be a large
    download of mostly nothing, and it would loop — and a loop point is the one
@@ -3135,7 +2492,6 @@ document.addEventListener('visibilitychange', () => {
 });
 
 applyLanguage('de');
-scheduleMark(MARK_FIRST);
 </script>
 </body>
 </html>
