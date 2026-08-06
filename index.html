@@ -1055,6 +1055,7 @@ const textWidths = new Map();
 
 /* Advance width of a string at font-size 100, in user units. Uses a hidden
    node with the real class so letter-spacing counts. */
+let measureCtx = null;
 function textWidth100(text, cls) {
   const key = cls + '|' + text;
   if (textWidths.has(key)) return textWidths.get(key);
@@ -1067,9 +1068,22 @@ function textWidth100(text, cls) {
   measurer.setAttribute('class', cls);
   measurer.style.fontSize = '100px';
   measurer.textContent = text;
-  const w = measurer.getComputedTextLength();
-  textWidths.set(key, w);
-  return w;
+  let w = measurer.getComputedTextLength();
+  /* WebKit (Safari, and iOS browsers like DuckDuckGo that use it) can return 0
+     from getComputedTextLength() on a hidden SVG <text> node — especially
+     before the web font has settled — which would collapse every label to
+     nothing. Fall back to a canvas measure, which needs no layout, and never
+     cache a zero so a bad early read can't stick. */
+  if (!(w > 0) && text) {
+    const cs = getComputedStyle(measurer);
+    if (!measureCtx) measureCtx = document.createElement('canvas').getContext('2d');
+    measureCtx.font = `${cs.fontStyle} ${cs.fontWeight} 100px ${cs.fontFamily}`;
+    w = measureCtx.measureText(text).width;
+    const ls = parseFloat(cs.letterSpacing);          // resolved to px at 100px
+    if (ls && isFinite(ls) && text.length > 1) w += ls * (text.length - 1);
+  }
+  if (w > 0) textWidths.set(key, w);
+  return w > 0 ? w : 1;
 }
 
 /* Lines are costed by summing their atoms rather than measuring every candidate
@@ -2046,15 +2060,20 @@ window.addEventListener('resize', () => {
   });
 });
 /* Everything is measured, so nothing can be trusted until Marcellus is in:
-   the fallback face has different metrics. Re-measure and rebuild once. */
+   the fallback face has different metrics. Re-measure and rebuild once.
+   On a warm load the fonts are already cached, so this resolves almost at
+   once — run it inside a frame so the SVG is laid out before we measure,
+   otherwise the text lengths come back 0 and every label collapses. */
 if (document.fonts) document.fonts.ready.then(() => {
-  textWidths.clear();
-  buildRing(outerG, 'outer');
-  buildRing(innerG, 'inner');
-  buildBaseSectors();
-  applyRotation('outer');
-  applyRotation('inner');
-  updateHub();                  // rewrites and refits the hub text
+  requestAnimationFrame(() => {
+    textWidths.clear();
+    buildRing(outerG, 'outer');
+    buildRing(innerG, 'inner');
+    buildBaseSectors();
+    applyRotation('outer');
+    applyRotation('inner');
+    updateHub();                  // rewrites and refits the hub text
+  });
 });
 
 /* ================= ROTATION MOTION ================= */
