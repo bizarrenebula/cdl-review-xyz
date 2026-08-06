@@ -2096,35 +2096,37 @@ function orientPcWheel(theta) {
 
 const isPcBase = () => matchMedia('(min-width: 900px)').matches;
 
-/* The event (what happened) is the base principle the pointer — the wheel's
-   principle-1 sector — currently sits on. */
-function pcEventIndex() {
+/* The base principle the pointer (the wheel's principle-1 sector) sits on = the
+   PERSON (to whom, chosen from the outer world). */
+function pcPersonIndex() {
   const k = (((Math.round(state.outer.angle / STEP)) % 12) + 12) % 12;   // notches turned
   return ((12 - k) % 12 + 12) % 12;
 }
-/* Light the base wedge the pointer sits on, and mark the base as "engaged"
-   (read-more offered on every wedge) once the wheel has left its home spot. */
+/* Light the base wedge the pointer sits on (the chosen person), and mark the
+   base "engaged" (read-more offered on every wedge) once the wheel has moved. */
 function updatePcBase() {
   if (!baseSvg) return;
-  const e = pcEventIndex();
+  const p = pcPersonIndex();
   const moved = ((Math.round(state.outer.angle / STEP)) % 12 + 12) % 12 !== 0;
   baseSvg.querySelectorAll('.base-wedge').forEach(el =>
-    el.classList.toggle('event', +el.dataset.index === e));
+    el.classList.toggle('event', +el.dataset.index === p));
   pcbaseEl?.classList.toggle('engaged', moved);
 }
 
-/* On the base each wedge is where a journey ends. Hovering a wedge lights the
-   person on the wheel that projects onto it (result = person + event − 1);
-   clicking opens the reading for that (person, event) pairing. */
-const wheelPersonForResult = r => ((r - pcEventIndex()) % 12 + 12) % 12;
+/* The mechanic: the pointer selects the PERSON (base principle under it). A
+   clicked base wedge is the RESULT principle; the EVENT (what happened) that
+   leads there is result − person + 1. So the reading is: the [event's life-area]
+   of your [person] reflects your [result] life principle. Hovering a wedge lights
+   the event's sector on the wheel — the sector that points at that result. */
+const eventForResult = r => ((r - pcPersonIndex()) % 12 + 12) % 12;   // event = result − person
 if (baseSvg) {
   baseSvg.addEventListener('mouseover', ev => {
     const w = ev.target.closest && ev.target.closest('.base-wedge');
     if (!w || !isPcBase()) return;
-    const p = wheelPersonForResult(+w.dataset.index);
+    const e = eventForResult(+w.dataset.index);
     w.classList.add('hover');
     outerG.querySelectorAll('.sector-outer, .label-outer').forEach(el =>
-      el.classList.toggle('projected', +el.dataset.index === p));
+      el.classList.toggle('projected', +el.dataset.index === e));
   });
   baseSvg.addEventListener('mouseout', ev => {
     const w = ev.target.closest && ev.target.closest('.base-wedge');
@@ -2135,7 +2137,7 @@ if (baseSvg) {
   baseSvg.addEventListener('click', ev => {
     const w = ev.target.closest && ev.target.closest('.base-wedge');
     if (!w || !isPcBase()) return;
-    openResultModalFor(wheelPersonForResult(+w.dataset.index), pcEventIndex());
+    openResultModalFor(pcPersonIndex(), eventForResult(+w.dataset.index));
   });
 }
 
@@ -2899,9 +2901,9 @@ function bookHTML(p, e) {
 /* The result reading for a person (p) and an event (e); result LP = p + e − 1. */
 function openResultModalFor(p, e) {
   const r = resultLP(p, e);
-  // eyebrow keeps the formula; title is the reflect-sentence pattern
+  // eyebrow shows the formula person + event − 1; title is the reflect sentence
   document.getElementById('modalEyebrow').textContent =
-    `${e + 1} + ${p + 1} − 1 → ${r + 1}. ${T().lpWord}`;
+    `${p + 1} + ${e + 1} − 1 → ${r + 1}. ${T().lpWord}`;
   document.getElementById('modalTitle').textContent =
     REFLECT[lang](LP()[e].area, LP()[p].label, r + 1);
   // body: book text from the quotation (motto) down to the Je-mehr…desto block,
