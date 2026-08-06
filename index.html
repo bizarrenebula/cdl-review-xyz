@@ -38,7 +38,7 @@
     --ring-outer: #1c1840;
     --ring-inner: #262052;
     --hub:        #14112e;
-    /* 4 principle colours from the book */
+    /* 4 principle colours — the elements: fire, earth, air, water */
     --c-red:    #ff4d5e;
     --c-green:  #1fa845;
     /* the answer's ink: aged gold on parchment, and its lit peak */
@@ -46,28 +46,25 @@
     --gold-lit: #ffeab8;
     --c-yellow: #ffd84d;
     --c-violet: #b477ff;
+    --c-blue:   #2f6fd0;          /* water — replaces violet as the 4th element */
+    /* light page + base theme (the wheel keeps the night sky) */
+    --page-bg:  #edeae2;
+    --page-ink: #1b2440;          /* dark navy text on the light base/page */
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     min-height: 100vh;
     background:
-      radial-gradient(ellipse 80% 60% at 50% -10%, #232052 0%, transparent 60%),
-      var(--sky);
-    color: var(--parchment);
+      radial-gradient(ellipse 90% 70% at 50% -10%, #ffffff 0%, transparent 60%),
+      var(--page-bg);
+    color: var(--page-ink);
     font-family: 'Spectral', Georgia, serif;
     display: flex; flex-direction: column; align-items: center;
     justify-content: center;
     overflow-x: hidden;
   }
-  .stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
-  .stars span {
-    position: absolute; width: 2px; height: 2px;
-    background: var(--parchment); border-radius: 50%;
-    opacity: .5; animation: twinkle 4s ease-in-out infinite;
-  }
-  @keyframes twinkle { 0%,100%{opacity:.15} 50%{opacity:.6} }
+  .stars { display: none; }          /* the night sky lives only in the wheel now */
   @media (prefers-reduced-motion: reduce) {
-    .stars span { animation: none; }
     * { transition: none !important; }
   }
 
@@ -80,14 +77,14 @@
     font-family: 'Spectral', serif;
     font-size: .72rem; letter-spacing: .12em;
     padding: .35em .7em;
-    background: rgba(20,17,46,.7);
-    border: 1px solid var(--brass-dim);
+    background: rgba(255,255,255,.7);
+    border: 1px solid rgba(27,36,64,.35);
     border-radius: 2rem;
-    color: #b9aed9; cursor: pointer;
+    color: var(--page-ink); cursor: pointer;
     transition: all .2s;
   }
   .lang-switch button.active,
-  .lang-switch button:hover { background: var(--brass); color: var(--sky-deep); border-color: var(--brass); }
+  .lang-switch button:hover { background: var(--page-ink); color: #fff; border-color: var(--page-ink); }
 
   /* The sound toggle sits opposite the languages, quiet until you look for it.
      Three bars that stand still when muted and drift when the drone is on. */
@@ -95,13 +92,13 @@
     position: fixed; top: .9rem; left: .9rem; z-index: 5;
     display: flex; align-items: center; gap: .42rem;
     padding: .42em .8em .42em .7em;
-    background: rgba(20,17,46,.7);
-    border: 1px solid var(--brass-dim); border-radius: 2rem;
-    color: #b9aed9; cursor: pointer;
+    background: rgba(255,255,255,.7);
+    border: 1px solid rgba(27,36,64,.35); border-radius: 2rem;
+    color: var(--page-ink); cursor: pointer;
     font-family: 'Spectral', serif; font-size: .68rem; letter-spacing: .12em;
     transition: color .3s, border-color .3s, background .3s;
   }
-  .sound:hover, .sound:focus-visible { outline: none; border-color: var(--brass); color: var(--parchment); }
+  .sound:hover, .sound:focus-visible { outline: none; border-color: var(--page-ink); color: var(--page-ink); }
   .sound i { display: flex; align-items: flex-end; gap: 2px; height: .7rem; }
   .sound i b {
     display: block; width: 2px; height: 30%;
@@ -124,25 +121,11 @@
     font-family: 'Marcellus', serif; font-weight: 400;
     font-size: clamp(1.4rem, 4vw, 2.2rem);
     letter-spacing: .12em; text-transform: uppercase;
-    color: var(--gold-ink);
-    /* Breathes on the same 3.2s as the answer in the ball, and starts on the
-       same beat, so the title and the result pulse together. */
-    text-shadow: 0 1px 3px rgba(4,3,14,.9), 0 0 18px rgba(211,169,95,.5);
-    animation: title-breathe 3.2s ease-in-out 1s infinite;
-  }
-  @keyframes title-breathe {
-    0%, 100% { color: var(--gold-ink);
-               text-shadow: 0 1px 3px rgba(4,3,14,.9), 0 0 18px rgba(211,169,95,.5); }
-    50%      { color: var(--gold-lit);
-               text-shadow: 0 1px 3px rgba(4,3,14,.9), 0 0 26px rgba(255,214,140,.85),
-                            0 0 52px rgba(211,169,95,.6); }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    header h1 { animation: none; }
+    color: var(--page-ink);
   }
   header p {
     margin-top: .5rem; font-size: .92rem; font-weight: 300; font-style: italic;
-    color: #b9aed9; max-width: 36rem; margin-inline: auto;
+    color: rgba(27,36,64,.7); max-width: 36rem; margin-inline: auto;
   }
 
   /* The stage is the wheel's own box; the counting ring sits outside it, in
@@ -840,25 +823,23 @@
 
     /* The wedge shapes and their labels (built in JS). */
     .base-wedge {
-      fill: rgba(28, 24, 64, .5);
-      stroke: var(--seg-color, var(--brass-dim));
+      fill: rgba(255, 255, 255, .62);
+      stroke: color-mix(in srgb, var(--seg-color, var(--brass-dim)) 82%, #2a2438);
       stroke-width: 2;
       stroke-linejoin: round;
-      transition: fill .3s;
     }
-    .base-wedge.active { fill: rgba(58, 47, 110, .62); }
     .base-num {
       font-family: 'Marcellus', serif;
-      fill: var(--seg-color, var(--brass));
+      fill: var(--page-ink);
       dominant-baseline: central;
     }
     .base-area {
       font-family: 'Marcellus', serif;
-      fill: var(--gold-ink);
+      fill: var(--page-ink);
       dominant-baseline: central;
     }
     .base-person {
-      fill: #c9bfe6;
+      fill: rgba(27, 36, 64, .8);
       font-style: italic;
       dominant-baseline: central;
     }
@@ -871,42 +852,24 @@
       width: 100%; height: 100%; overflow: hidden;
       display: flex; align-items: center; justify-content: center;
       text-align: center; line-height: 1.16;
-      font-family: 'Spectral', Georgia, serif; color: #cec4e6;
+      font-family: 'Spectral', Georgia, serif; color: var(--page-ink);
     }
     .bs-box .bs-content { display: flex; flex-direction: column; gap: .35em; width: 100%; }
     .bs-box .bs-keys {
-      color: var(--gold-ink);
+      color: var(--page-ink);
       font-family: 'Marcellus', serif;
       letter-spacing: .01em;
+      font-weight: 600;
     }
     .bs-box .bs-line { font-size: .92em; }
-    .bs-box .bs-line b { color: var(--seg-color, var(--brass)); font-weight: 400; }
-
-    /* The wedge the pointer sits on (the chosen event). */
-    .base-wedge.event {
-      fill: rgba(58, 47, 110, .55);
-      stroke-width: 3;
-      filter: drop-shadow(0 0 5px var(--seg-color, transparent));
+    .bs-box .bs-line b {
+      color: color-mix(in srgb, var(--seg-color, var(--brass)) 70%, #1b2440);
+      font-weight: 600;
     }
+
     /* Once the wheel has moved, every wedge is a clickable journey-end. */
     #pcbase.engaged .base-wedge { cursor: pointer; }
-    #pcbase.engaged .base-wedge.hover {
-      fill: rgba(74, 58, 134, .7);
-      stroke-width: 3;
-      filter: drop-shadow(0 0 8px var(--seg-color, transparent));
-    }
-    /* The pointer sector (principle 1) on the wheel, and the person a hovered
-       base wedge projects back to. */
     #pcbase .pointer-sector { stroke-width: 3.4; }
-    #pcbase .sector-outer.projected {
-      fill: #4a3a86;
-      stroke-width: 3.4;
-      filter:
-        drop-shadow(0 0 2px #fff)
-        drop-shadow(0 0 6px var(--seg-color))
-        drop-shadow(0 0 14px var(--seg-color));
-    }
-    #pcbase .label-outer.projected { fill: #fff; }
   }
 </style>
 </head>
@@ -1449,7 +1412,7 @@ const LP = () => I18N[lang].lp;
 
 /* ================= GEOMETRY ================= */
 
-const LP_COLORS = ['var(--c-red)','var(--c-green)','var(--c-yellow)','var(--c-violet)'];
+const LP_COLORS = ['var(--c-red)','var(--c-green)','var(--c-yellow)','var(--c-blue)'];
 const CX = 350, CY = 350;
 const OUTER_R1 = 252, OUTER_R2 = 344;
 const INNER_R1 = 164, INNER_R2 = 252;
@@ -2310,15 +2273,8 @@ function raiseActive(group, ring, idx) {
 const hubEl = document.getElementById('hub');
 let lastPair = null;
 function pulseHub(key) {
-  if (lastPair === key) return;                 // language switch, re-snap to the same notch
-  const first = lastPair === null;
+  // Attention/fanfare effects removed by request — the hub no longer pulses or breathes.
   lastPair = key;
-  if (first) return;                            // no fanfare on the initial render
-  hubEl.classList.add('lit');                   // stays breathing from here on
-  if (reduceMotion()) return;
-  hubEl.classList.remove('pulse');
-  void hubEl.offsetWidth;                       // restart the animation
-  hubEl.classList.add('pulse');
 }
 hubEl?.addEventListener('animationend', ev => {
   if (ev.animationName === 'rim-fade') hubEl.classList.remove('pulse');   // last one out
@@ -2619,18 +2575,7 @@ const MARK_HANDOFF = Math.round(MARK_MS * 0.78);
    --mark-ms, so setting that on the element is enough to make a single pulse
    quicker than the rest. */
 function markPulse(el, delay = 0, quietly = true, ms = MARK_MS) {
-  setTimeout(() => {
-    if (!el || !el.isConnected) return;           // rebuilt out from under us
-    if (quietly && !markAllowed()) return;        // the moment passed
-    el.classList.remove('mark-pulse');
-    if (ms !== MARK_MS) el.style.setProperty('--mark-ms', ms + 'ms');
-    el.getBoundingClientRect();                   // reflow, so a re-pulse restarts
-    el.classList.add('mark-pulse');
-    setTimeout(() => {
-      el.classList.remove('mark-pulse');
-      if (ms !== MARK_MS) el.style.removeProperty('--mark-ms');
-    }, ms + 60);
-  }, delay);
+  /* Attention-drawing pulses removed by request — no-op. */
 }
 
 /* The selected wedge of a ring, which is always the one under the marker, and
@@ -2655,8 +2600,7 @@ function markStation(ring, delay) {
 /* Silent while the user is already busy — mid-turn, reading a card, or away —
    and off entirely for anyone who asked for less motion. */
 function markAllowed() {
-  return !reduceMotion() && !document.hidden && !drag && spinners === 0 &&
-         !overlay.classList.contains('open');
+  return false;   // all periodic/attention marks removed by request
 }
 
 /* ---- The sweep: one light around the pair and the ball together ----
@@ -2711,8 +2655,7 @@ function markRound() {
 
 let markTimer = null;
 function scheduleMark(delay = MARK_EVERY) {
-  clearTimeout(markTimer);
-  markTimer = setTimeout(() => { markRound(); scheduleMark(); }, delay);
+  /* Periodic attention reminders removed by request — no-op. */
 }
 /* A new pairing is its own reminder — mark the group at once and restart the
    clock. Keyed on the pair, so a language switch (same notch, new words) stays
