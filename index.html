@@ -2746,8 +2746,13 @@ svg.addEventListener('pointerdown', ev => {
   if (drag) return;                     // one finger turns the wheel; ignore the rest
   const { angle, dist } = eventInfo(ev);
   let ring = null;
-  if (dist >= INNER_R1 && dist < OUTER_R1) ring = 'inner';
-  else if (dist >= OUTER_R1 && dist <= OUTER_R2 + 6) ring = 'outer';
+  if (isPcBase()) {
+    // one wheel on the base: the whole disc (past the tiny hub) turns the person ring
+    if (dist >= 24 && dist <= OUTER_R2 + 8) ring = 'outer';
+  } else {
+    if (dist >= INNER_R1 && dist < OUTER_R1) ring = 'inner';
+    else if (dist >= OUTER_R1 && dist <= OUTER_R2 + 6) ring = 'outer';
+  }
   if (!ring) return;
   const s = state[ring];
   if (s.raf) { cancelAnimationFrame(s.raf); s.raf = null; s.target = null; }
