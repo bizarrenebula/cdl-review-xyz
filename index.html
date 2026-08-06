@@ -52,6 +52,10 @@
     --page-ink: #1b2440;          /* dark navy text on the light base/page */
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
+  /* Monochrome: every colour in the app is desaturated to greyscale at render
+     time. One switch takes the whole thing back to black/white/grey — the
+     element colours, the gold accents, and the night-sky wheel alike. */
+  html { filter: grayscale(1); -webkit-filter: grayscale(1); }
   body {
     min-height: 100vh;
     background:
@@ -1412,7 +1416,9 @@ const LP = () => I18N[lang].lp;
 
 /* ================= GEOMETRY ================= */
 
-const LP_COLORS = ['var(--c-red)','var(--c-green)','var(--c-yellow)','var(--c-blue)'];
+// Monochrome: all four principle "element" colours collapse to one neutral grey,
+// so every sector border/edge/number reads the same (see the grayscale filter in CSS).
+const LP_COLORS = ['#6a6a6a','#6a6a6a','#6a6a6a','#6a6a6a'];
 const CX = 350, CY = 350;
 const OUTER_R1 = 252, OUTER_R2 = 344;
 const INNER_R1 = 164, INNER_R2 = 252;
