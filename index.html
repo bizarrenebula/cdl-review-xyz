@@ -1831,21 +1831,27 @@ function buildBaseSectors() {
     const numR = fNum * 0.95;
 
     const capB = Math.min(W, H) * 0.44;
-    /* Boxes at a point, from tall to wide-short: a wide-short box lets a field
-       sit on one line; a tall box suits a short sector that must wrap. Each is
-       as wide as the wedge allows across its height. */
-    const boxesAt = (px, py) => {
-      const row0 = crossSpan(poly, 'x', py, px);
-      const vs = crossSpan(poly, 'y', px, py);
+    /* Rotate a point around the sector centroid — used to tilt the text box so
+       it can run along the wedge's inclined sides and grow larger. */
+    const rotP = (x, y, deg) => {
+      if (!deg) return [x, y];
+      const a = deg * Math.PI / 180, c = Math.cos(a), s = Math.sin(a);
+      const dx = x - cX, dy = y - cY;
+      return [cX + dx * c - dy * s, cY + dx * s + dy * c];
+    };
+    /* Boxes at a point inside a polygon, tall through wide-short. */
+    const boxesIn = (pl, px, py) => {
+      const row0 = crossSpan(pl, 'x', py, px);
+      const vs = crossSpan(pl, 'y', px, py);
       if (!row0 || !vs) return [];
       const maxH = Math.min(py - vs[0], vs[1] - py);
       const out = [];
-      for (const frac of [1, 0.62, 0.4, 0.26]) {
+      for (const frac of [1, 0.6, 0.38, 0.25]) {
         const hH = maxH * frac;
         if (hH < 7) continue;
         let xL = row0[0], xR = row0[1];
         for (const dy of [-hH, -hH * 0.6, hH * 0.6, hH]) {
-          const r = crossSpan(poly, 'x', py + dy, px);
+          const r = crossSpan(pl, 'x', py + dy, px);
           if (r) { xL = Math.max(xL, r[0]); xR = Math.min(xR, r[1]); }
         }
         if (xR - xL < 24) continue;
@@ -1853,122 +1859,135 @@ function buildBaseSectors() {
       }
       return out;
     };
-    /* Trim a box so it does not cover the number: cut the edge nearest it. */
-    const keepOut = (r) => {
+    /* Trim a box away from a keep-out point (the principle number). */
+    const keepClear = (r, nx, ny) => {
       let { cx, cy, hW, hH } = r;
       const L = cx - hW, R = cx + hW, T = cy - hH, B = cy + hH;
-      if (numX < L - numR || numX > R + numR || numY < T - numR || numY > B + numR) return r;
+      if (nx < L - numR || nx > R + numR || ny < T - numR || ny > B + numR) return r;
       const opts = [
-        { d: R - (numX - numR), f: () => { const e = numX - numR; hW = (e - L) / 2; cx = (L + e) / 2; } },
-        { d: (numX + numR) - L, f: () => { const e = numX + numR; hW = (R - e) / 2; cx = (e + R) / 2; } },
-        { d: B - (numY - numR), f: () => { const e = numY - numR; hH = (e - T) / 2; cy = (T + e) / 2; } },
-        { d: (numY + numR) - T, f: () => { const e = numY + numR; hH = (B - e) / 2; cy = (e + B) / 2; } }
+        { d: R - (nx - numR), f: () => { const e = nx - numR; hW = (e - L) / 2; cx = (L + e) / 2; } },
+        { d: (nx + numR) - L, f: () => { const e = nx + numR; hW = (R - e) / 2; cx = (e + R) / 2; } },
+        { d: B - (ny - numR), f: () => { const e = ny - numR; hH = (e - T) / 2; cy = (T + e) / 2; } },
+        { d: (ny + numR) - T, f: () => { const e = ny + numR; hH = (B - e) / 2; cy = (e + B) / 2; } }
       ].filter(o => o.d > 0).sort((a, b) => a.d - b.d);
       if (opts.length) opts[0].f();
       return { cx, cy, hW, hH };
     };
+    const inP = (pl, x, y) => {
+      let c = false;
+      for (let a = 0, bI = pl.length - 1; a < pl.length; bI = a++) {
+        const [xi, yi] = pl[a], [xj, yj] = pl[bI];
+        if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) c = !c;
+      }
+      return c;
+    };
 
+    /* An unrotated clip group holds the text; the foreignObject inside may be
+       rotated so the text follows the wedge's slope. */
     const clip = document.createElementNS(ns, 'clipPath');
     clip.setAttribute('id', 'bsclip-' + i);
     const clipP = document.createElementNS(ns, 'path');
     clipP.setAttribute('d', d);
     clip.appendChild(clipP);
     baseSvg.appendChild(clip);
-
+    const g = document.createElementNS(ns, 'g');
+    g.setAttribute('clip-path', 'url(#bsclip-' + i + ')');
+    g.setAttribute('pointer-events', 'none');
     const fo = document.createElementNS(ns, 'foreignObject');
     fo.setAttribute('pointer-events', 'none');
-    fo.setAttribute('clip-path', 'url(#bsclip-' + i + ')');
     const box = document.createElement('div');
     box.className = 'bs-box';
     box.style.setProperty('--seg-color', color);
     const content = document.createElement('div');
     content.className = 'bs-content';
-    const kEl = document.createElement('div');
-    kEl.className = 'bs-keys';
-    kEl.textContent = item.keys;
-    const pEl = document.createElement('div');
-    pEl.className = 'bs-line';
+    const kEl = document.createElement('div'); kEl.className = 'bs-keys'; kEl.textContent = item.keys;
+    const pEl = document.createElement('div'); pEl.className = 'bs-line';
     const pIco = document.createElement('b'); pIco.textContent = '👤';
     pEl.append(pIco, document.createTextNode(' ' + item.people));
-    const bEl = document.createElement('div');
-    bEl.className = 'bs-line';
+    const bEl = document.createElement('div'); bEl.className = 'bs-line';
     const bIco = document.createElement('b'); bIco.textContent = '🦴';
     bEl.append(bIco, document.createTextNode(' ' + item.body));
     content.append(kEl, pEl, bEl);
     box.appendChild(content);
     fo.appendChild(box);
-    baseSvg.appendChild(fo);
+    g.appendChild(fo);
+    baseSvg.appendChild(g);
 
-    /* Candidate placements: the area centroid, points along the wedge's spine,
-       and a grid over the wedge — so the widest interior rectangle is found,
-       not just one near the spine. Keep whichever grows the font largest. */
-    const xs = poly.map(p => p[0]), ys = poly.map(p => p[1]);
-    const bx0 = Math.min(...xs), bx1 = Math.max(...xs);
-    const by0 = Math.min(...ys), by1 = Math.max(...ys);
-    const inPoly = (x, y) => {
-      let c = false;
-      for (let a = 0, bI = poly.length - 1; a < poly.length; bI = a++) {
-        const [xi, yi] = poly[a], [xj, yj] = poly[bI];
-        if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) c = !c;
-      }
-      return c;
-    };
-    const [smx, smy] = pol(Rin, (ia1 + ia2) / 2);
-    const [emx, emy] = rectHit((oa1 + oa2) / 2);
-    const cands = [[cX, cY]];
-    for (let u = 0.25; u <= 0.85; u += 0.15) cands.push([smx + (emx - smx) * u, smy + (emy - smy) * u]);
-    for (let gx = 1; gx <= 6; gx++)
-      for (let gy = 1; gy <= 5; gy++) {
-        const x = bx0 + (bx1 - bx0) * gx / 7, y = by0 + (by1 - by0) * gy / 6;
-        if (inPoly(x, y)) cands.push([x, y]);
-      }
-    /* Build every candidate box shape, keep each clear of the number, shrink a
-       touch. */
-    const SH = 0.9;
-    const rects = [];
-    for (const [px, py] of cands)
-      for (const b of boxesAt(px, py)) {
-        const t = keepOut(b);
-        if (t.hW >= 12 && t.hH >= 9) rects.push({ cx: t.cx, cy: t.cy, hW: t.hW * SH, hH: t.hH * SH });
-      }
-    if (rects.length === 0) rects.push({ cx: cX, cy: cY, hW: Math.min(W, H) * 0.09, hH: Math.min(W, H) * 0.09 });
-
-    /* Measure the text's single-line footprint once, then shortlist boxes that
-       let it grow big (wide-short, for single lines) plus the largest by area
-       (for short sectors that must wrap). Size both layouts on the shortlist and
-       keep whichever reads largest — a slight bias favours one line per field. */
+    /* Single-line footprint (per px), for ranking; and a fitter that returns the
+       largest font for a box of a given size. */
     fo.setAttribute('width', '600'); fo.setAttribute('height', '600');
     content.style.whiteSpace = 'nowrap'; box.style.fontSize = '10px';
     const wPer = Math.max(1, content.scrollWidth / 10), hPer = Math.max(1, content.offsetHeight / 10);
-    const proxy = r => Math.min((r.hW * 2) / wPer, (r.hH * 2) / hPer);
-    const byProxy = [...rects].sort((a, b) => proxy(b) - proxy(a)).slice(0, 6);
-    const byArea = [...rects].sort((a, b) => (b.hW * b.hH) - (a.hW * a.hH)).slice(0, 4);
-    const finalists = byProxy.concat(byArea);
-
-    let best = null;
-    for (const r of finalists) {
-      fo.setAttribute('x', (r.cx - r.hW).toFixed(1));
-      fo.setAttribute('y', (r.cy - r.hH).toFixed(1));
-      fo.setAttribute('width', (r.hW * 2).toFixed(1));
-      fo.setAttribute('height', (r.hH * 2).toFixed(1));
+    const measureFit = (hW, hH) => {
+      fo.setAttribute('width', (hW * 2).toFixed(1)); fo.setAttribute('height', (hH * 2).toFixed(1));
+      let bf = null;
       for (const nowrap of [true, false]) {
         content.style.whiteSpace = nowrap ? 'nowrap' : 'normal';
         let lo = 6, hi = 30;
         for (let it = 0; it < 6; it++) {
           const mid = (lo + hi) / 2;
           box.style.fontSize = mid.toFixed(2) + 'px';
-          if (content.offsetHeight <= r.hH * 2 && content.scrollWidth <= r.hW * 2) lo = mid; else hi = mid;
+          if (content.offsetHeight <= hH * 2 && content.scrollWidth <= hW * 2) lo = mid; else hi = mid;
         }
-        const score = lo * (nowrap ? 1.05 : 1);
-        if (!best || score > best.score) best = { score, fs: lo, nowrap, r };
+        const sc = lo * (nowrap ? 1.05 : 1);
+        if (!bf || sc > bf.sc) bf = { sc, fs: lo, nowrap };
+      }
+      return bf;
+    };
+
+    /* Candidate tilts: flat, and the wedge's spine angle (kept upright), so the
+       text can lean along an inclined sector. A tilt is chosen only if it grows
+       the text clearly bigger. */
+    const [smx, smy] = pol(Rin, (ia1 + ia2) / 2);
+    const [emx, emy] = rectHit((oa1 + oa2) / 2);
+    let spineTilt = Math.atan2(emy - smy, emx - smx) * 180 / Math.PI;
+    while (spineTilt > 90) spineTilt -= 180;
+    while (spineTilt < -90) spineTilt += 180;
+    const tilts = [0];
+    if (Math.abs(spineTilt) > 7) tilts.push(Math.max(-52, Math.min(52, spineTilt)));
+
+    let gBest = null;
+    for (const tilt of tilts) {
+      const plR = tilt ? poly.map(p => rotP(p[0], p[1], -tilt)) : poly;
+      const [nRx, nRy] = rotP(numX, numY, -tilt);
+      const [sRx, sRy] = rotP(smx, smy, -tilt);
+      const [eRx, eRy] = rotP(emx, emy, -tilt);
+      const xr = plR.map(p => p[0]), yr = plR.map(p => p[1]);
+      const rbx0 = Math.min(...xr), rbx1 = Math.max(...xr), rby0 = Math.min(...yr), rby1 = Math.max(...yr);
+      const cnds = [[cX, cY]];
+      for (let u = 0.25; u <= 0.85; u += 0.15) cnds.push([sRx + (eRx - sRx) * u, sRy + (eRy - sRy) * u]);
+      for (let gx = 1; gx <= 6; gx++) for (let gy = 1; gy <= 5; gy++) {
+        const x = rbx0 + (rbx1 - rbx0) * gx / 7, y = rby0 + (rby1 - rby0) * gy / 6;
+        if (inP(plR, x, y)) cnds.push([x, y]);
+      }
+      const rs = [];
+      for (const [px, py] of cnds)
+        for (const b of boxesIn(plR, px, py)) {
+          const t = keepClear(b, nRx, nRy);
+          if (t.hW >= 12 && t.hH >= 9) rs.push({ cx: t.cx, cy: t.cy, hW: t.hW * 0.9, hH: t.hH * 0.9 });
+        }
+      if (!rs.length) continue;
+      const proxy = r => Math.min((r.hW * 2) / wPer, (r.hH * 2) / hPer);
+      const shortlist = [...rs].sort((a, b) => proxy(b) - proxy(a)).slice(0, 5)
+        .concat([...rs].sort((a, b) => (b.hW * b.hH) - (a.hW * a.hH)).slice(0, 3));
+      const penalty = 1 - Math.min(0.05, Math.abs(tilt) / 900);   // barely favour flat; let tilt win when bigger
+      for (const r of shortlist) {
+        const f = measureFit(r.hW, r.hH);
+        const sc = f.sc * penalty;
+        if (!gBest || sc > gBest.sc) gBest = { sc, fs: f.fs, nowrap: f.nowrap, r, tilt };
       }
     }
-    content.style.whiteSpace = best.nowrap ? 'nowrap' : 'normal';
-    fo.setAttribute('x', (best.r.cx - best.r.hW).toFixed(1));
-    fo.setAttribute('y', (best.r.cy - best.r.hH).toFixed(1));
-    fo.setAttribute('width', (best.r.hW * 2).toFixed(1));
-    fo.setAttribute('height', (best.r.hH * 2).toFixed(1));
-    box.style.fontSize = best.fs.toFixed(2) + 'px';
+    if (!gBest) gBest = { fs: 9, nowrap: false, r: { cx: cX, cy: cY, hW: Math.min(W, H) * 0.09, hH: Math.min(W, H) * 0.09 }, tilt: 0 };
+
+    /* Map the chosen box back to page coordinates and rotate the text. */
+    const [acx, acy] = rotP(gBest.r.cx, gBest.r.cy, gBest.tilt);
+    content.style.whiteSpace = gBest.nowrap ? 'nowrap' : 'normal';
+    box.style.fontSize = gBest.fs.toFixed(2) + 'px';
+    fo.setAttribute('x', (acx - gBest.r.hW).toFixed(1));
+    fo.setAttribute('y', (acy - gBest.r.hH).toFixed(1));
+    fo.setAttribute('width', (gBest.r.hW * 2).toFixed(1));
+    fo.setAttribute('height', (gBest.r.hH * 2).toFixed(1));
+    if (gBest.tilt) fo.setAttribute('transform', `rotate(${gBest.tilt.toFixed(2)}, ${acx.toFixed(1)}, ${acy.toFixed(1)})`);
 
     /* The principle number, near the outer edge on the mid-angle (kept clear of
        the text above). */
