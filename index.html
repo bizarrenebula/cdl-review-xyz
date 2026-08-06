@@ -52,10 +52,6 @@
     --page-ink: #1b2440;          /* dark navy text on the light base/page */
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  /* Monochrome: every colour in the app is desaturated to greyscale at render
-     time. One switch takes the whole thing back to black/white/grey — the
-     element colours, the gold accents, and the night-sky wheel alike. */
-  html { filter: grayscale(1); -webkit-filter: grayscale(1); }
   body {
     min-height: 100vh;
     background:
@@ -875,6 +871,86 @@
     #pcbase.engaged .base-wedge { cursor: pointer; }
     #pcbase .pointer-sector { stroke-width: 3.4; }
   }
+
+  /* ====================================================================
+     FLAT MONOCHROME
+     Black text on a white background everywhere; black borders for the
+     base and the wheel; no special visual effects (no glows, gradients,
+     drop-shadows, the crystal-ball shading, mist, or breathing).
+     One block, appended last and marked !important, so it overrides the
+     styled theme above without touching it — easy to lift later.
+     ==================================================================== */
+  :root {
+    --sky:#fff; --sky-deep:#fff; --ring-outer:#fff; --ring-inner:#fff; --hub:#fff;
+    --parchment:#fff; --page-bg:#fff; --page-ink:#000;
+    --brass:#000; --brass-dim:#000; --gold-ink:#000; --gold-lit:#000; --ink:#000;
+  }
+  body { background:#fff !important; color:#000 !important; }
+
+  /* Drop every decorative / effect layer. */
+  .stars, .hub-mist, .hub-reveal, .hub-ring, #markSweep { display:none !important; }
+  .hub::after, .hub::before { content:none !important; background:none !important; }
+
+  /* Stop every ambient animation (mist, breathing, letter reveal, sweep). */
+  .hub, .hub.lit, .hub.pulse .rim, .hub.pulse .rim i, .hub.pulse .veil,
+  .hub-mist span, .hub .result .ch, header h1 { animation:none !important; }
+
+  /* Wheel sectors: white fill, thin black border, no neon glow. */
+  .sector-outer, .sector-inner,
+  .sector-outer.active, .sector-inner.active {
+    fill:#fff !important; stroke:#000 !important; stroke-width:1.4 !important;
+    filter:none !important;
+  }
+
+  /* Wheel + base text: plain black ink, no halo, no glow. */
+  .label-outer, .label-inner, .active-label,
+  #pcbase .wheel-person-pc, #pcbase .wheel-num-pc,
+  .wheel-num, .base-num, .base-area, .base-person {
+    fill:#000 !important; fill-opacity:1 !important;
+    stroke:none !important; filter:none !important;
+  }
+
+  /* Guide rings and the wheel's rim: black hairlines, no gold. */
+  .wheel-guide { stroke:#000 !important; }
+
+  /* The crystal ball becomes a plain white disc with a black outline. */
+  .hub {
+    background:#fff !important; border:1.4px solid #000 !important;
+    box-shadow:none !important;
+  }
+  .hub .result, .hub .match, .hub .eyebrow, .hub .result .ch {
+    color:#000 !important; text-shadow:none !important; filter:none !important;
+  }
+  .hub button {
+    color:#000 !important; background:#fff !important;
+    border:1px solid #000 !important; text-shadow:none !important;
+  }
+  .hub button:hover, .hub button:focus-visible {
+    background:#000 !important; color:#fff !important;
+  }
+
+  /* The pointer arrow / top needle: solid black. */
+  #pcbase .wheel-pointer { fill:#000 !important; stroke:#000 !important; filter:none !important; }
+  .needle { border-top-color:#000 !important; filter:none !important; }
+
+  /* Base: white rectangle and wedges with black borders and black text. */
+  .pcbase { background:#fff !important; border:1px solid #000 !important; box-shadow:none !important; }
+  .base-wedge, .base-wedge.event, .base-wedge.hover,
+  #pcbase.engaged .base-wedge.hover {
+    fill:#fff !important; stroke:#000 !important; filter:none !important;
+  }
+  .bs-box, .bs-box .bs-content, .bs-box .bs-keys, .bs-box .bs-line,
+  .bs-box .bs-line b { color:#000 !important; }
+  /* The person/bone glyphs are colour emoji — flatten them to black silhouettes. */
+  .bs-box .bs-line b { filter:brightness(0) !important; }
+  #pcbase .sector-outer.projected, #pcbase .label-outer.projected {
+    fill:#fff !important; filter:none !important;
+  }
+  #pcbase .label-outer.projected { fill:#000 !important; }
+
+  /* Modal / chrome: white, black text, no colour. */
+  .modal { box-shadow:none !important; border:1px solid #000 !important; }
+  .hint, .control-block .name, header p { color:#000 !important; }
 </style>
 </head>
 <body>
@@ -908,8 +984,8 @@
         <stop offset="100%" stop-color="rgba(211,169,95,.18)"/>
       </radialGradient>
     </defs>
-    <circle cx="350" cy="350" r="348" fill="url(#glow)"/>
-    <circle cx="350" cy="350" r="344" fill="none" stroke="#d3a95f" stroke-width="2"/>
+    <circle cx="350" cy="350" r="348" fill="none"/>
+    <circle cx="350" cy="350" r="344" fill="none" stroke="#000" stroke-width="1.4"/>
     <g id="outerRing" class="ring-group"></g>
     <g id="innerRing" class="ring-group"></g>
     <!-- The twelve numbers, outside the wheel; built and turned in JS. -->
@@ -1416,9 +1492,9 @@ const LP = () => I18N[lang].lp;
 
 /* ================= GEOMETRY ================= */
 
-// Monochrome: all four principle "element" colours collapse to one neutral grey,
-// so every sector border/edge/number reads the same (see the grayscale filter in CSS).
-const LP_COLORS = ['#6a6a6a','#6a6a6a','#6a6a6a','#6a6a6a'];
+// Monochrome: no element colours — every seg-color is plain black (see the
+// FLAT MONOCHROME block in the CSS, which drives all fills/strokes/text).
+const LP_COLORS = ['#000','#000','#000','#000'];
 const CX = 350, CY = 350;
 const OUTER_R1 = 252, OUTER_R2 = 344;
 const INNER_R1 = 164, INNER_R2 = 252;
