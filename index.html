@@ -1424,9 +1424,9 @@ function buildBaseSectors() {
        aspect ratio, each grown out to the polygon edge by binary search — so the
        block is centred on the sector's geometric centre and spans its full
        depth, using the outer portion rather than hugging the wheel. */
-    const maxRectAt = (pl, bx, by, nx, ny) => {
+    const maxRectAt = (pl, bx, by, nx, ny, keepR = numR) => {
       const fits = (hW, hH) => {
-        if (circleRectHit(nx, ny, numR, bx, by, hW, hH)) return false;
+        if (circleRectHit(nx, ny, keepR, bx, by, hW, hH)) return false;
         const pts = [[bx - hW, by - hH], [bx + hW, by - hH], [bx + hW, by + hH], [bx - hW, by + hH],
                      [bx, by - hH], [bx, by + hH], [bx - hW, by], [bx + hW, by]];
         for (const [x, y] of pts) if (!inP(pl, x, y)) return false;
@@ -1524,13 +1524,17 @@ function buildBaseSectors() {
         const py = spineInner[1] + (spineOuter[1] - spineInner[1]) * u;
         centres.push(rotP(px, py, -tilt));
       }
+      /* On the thin top/bottom wedges the number sits in the middle of the wide
+         outer strip; a smaller keep-out lets the text claim more of that width. */
+      const keepR = isSide ? numR : numR * 0.55;
       for (const [bx, by] of centres)
-        for (const r0 of maxRectAt(plR, bx, by, nRx, nRy)) {
+        for (const r0 of maxRectAt(plR, bx, by, nRx, nRy, keepR)) {
           const r = { cx: r0.cx, cy: r0.cy, hW: r0.hW * 0.97, hH: r0.hH * 0.97 };
           if (r.hW < 12 || r.hH < 9) continue;
-          /* Top/bottom wedges: keep every subtext on one line, filling the wide
-             outer part rather than wrapping into the narrow centre. */
-          const f = measureFit(r.hW, r.hH, !isSide);
+          /* Try single-line and wrapped, keeping whichever reads larger — for
+             the top/bottom wedges this lets the long first/second subtexts break
+             to two lines when that grows the text. */
+          const f = measureFit(r.hW, r.hH);
           if (!gBest || f.sc > gBest.sc) gBest = { sc: f.sc, fs: f.fs, nowrap: f.nowrap, r, tilt };
         }
     }
