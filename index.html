@@ -73,16 +73,36 @@
   .lang-switch button.active,
   .lang-switch button:hover { background: var(--ink); color: var(--paper); border-color: var(--line); }
 
-  header { text-align: center; padding: 1.4rem 1rem .4rem; z-index: 1; }
+  header {
+    width: 100%;
+    text-align: center;
+    padding: 1.4rem 1rem .4rem;
+    z-index: 1;
+    background:
+      linear-gradient(rgba(2, 9, 26, .12), rgba(2, 9, 26, .3)),
+      url('assets/cosmic-header.webp') center 47% / cover no-repeat;
+    border-bottom: 1px solid #9d7629;
+    box-shadow: inset 0 -1px 0 rgba(255, 224, 145, .18);
+  }
   header h1 {
     font-family: 'Marcellus', serif; font-weight: 700;
-    font-size: clamp(1.4rem, 4vw, 2.2rem);
+    font-size: clamp(1.55rem, 4.4vw, 2.5rem);
     letter-spacing: .12em; text-transform: uppercase;
     color: var(--gold);
+    background: linear-gradient(105deg, #9f7020 0%, #f8e4a0 24%, #c38d2c 49%, #ffe9a6 72%, #a06d1d 100%);
+    background-size: 220% 100%;
+    background-position: 42% 50%;
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .85));
   }
   header p {
     margin-top: .5rem; font-size: .92rem; font-weight: 300; font-style: italic;
     color: var(--gold); max-width: 36rem; margin-inline: auto;
+    background: linear-gradient(100deg, #b9852a, #f5dda0 32%, #d5a746 62%, #ffe8ac);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .9));
   }
 
   /* The stage is the wheel's own box; the counting ring sits outside it, in
@@ -101,6 +121,16 @@
     header { padding: 2.6rem 1rem 1rem; }
     header p { margin-top: .9rem; }
     .stage { margin: 1.8rem auto; }
+  }
+  @media (max-width: 899px) {
+    header { transform: translateY(-.4rem); }
+    .stage { margin-top: 2.2rem; }
+    #wheel .label-outer,
+    #wheel .label-inner,
+    #wheel .wheel-num {
+      fill: #000 !important;
+      stroke: none !important;
+    }
   }
   /* The outer ring reaches r=344 in a 700-unit viewBox, so its halo — and the
      counting ring past it — would be clipped flat by the SVG viewport. Let
@@ -192,7 +222,7 @@
     margin-top: .25rem;
     font-family: 'Spectral', serif;
     font-size: .66rem; letter-spacing: .14em; text-transform: uppercase;
-    color: var(--ink); background: var(--paper);
+    color: var(--ink); background: var(--result-color, var(--paper));
     border: 1px solid var(--line); border-radius: 2rem;
     padding: .38em 1.1em; cursor: pointer;
     transition: background .25s, color .25s;
@@ -350,6 +380,11 @@
       overflow: hidden;
     }
     header { padding: 1.4rem 1rem .5rem; flex: 0 0 auto; }
+    header p {
+      max-width: none;
+      white-space: nowrap;
+      font-size: clamp(.72rem, 1.2vw, 1.25rem);
+    }
 
     /* The base rectangle. The twelve principle wedges (SVG) fill it and wrap
        around the wheel; the wheel sits on top, centred, and covers their inner
@@ -362,8 +397,8 @@
       align-self: center;
       margin: 0 auto;
       border: 1px solid var(--line);
-      border-radius: 12px;
-      background: var(--paper);
+      border-radius: 0;
+      background: #faf4e6 url('assets/parchment-base.webp') center / cover no-repeat;
       min-height: 0;
       overflow: hidden;
     }
@@ -406,7 +441,8 @@
     /* Principle number on each wheel sector, near the rim. */
     #pcbase .wheel-num-pc {
       font-family: 'Marcellus', serif;
-      font-size: 19px;
+      font-size: 22px;
+      font-weight: 700;
       fill: var(--ink);
       pointer-events: none;
       -webkit-user-select: none; user-select: none;
@@ -421,7 +457,7 @@
 
     /* The wedge shapes and their labels (built in JS). */
     .base-wedge {
-      fill: var(--paper);
+      fill: transparent;
       stroke: var(--line);
       stroke-width: 2;
       stroke-linejoin: round;
@@ -532,6 +568,7 @@ const I18N = {
     ui: {
       title: 'Der Code des Lebens',
       subtitle: 'Drehen Sie das äußere Rad nach links und rechts, um die Person zu wählen, und drehen Sie das innere Rad nach links und rechts, um die Kategorie des Ereignisses zu wählen.',
+      pcSubtitle: 'Bewegen Sie das Rad, um die Person auszuwählen, und wählen Sie dann einen Sektor auf der Basis.',
       alignment: 'Ausrichtung',
       readMore: 'Mehr lesen',
       outer: 'Außen · Personen',
@@ -644,6 +681,7 @@ const I18N = {
     ui: {
       title: 'The Code of Life',
       subtitle: 'Rotate the outer wheel left and right to select the person, and rotate the inner wheel left and right to select the category of the event.',
+      pcSubtitle: 'Move the wheel to select the person, then choose a sector on the base.',
       alignment: 'Alignment',
       readMore: 'Read more',
       outer: 'Outer · People',
@@ -756,6 +794,7 @@ const I18N = {
     ui: {
       title: 'Код жизни',
       subtitle: 'Поворачивайте внешнее колесо влево и вправо, чтобы выбрать человека, и поворачивайте внутреннее колесо влево и вправо, чтобы выбрать категорию события.',
+      pcSubtitle: 'Двигайте колесо, чтобы выбрать человека, затем выберите сектор на основе.',
       alignment: 'Совмещение',
       readMore: 'Подробнее',
       outer: 'Внешний · Люди',
@@ -868,6 +907,7 @@ const I18N = {
     ui: {
       title: 'Кодът на живота',
       subtitle: 'Завъртайте външното колело наляво и надясно, за да изберете човека, и завъртайте вътрешното колело наляво и надясно, за да изберете категорията на събитието.',
+      pcSubtitle: 'Преместете колелото, за да изберете човека, след което изберете сектор от основата.',
       alignment: 'Подравняване',
       readMore: 'Прочети още',
       outer: 'Външен · Хора',
@@ -1867,6 +1907,7 @@ function updateHub() {
   const p = selectedIndex('outer');
   const e = selectedIndex('inner');
   const r = resultLP(p, e);
+  hubEl.style.setProperty('--result-color', LP_COLORS[r % 4]);
   raiseActive(outerG, 'outer', p);
   raiseActive(innerG, 'inner', e);
   outerG.querySelectorAll('.sector-outer').forEach(el =>
@@ -2029,6 +2070,7 @@ window.addEventListener('resize', () => {
     const pc = matchMedia('(min-width: 900px)').matches;
     if (pc !== lastPc) {           // crossing the breakpoint swaps the wheel renderer
       lastPc = pc;
+      document.getElementById('uiSubtitle').textContent = pc ? T().pcSubtitle : T().subtitle;
       buildRing(outerG, 'outer');
       applyRotation('outer');
     }
@@ -2037,23 +2079,6 @@ window.addEventListener('resize', () => {
     updateHub();
   });
 });
-/* Everything is measured, so nothing can be trusted until Marcellus is in:
-   the fallback face has different metrics. Re-measure and rebuild once.
-   On a warm load the fonts are already cached, so this resolves almost at
-   once — run it inside a frame so the SVG is laid out before we measure,
-   otherwise the text lengths come back 0 and every label collapses. */
-if (document.fonts) document.fonts.ready.then(() => {
-  requestAnimationFrame(() => {
-    textWidths.clear();
-    buildRing(outerG, 'outer');
-    buildRing(innerG, 'inner');
-    buildBaseSectors();
-    applyRotation('outer');
-    applyRotation('inner');
-    updateHub();                  // rewrites and refits the hub text
-  });
-});
-
 /* ================= ROTATION MOTION ================= */
 
 const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -2329,7 +2354,7 @@ function applyLanguage(newLang) {
   document.querySelectorAll('.lang-switch button').forEach(b =>
     b.classList.toggle('active', b.dataset.lang === lang));
   document.getElementById('uiTitle').textContent = T().title;
-  document.getElementById('uiSubtitle').textContent = T().subtitle;
+  document.getElementById('uiSubtitle').textContent = isPcBase() ? T().pcSubtitle : T().subtitle;
   document.getElementById('uiAlignment').textContent = T().alignment;
   document.getElementById('readMoreBtn').textContent = T().readMore;
   buildRing(outerG, 'outer');
