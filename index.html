@@ -281,18 +281,35 @@
       filter: drop-shadow(0 0 2px #fff) drop-shadow(0 0 5px #f4c95a);
     }
     .mobile-correspondences {
-      display: block;
+      display: none;
+      position: relative;
       width: min(92vw, 42rem);
       margin: .45rem auto 1.5rem;
-      padding: 1rem;
+      height: 16.5rem;
+      box-sizing: border-box;
+      padding: .65rem .75rem .75rem;
       border: 1px solid var(--line);
-      border-top: 5px solid var(--principle-color, var(--gold));
+      border-top: 4px solid var(--principle-color, var(--gold));
       background: #faf4e6 url('assets/parchment-base.webp') center / cover;
       color: var(--ink);
       box-shadow: 0 5px 18px rgba(31, 21, 5, .14);
       transition: border-color .25s ease, opacity .18s ease, transform .18s ease;
+      overflow: hidden;
     }
+    .mobile-correspondences.open { display: grid; grid-template-rows: auto auto minmax(0, 1fr); }
     .mobile-correspondences.updating { opacity: .55; transform: translateY(3px); }
+    .corr-close {
+      position: absolute;
+      top: .25rem;
+      right: .35rem;
+      width: 1.65rem;
+      height: 1.65rem;
+      border: 0;
+      background: transparent;
+      color: var(--ink);
+      font: 1.4rem/1 serif;
+      cursor: pointer;
+    }
     .corr-source {
       font-size: .62rem;
       letter-spacing: .18em;
@@ -300,27 +317,42 @@
       color: #6e521e;
     }
     .corr-title {
-      margin: .15rem 0 .75rem;
+      margin: .1rem 1.7rem .4rem 0;
       font-family: 'Marcellus', serif;
-      font-size: 1.12rem;
+      font-size: .96rem;
       font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-    .corr-grid { display: grid; gap: .7rem; }
+    .corr-grid { display: grid; grid-template-rows: repeat(3, minmax(0, 1fr)); gap: .28rem; min-height: 0; }
     .corr-field {
-      padding-top: .55rem;
+      display: grid;
+      grid-template-columns: minmax(4.7rem, 27%) minmax(0, 1fr);
+      align-items: start;
+      gap: .45rem;
+      min-height: 0;
+      padding-top: .32rem;
       border-top: 1px solid rgba(0, 0, 0, .24);
+      overflow: hidden;
     }
     .corr-key {
-      margin-bottom: .2rem;
-      font-size: .61rem;
-      letter-spacing: .16em;
+      font-size: clamp(.52rem, 2.25vw, .61rem);
+      letter-spacing: .1em;
       text-transform: uppercase;
       font-weight: 700;
     }
-    .corr-value { font-size: .88rem; line-height: 1.4; }
+    .corr-value {
+      font-size: clamp(.68rem, 2.9vw, .82rem);
+      line-height: 1.22;
+      overflow: hidden;
+    }
   }
   @media (min-width: 640px) and (max-width: 899px) {
-    .corr-grid { grid-template-columns: repeat(3, 1fr); }
+    .mobile-correspondences { height: 10.5rem; }
+    .corr-grid { grid-template-columns: repeat(3, 1fr); grid-template-rows: minmax(0, 1fr); gap: .65rem; }
+    .corr-field { display: block; }
+    .corr-key { margin-bottom: .2rem; }
   }
   /* The outer ring reaches r=344 in a 700-unit viewBox, so its halo — and the
      counting ring past it — would be clipped flat by the SVG viewport. Let
@@ -830,6 +862,7 @@
 </div>
 
 <section class="mobile-correspondences" id="correspondencePanel" aria-live="polite">
+  <button class="corr-close" id="closeCorrespondences" type="button" aria-label="Close">×</button>
   <div class="corr-source" id="corrSource"></div>
   <div class="corr-title" id="corrTitle"></div>
   <div class="corr-grid">
@@ -2132,6 +2165,16 @@ function updateMobileCorrespondences(ring = 'outer', force = false) {
   requestAnimationFrame(() => panel.classList.remove('updating'));
 }
 
+function showMobileCorrespondences(ring = 'outer', duringDemo = false) {
+  if (isPcBase() || (demoActive && !duringDemo)) return;
+  updateMobileCorrespondences(ring);
+  document.getElementById('correspondencePanel')?.classList.add('open');
+}
+
+function hideMobileCorrespondences() {
+  document.getElementById('correspondencePanel')?.classList.remove('open', 'updating');
+}
+
 function applyRotation(ring) {
   const s = state[ring];
   s.group.setAttribute('transform', `rotate(${s.angle}, ${CX}, ${CY})`);
@@ -2185,7 +2228,6 @@ function turnNumRing() {
 }
 
 function trackNumRing(ring) {
-  updateMobileCorrespondences(ring);
   if (ring === (numPending ?? numTrack)) return;    // already going there
   /* Whatever was in flight is over: the hand moved again. Taking hold of the
      wheel the ring is already on, mid-fade, has to land here too — otherwise
@@ -2477,6 +2519,7 @@ function snap(ring) {
    counting ring over — the same way a hand on the wheel does. */
 function step(ring, dir) {
   const s = state[ring];
+  showMobileCorrespondences(ring);
   trackNumRing(ring);
   const base = s.target != null ? s.target : Math.round(s.angle / STEP) * STEP;
   animateTo(ring, base + STEP * dir, isSmall() ? 420 : 560, easeRoll);
@@ -2522,6 +2565,7 @@ svg.addEventListener('pointermove', ev => {
   if (!drag) return;
   if (Math.hypot(ev.clientX - drag.startX, ev.clientY - drag.startY) > 6) drag.moved = true;
   if (!drag.moved) return;
+  showMobileCorrespondences(drag.ring);
   const { angle } = eventInfo(ev);
   let delta = angle - drag.lastAngle;
   if (delta > 180) delta -= 360;
@@ -2673,6 +2717,7 @@ function openResultModal() {
 }
 
 document.getElementById('readMoreBtn').addEventListener('click', openResultModal);
+document.getElementById('closeCorrespondences').addEventListener('click', hideMobileCorrespondences);
 document.getElementById('closeModal').addEventListener('click', () => overlay.classList.remove('open'));
 overlay.addEventListener('click', ev => { if (ev.target === overlay) overlay.classList.remove('open'); });
 document.addEventListener('keydown', ev => { if (ev.key === 'Escape') overlay.classList.remove('open'); });
@@ -2745,17 +2790,20 @@ const DEMO_GUIDE = {
     siblingChild: {
       person: 'Finden Sie auf der Basis das Prinzip, bei dem die Geschwister stehen.',
       event: 'Kinder gehören bei Ihrem Geschwister zum 5. Prinzip.',
-      result: 'Die Geburt des Kindes eines Geschwisters spiegelt Ihr 7. Lebensprinzip wider.'
+      result: 'Die Geburt des Kindes eines Geschwisters spiegelt Ihr 7. Lebensprinzip wider.',
+      correspondences: 'Beim Drehen eines Rades erscheinen hier die drei Entsprechungen des ausgewählten Prinzips.'
     },
     friendJob: {
       person: 'Finden Sie auf der Basis das Prinzip, bei dem die Freunde stehen.',
       event: 'Eine neue Arbeit gehört bei Ihrem Freund zum 6. Prinzip.',
-      result: 'Der neue Arbeitsplatz eines Freundes spiegelt Ihr 4. Lebensprinzip wider.'
+      result: 'Der neue Arbeitsplatz eines Freundes spiegelt Ihr 4. Lebensprinzip wider.',
+      correspondences: 'Beim Drehen eines Rades erscheinen hier die drei Entsprechungen des ausgewählten Prinzips.'
     },
     promotion: {
       person: 'Finden Sie auf der Basis das Prinzip, bei dem die Kollegen stehen.',
       event: 'Eine Beförderung gehört bei Ihrem Kollegen zum 9. Prinzip.',
-      result: 'Die Beförderung eines Kollegen spiegelt Ihr 2. Lebensprinzip wider.'
+      result: 'Die Beförderung eines Kollegen spiegelt Ihr 2. Lebensprinzip wider.',
+      correspondences: 'Beim Drehen eines Rades erscheinen hier die drei Entsprechungen des ausgewählten Prinzips.'
     }
   },
   en: {
@@ -2763,17 +2811,20 @@ const DEMO_GUIDE = {
     siblingChild: {
       person: 'Find the principle on the base where siblings are represented.',
       event: "Children are in principle 5 of your sibling's outer world.",
-      result: "The birth of a sibling's child reflects your 7th life principle."
+      result: "The birth of a sibling's child reflects your 7th life principle.",
+      correspondences: 'When you turn either wheel, the three correspondences for its selected principle appear here.'
     },
     friendJob: {
       person: 'Find the principle on the base where friends are represented.',
       event: "A new job is in principle 6 of your friend's outer world.",
-      result: "A friend starting a new job reflects your 4th life principle."
+      result: "A friend starting a new job reflects your 4th life principle.",
+      correspondences: 'When you turn either wheel, the three correspondences for its selected principle appear here.'
     },
     promotion: {
       person: 'Find the principle on the base where colleagues are represented.',
       event: "A promotion is in principle 9 of your colleague's outer world.",
-      result: "A colleague's promotion reflects your 2nd life principle."
+      result: "A colleague's promotion reflects your 2nd life principle.",
+      correspondences: 'When you turn either wheel, the three correspondences for its selected principle appear here.'
     }
   },
   ru: {
@@ -2781,17 +2832,20 @@ const DEMO_GUIDE = {
     siblingChild: {
       person: 'Найдите на основе принцип, где указаны братья и сёстры.',
       event: 'Дети относятся к 5-му принципу внешнего мира вашего брата или сестры.',
-      result: 'Рождение ребёнка у брата или сестры отражает ваш 7-й жизненный принцип.'
+      result: 'Рождение ребёнка у брата или сестры отражает ваш 7-й жизненный принцип.',
+      correspondences: 'При вращении любого колеса здесь появляются три соответствия выбранного принципа.'
     },
     friendJob: {
       person: 'Найдите на основе принцип, где указаны друзья.',
       event: 'Новая работа относится к 6-му принципу внешнего мира вашего друга.',
-      result: 'Новая работа друга отражает ваш 4-й жизненный принцип.'
+      result: 'Новая работа друга отражает ваш 4-й жизненный принцип.',
+      correspondences: 'При вращении любого колеса здесь появляются три соответствия выбранного принципа.'
     },
     promotion: {
       person: 'Найдите на основе принцип, где указаны коллеги.',
       event: 'Повышение относится к 9-му принципу внешнего мира вашего коллеги.',
-      result: 'Повышение коллеги отражает ваш 2-й жизненный принцип.'
+      result: 'Повышение коллеги отражает ваш 2-й жизненный принцип.',
+      correspondences: 'При вращении любого колеса здесь появляются три соответствия выбранного принципа.'
     }
   },
   bg: {
@@ -2799,17 +2853,20 @@ const DEMO_GUIDE = {
     siblingChild: {
       person: 'Намерете в основата принципа, в който са братята и сестрите.',
       event: 'Децата са в 5-и принцип от външния свят на вашия брат или сестра.',
-      result: 'Раждането на дете на брат или сестра отразява вашия 7-и жизнен принцип.'
+      result: 'Раждането на дете на брат или сестра отразява вашия 7-и жизнен принцип.',
+      correspondences: 'Когато завъртите някое от колелата, тук се показват трите съответствия на избрания принцип.'
     },
     friendJob: {
       person: 'Намерете в основата принципа, в който са приятелите.',
       event: 'Новата работа е в 6-и принцип от външния свят на вашия приятел.',
-      result: 'Новата работа на приятел отразява вашия 4-и жизнен принцип.'
+      result: 'Новата работа на приятел отразява вашия 4-и жизнен принцип.',
+      correspondences: 'Когато завъртите някое от колелата, тук се показват трите съответствия на избрания принцип.'
     },
     promotion: {
       person: 'Намерете в основата принципа, в който са колегите.',
       event: 'Повишението е в 9-и принцип от външния свят на вашия колега.',
-      result: 'Повишението на колега отразява вашия 2-и жизнен принцип.'
+      result: 'Повишението на колега отразява вашия 2-и жизнен принцип.',
+      correspondences: 'Когато завъртите някое от колелата, тук се показват трите съответствия на избрания принцип.'
     }
   }
 };
@@ -2817,6 +2874,7 @@ const DEMO_GUIDE = {
 let demoTimers = [];
 let demoActive = false;
 let demoCompleting = false;
+let activeDemoKey = null;
 let balloonAdvance = null;
 const demoLater = (fn, delay) => {
   const id = setTimeout(fn, delay);
@@ -2928,6 +2986,7 @@ function renderDemoChooser() {
 function showDemoChooser() {
   clearDemoTimers();
   clearDemoVisuals();
+  hideMobileCorrespondences();
   document.body.classList.remove('intro-running');
   renderDemoChooser();
   demoOverlay.classList.add('open');
@@ -2942,7 +3001,9 @@ function resetWheelsToOne() {
 function interruptGuidedDemo(showChooser = true) {
   clearDemoTimers();
   demoActive = false;
+  activeDemoKey = null;
   clearDemoVisuals();
+  hideMobileCorrespondences();
   overlay.classList.remove('open');
   demoOverlay.classList.remove('open');
   document.body.classList.remove('intro-running');
@@ -2983,9 +3044,23 @@ function tourResultHeadings() {
     headings.forEach(el => el.classList.remove('demo-heading'));
     demoCompleting = true;
     document.getElementById('closeModal').click();
-    demoActive = false;
-    showDemoChooser();
-    demoCompleting = false;
+    if (!isPcBase()) {
+      showMobileCorrespondences('inner', true);
+      const panel = document.getElementById('correspondencePanel');
+      const copy = DEMO_GUIDE[lang][activeDemoKey]?.correspondences;
+      demoCompleting = false;
+      panel?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      demoLater(() => presentDemoStep(copy, panel, () => {
+          demoActive = false;
+          activeDemoKey = null;
+          showDemoChooser();
+        }), 650);
+    } else {
+      demoActive = false;
+      activeDemoKey = null;
+      showDemoChooser();
+      demoCompleting = false;
+    }
   }, 500 + headings.length * 950 + 1500);
 }
 
@@ -3072,9 +3147,11 @@ function startGuidedDemo(key) {
   if (!example) return;
   clearDemoTimers();
   clearDemoVisuals();
+  hideMobileCorrespondences();
   demoOverlay.classList.remove('open');
   document.body.classList.add('intro-running');
   demoActive = true;
+  activeDemoKey = key;
   runGuidedExample(key, example);
 }
 
