@@ -248,6 +248,14 @@
     header { transform: translateY(-.4rem); }
     .stage { margin-top: 2.2rem; }
     body.intro-running .stage { pointer-events: none; }
+    .demo-balloon {
+      width: min(22rem, calc(100vw - 2rem));
+      padding: .65rem .8rem;
+      font-size: clamp(.8rem, 3.4vw, .94rem);
+      line-height: 1.32;
+    }
+    .demo-balloon.right { width: min(22rem, calc(100vw - 4.5rem)); }
+    .demo-balloon .continue { margin-top: .35rem; font-size: .62em; }
     #wheel .label-outer,
     #wheel .label-inner,
     #wheel .wheel-num {
