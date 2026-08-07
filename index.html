@@ -1324,7 +1324,7 @@ function buildBaseSectors() {
   })();
 
   const fNum = Math.max(15, Math.min(28, H * 0.032));
-  const capFont = fNum * 1.35;                      // body text stays near the number's scale
+  const capFont = fNum * 1.7;                       // ceiling for body text, relative to the number
 
   /* Sample a wedge's outline (inner arc + outer edge) as a polygon, and find
      the polygon's interval at a given x or y — used to size each label box so
@@ -1501,40 +1501,35 @@ function buildBaseSectors() {
        including the near-horizontal ones (12,1,6,7) that used to sit flat. The
        top/bottom wedges keep the old "flat, or the spine if it grows the text"
        search. */
-    const [smx, smy] = pol(Rin, (ia1 + ia2) / 2);
-    const [emx, emy] = rectHit((oa1 + oa2) / 2);
-    let tilts;
-    if (isSide) {
-      /* Lean along the radius, but cap the angle so the text stays comfortably
-         readable — a gentle flare, never a steep diagonal that makes the reader
-         tilt their head. The corners want ~45°; we hold them to MAX_TILT. */
-      const MAX_TILT = 16;
-      const raw = radialTextRot((ia1 + ia2) / 2);
-      tilts = [Math.max(-MAX_TILT, Math.min(MAX_TILT, raw))];
-    } else {
-      let spineTilt = Math.atan2(emy - smy, emx - smx) * 180 / Math.PI;
-      while (spineTilt > 90) spineTilt -= 180;
-      while (spineTilt < -90) spineTilt += 180;
-      tilts = [0];
-      if (Math.abs(spineTilt) > 7) tilts.push(Math.max(-52, Math.min(52, spineTilt)));
-    }
+    /* Every sector leans gently along its own radius — a light flare out of the
+       wheel, capped small so the text reads without a head-tilt. The top/bottom
+       wedges get the same slight lean (they used to sit flat). */
+    const MAX_TILT = 11;
+    const tilts = [Math.max(-MAX_TILT, Math.min(MAX_TILT, radialTextRot((ia1 + ia2) / 2)))];
+    const spineInner = pol(Rin, (ia1 + ia2) / 2);
+    const spineOuter = rectHit((oa1 + oa2) / 2);
 
     let gBest = null;
     for (const tilt of tilts) {
       const plR = tilt ? poly.map(p => rotP(p[0], p[1], -tilt)) : poly;
       const [nRx, nRy] = rotP(numX, numY, -tilt);
-      /* The centroid (cX,cY) is rotP's fixed point, so it is still the centre in
-         the rotated frame. Grow rectangles out from there — centred on the
-         sector's geometric centre, spanning its full depth — and let the text's
-         binary-search fit pick the aspect that reads largest. */
-      const shortlist = maxRectAt(plR, cX, cY, nRx, nRy)
-        .map(r0 => ({ cx: r0.cx, cy: r0.cy, hW: r0.hW * 0.94, hH: r0.hH * 0.94 }))
-        .filter(r => r.hW >= 12 && r.hH >= 9);
-      if (!shortlist.length) continue;
-      for (const r of shortlist) {
-        const f = measureFit(r.hW, r.hH);
-        if (!gBest || f.sc > gBest.sc) gBest = { sc: f.sc, fs: f.fs, nowrap: f.nowrap, r, tilt };
+      /* Side wedges are roomy and symmetric — centre the block on the geometric
+         centroid (rotP's fixed point). The thin top/bottom wedges also try a few
+         centres out along the radius, so they can claim their wide outer part and
+         grow the text larger instead of being pinned to the narrow centre. */
+      const centres = [[cX, cY]];
+      if (!isSide) for (const u of [0.45, 0.6, 0.72, 0.83]) {
+        const px = spineInner[0] + (spineOuter[0] - spineInner[0]) * u;
+        const py = spineInner[1] + (spineOuter[1] - spineInner[1]) * u;
+        centres.push(rotP(px, py, -tilt));
       }
+      for (const [bx, by] of centres)
+        for (const r0 of maxRectAt(plR, bx, by, nRx, nRy)) {
+          const r = { cx: r0.cx, cy: r0.cy, hW: r0.hW * 0.97, hH: r0.hH * 0.97 };
+          if (r.hW < 12 || r.hH < 9) continue;
+          const f = measureFit(r.hW, r.hH);
+          if (!gBest || f.sc > gBest.sc) gBest = { sc: f.sc, fs: f.fs, nowrap: f.nowrap, r, tilt };
+        }
     }
     if (!gBest) gBest = { fs: 9, nowrap: false, r: { cx: cX, cy: cY, hW: Math.min(W, H) * 0.09, hH: Math.min(W, H) * 0.09 }, tilt: 0 };
 
