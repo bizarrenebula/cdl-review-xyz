@@ -1324,6 +1324,7 @@ function buildBaseSectors() {
   })();
 
   const fNum = Math.max(15, Math.min(28, H * 0.032));
+  const capFont = fNum * 1.35;                      // body text stays near the number's scale
 
   /* Sample a wedge's outline (inner arc + outer edge) as a polygon, and find
      the polygon's interval at a given x or y — used to size each label box so
@@ -1339,21 +1340,6 @@ function buildBaseSectors() {
     p.push(rectHit(oa1));
     return p;
   };
-  const crossSpan = (poly, axis, fixed, ref) => {   // interval (containing ref) across the polygon
-    const hits = [];
-    for (let j = 0; j < poly.length; j++) {
-      const a = poly[j], b = poly[(j + 1) % poly.length];
-      const f1 = axis === 'x' ? a[1] : a[0], f2 = axis === 'x' ? b[1] : b[0];
-      const c1 = axis === 'x' ? a[0] : a[1], c2 = axis === 'x' ? b[0] : b[1];
-      if ((f1 <= fixed && f2 > fixed) || (f2 <= fixed && f1 > fixed))
-        hits.push(c1 + (c2 - c1) * (fixed - f1) / (f2 - f1));
-    }
-    hits.sort((m, n) => m - n);
-    for (let j = 0; j + 1 < hits.length; j += 2)
-      if (ref >= hits[j] - 0.5 && ref <= hits[j + 1] + 0.5) return [hits[j], hits[j + 1]];
-    return null;
-  };
-
   baseSvg.setAttribute('viewBox', `0 0 ${W} ${H}`);
   baseSvg.innerHTML = '';
 
@@ -1411,48 +1397,14 @@ function buildBaseSectors() {
     const numX = omx * 0.9 + imx * 0.1, numY = omy * 0.9 + imy * 0.1;
     const numR = fNum * 0.95;
 
-    const capB = Math.min(W, H) * 0.44;
-    /* Rotate a point around the sector centroid — used to tilt the text box so
-       it can run along the wedge's inclined sides and grow larger. */
+    /* Rotate a point around the sector centroid. The text box is built in this
+       rotated frame (so it can lean along the wedge yet stay axis-aligned for
+       fitting); the centroid is the fixed point, so it maps to itself. */
     const rotP = (x, y, deg) => {
       if (!deg) return [x, y];
       const a = deg * Math.PI / 180, c = Math.cos(a), s = Math.sin(a);
       const dx = x - cX, dy = y - cY;
       return [cX + dx * c - dy * s, cY + dx * s + dy * c];
-    };
-    /* Boxes at a point inside a polygon, tall through wide-short. */
-    const boxesIn = (pl, px, py) => {
-      const row0 = crossSpan(pl, 'x', py, px);
-      const vs = crossSpan(pl, 'y', px, py);
-      if (!row0 || !vs) return [];
-      const maxH = Math.min(py - vs[0], vs[1] - py);
-      const out = [];
-      for (const frac of [1, 0.6, 0.38, 0.25]) {
-        const hH = maxH * frac;
-        if (hH < 7) continue;
-        let xL = row0[0], xR = row0[1];
-        for (const dy of [-hH, -hH * 0.6, hH * 0.6, hH]) {
-          const r = crossSpan(pl, 'x', py + dy, px);
-          if (r) { xL = Math.max(xL, r[0]); xR = Math.min(xR, r[1]); }
-        }
-        if (xR - xL < 24) continue;
-        out.push({ cx: (xL + xR) / 2, cy: py, hW: Math.min((xR - xL) / 2, capB), hH: Math.min(hH, capB) });
-      }
-      return out;
-    };
-    /* Trim a box away from a keep-out point (the principle number). */
-    const keepClear = (r, nx, ny) => {
-      let { cx, cy, hW, hH } = r;
-      const L = cx - hW, R = cx + hW, T = cy - hH, B = cy + hH;
-      if (nx < L - numR || nx > R + numR || ny < T - numR || ny > B + numR) return r;
-      const opts = [
-        { d: R - (nx - numR), f: () => { const e = nx - numR; hW = (e - L) / 2; cx = (L + e) / 2; } },
-        { d: (nx + numR) - L, f: () => { const e = nx + numR; hW = (R - e) / 2; cx = (e + R) / 2; } },
-        { d: B - (ny - numR), f: () => { const e = ny - numR; hH = (e - T) / 2; cy = (T + e) / 2; } },
-        { d: (ny + numR) - T, f: () => { const e = ny + numR; hH = (B - e) / 2; cy = (e + B) / 2; } }
-      ].filter(o => o.d > 0).sort((a, b) => a.d - b.d);
-      if (opts.length) opts[0].f();
-      return { cx, cy, hW, hH };
     };
     const inP = (pl, x, y) => {
       let c = false;
@@ -1461,6 +1413,32 @@ function buildBaseSectors() {
         if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) c = !c;
       }
       return c;
+    };
+    /* Does the principle number's keep-out circle overlap a rectangle? */
+    const circleRectHit = (nx, ny, r, bx, by, hW, hH) => {
+      const dx = Math.max(Math.abs(nx - bx) - hW, 0), dy = Math.max(Math.abs(ny - by) - hH, 0);
+      return dx * dx + dy * dy < r * r;
+    };
+    /* The largest axis-aligned rectangles that fit inside polygon `pl` while
+       staying centred on (bx,by) and clear of the number at (nx,ny). One per
+       aspect ratio, each grown out to the polygon edge by binary search — so the
+       block is centred on the sector's geometric centre and spans its full
+       depth, using the outer portion rather than hugging the wheel. */
+    const maxRectAt = (pl, bx, by, nx, ny) => {
+      const fits = (hW, hH) => {
+        if (circleRectHit(nx, ny, numR, bx, by, hW, hH)) return false;
+        const pts = [[bx - hW, by - hH], [bx + hW, by - hH], [bx + hW, by + hH], [bx - hW, by + hH],
+                     [bx, by - hH], [bx, by + hH], [bx - hW, by], [bx + hW, by]];
+        for (const [x, y] of pts) if (!inP(pl, x, y)) return false;
+        return true;
+      };
+      const rects = [];
+      for (const asp of [0.55, 0.85, 1.2, 1.7, 2.4, 3.3, 4.5]) {   // hW/hH, wide → tall
+        let lo = 0, hi = Math.max(W, H);
+        for (let it = 0; it < 20; it++) { const s = (lo + hi) / 2; if (fits(asp * s, s)) lo = s; else hi = s; }
+        if (lo > 4) rects.push({ cx: bx, cy: by, hW: asp * lo, hH: lo });
+      }
+      return rects;
     };
 
     /* An unrotated clip group holds the text; the foreignObject inside may be
@@ -1494,11 +1472,9 @@ function buildBaseSectors() {
     g.appendChild(fo);
     baseSvg.appendChild(g);
 
-    /* Single-line footprint (per px), for ranking; and a fitter that returns the
-       largest font for a box of a given size. */
-    fo.setAttribute('width', '600'); fo.setAttribute('height', '600');
-    content.style.whiteSpace = 'nowrap'; box.style.fontSize = '10px';
-    const wPer = Math.max(1, content.scrollWidth / 10), hPer = Math.max(1, content.offsetHeight / 10);
+    /* The fitter: binary-search the largest font whose wrapped block fits a
+       given box, trying single-line and wrapped, using the live element's own
+       rendered metrics. */
     const measureFit = (hW, hH) => {
       fo.setAttribute('width', (hW * 2).toFixed(1)); fo.setAttribute('height', (hH * 2).toFixed(1));
       let bf = null;
@@ -1507,7 +1483,7 @@ function buildBaseSectors() {
         /* Binary-search the largest font whose rendered block fits the box in
            both axes. The ceiling is derived from the box, not hardcoded, so a
            roomy sector can grow as large as it needs. */
-        let lo = 6, hi = Math.max(12, Math.min(hH * 2, hW));
+        let lo = 6, hi = Math.max(12, Math.min(hH * 2, hW, capFont));
         for (let it = 0; it < 9; it++) {
           const mid = (lo + hi) / 2;
           box.style.fontSize = mid.toFixed(2) + 'px';
@@ -1547,31 +1523,17 @@ function buildBaseSectors() {
     for (const tilt of tilts) {
       const plR = tilt ? poly.map(p => rotP(p[0], p[1], -tilt)) : poly;
       const [nRx, nRy] = rotP(numX, numY, -tilt);
-      const [sRx, sRy] = rotP(smx, smy, -tilt);
-      const [eRx, eRy] = rotP(emx, emy, -tilt);
-      const xr = plR.map(p => p[0]), yr = plR.map(p => p[1]);
-      const rbx0 = Math.min(...xr), rbx1 = Math.max(...xr), rby0 = Math.min(...yr), rby1 = Math.max(...yr);
-      const cnds = [[cX, cY]];
-      for (let u = 0.25; u <= 0.85; u += 0.15) cnds.push([sRx + (eRx - sRx) * u, sRy + (eRy - sRy) * u]);
-      for (let gx = 1; gx <= 6; gx++) for (let gy = 1; gy <= 5; gy++) {
-        const x = rbx0 + (rbx1 - rbx0) * gx / 7, y = rby0 + (rby1 - rby0) * gy / 6;
-        if (inP(plR, x, y)) cnds.push([x, y]);
-      }
-      const rs = [];
-      for (const [px, py] of cnds)
-        for (const b of boxesIn(plR, px, py)) {
-          const t = keepClear(b, nRx, nRy);
-          if (t.hW >= 12 && t.hH >= 9) rs.push({ cx: t.cx, cy: t.cy, hW: t.hW * 0.9, hH: t.hH * 0.9 });
-        }
-      if (!rs.length) continue;
-      const proxy = r => Math.min((r.hW * 2) / wPer, (r.hH * 2) / hPer);
-      const shortlist = [...rs].sort((a, b) => proxy(b) - proxy(a)).slice(0, 5)
-        .concat([...rs].sort((a, b) => (b.hW * b.hH) - (a.hW * a.hH)).slice(0, 3));
-      const penalty = 1 - Math.min(0.05, Math.abs(tilt) / 900);   // barely favour flat; let tilt win when bigger
+      /* The centroid (cX,cY) is rotP's fixed point, so it is still the centre in
+         the rotated frame. Grow rectangles out from there — centred on the
+         sector's geometric centre, spanning its full depth — and let the text's
+         binary-search fit pick the aspect that reads largest. */
+      const shortlist = maxRectAt(plR, cX, cY, nRx, nRy)
+        .map(r0 => ({ cx: r0.cx, cy: r0.cy, hW: r0.hW * 0.94, hH: r0.hH * 0.94 }))
+        .filter(r => r.hW >= 12 && r.hH >= 9);
+      if (!shortlist.length) continue;
       for (const r of shortlist) {
         const f = measureFit(r.hW, r.hH);
-        const sc = f.sc * penalty;
-        if (!gBest || sc > gBest.sc) gBest = { sc, fs: f.fs, nowrap: f.nowrap, r, tilt };
+        if (!gBest || f.sc > gBest.sc) gBest = { sc: f.sc, fs: f.fs, nowrap: f.nowrap, r, tilt };
       }
     }
     if (!gBest) gBest = { fs: 9, nowrap: false, r: { cx: cX, cy: cY, hW: Math.min(W, H) * 0.09, hH: Math.min(W, H) * 0.09 }, tilt: 0 };
