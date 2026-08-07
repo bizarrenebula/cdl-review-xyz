@@ -1357,10 +1357,17 @@ function buildBaseSectors() {
   baseSvg.setAttribute('viewBox', `0 0 ${W} ${H}`);
   baseSvg.innerHTML = '';
 
+  const sideFits = [];                              // side wedges, unified to one font size after the loop
+
   for (let i = 0; i < 12; i++) {
     const pIdx = wedgePrincipleIndex(i);           // which principle sits in this wedge
     const item = LP()[pIdx];
     const color = LP_COLORS[pIdx % 4];
+    /* The eight wedges down the two sides (principles 11,12,1,2 and 8,7,6,5).
+       They share a shape and a job: their text flares straight out of the wheel
+       along its radius, all at one common size. The four top/bottom wedges
+       (9,10,3,4) keep their own fitting. */
+    const isSide = [1, 2, 3, 4, 7, 8, 9, 10].includes(i);
     const ia1 = i * 30, ia2 = ia1 + 30;            // uniform inner arc (aligned to the wheel)
     const oa1 = bounds[i], oa2 = bounds[i + 1];    // equal-area outer span
     const [i1x, i1y] = pol(Rin, ia1);
@@ -1511,16 +1518,24 @@ function buildBaseSectors() {
       return bf;
     };
 
-    /* Candidate tilts: flat, and the wedge's spine angle (kept upright), so the
-       text can lean along an inclined sector. A tilt is chosen only if it grows
-       the text clearly bigger. */
+    /* Tilt. Every side wedge leans along its own radius — the line from the
+       wheel out through the wedge — so the text flares out of the wheel like
+       sunrays (radialTextRot keeps it upright). This is applied to all eight,
+       including the near-horizontal ones (12,1,6,7) that used to sit flat. The
+       top/bottom wedges keep the old "flat, or the spine if it grows the text"
+       search. */
     const [smx, smy] = pol(Rin, (ia1 + ia2) / 2);
     const [emx, emy] = rectHit((oa1 + oa2) / 2);
-    let spineTilt = Math.atan2(emy - smy, emx - smx) * 180 / Math.PI;
-    while (spineTilt > 90) spineTilt -= 180;
-    while (spineTilt < -90) spineTilt += 180;
-    const tilts = [0];
-    if (Math.abs(spineTilt) > 7) tilts.push(Math.max(-52, Math.min(52, spineTilt)));
+    let tilts;
+    if (isSide) {
+      tilts = [Math.max(-58, Math.min(58, radialTextRot((ia1 + ia2) / 2)))];
+    } else {
+      let spineTilt = Math.atan2(emy - smy, emx - smx) * 180 / Math.PI;
+      while (spineTilt > 90) spineTilt -= 180;
+      while (spineTilt < -90) spineTilt += 180;
+      tilts = [0];
+      if (Math.abs(spineTilt) > 7) tilts.push(Math.max(-52, Math.min(52, spineTilt)));
+    }
 
     let gBest = null;
     for (const tilt of tilts) {
@@ -1564,6 +1579,7 @@ function buildBaseSectors() {
     fo.setAttribute('width', (gBest.r.hW * 2).toFixed(1));
     fo.setAttribute('height', (gBest.r.hH * 2).toFixed(1));
     if (gBest.tilt) fo.setAttribute('transform', `rotate(${gBest.tilt.toFixed(2)}, ${acx.toFixed(1)}, ${acy.toFixed(1)})`);
+    if (isSide) sideFits.push({ box, fs: gBest.fs });
 
     /* The principle number, near the outer edge on the mid-angle (kept clear of
        the text above). */
@@ -1576,6 +1592,14 @@ function buildBaseSectors() {
     num.style.setProperty('--seg-color', color);
     num.textContent = pIdx + 1;
     baseSvg.appendChild(num);
+  }
+
+  /* Unify the eight side wedges to one font size — the smallest that every one
+     of them fits — so they read as a single set of rays rather than a jumble of
+     sizes. */
+  if (sideFits.length) {
+    const commonFs = Math.min(...sideFits.map(s => s.fs));
+    sideFits.forEach(s => { s.box.style.fontSize = commonFs.toFixed(2) + 'px'; });
   }
 }
 
