@@ -97,8 +97,103 @@
     color: #08142e;
     outline: none;
   }
-  @media (max-width: 899px) { .guide-help { display: none; } }
-
+  .guide-help.attention {
+    animation: guide-pulse 1.4s ease-in-out infinite;
+  }
+  @keyframes guide-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(242, 207, 120, .62), 0 2px 9px rgba(0, 0, 0, .28); }
+    50% { box-shadow: 0 0 0 9px rgba(242, 207, 120, 0), 0 2px 12px rgba(0, 0, 0, .4); }
+  }
+  .demo-balloon {
+    position: fixed;
+    left: 50%; top: 50%;
+    z-index: 9;
+    width: min(30rem, calc(100vw - 1rem));
+    padding: 1rem 1.2rem;
+    border: 1px solid #8f6a24;
+    border-radius: 10px;
+    background: #fff9e9;
+    color: #171106;
+    font-size: clamp(1rem, 2.1vw, 1.18rem);
+    line-height: 1.45;
+    text-align: center;
+    pointer-events: none;
+    opacity: 0;
+    transform: translate(-50%, calc(-100% - 18px));
+    box-shadow: 0 5px 20px rgba(15, 10, 2, .28);
+    transition: left .8s cubic-bezier(.2, .72, .2, 1), top .8s cubic-bezier(.2, .72, .2, 1), opacity .25s ease;
+  }
+  .demo-balloon::after {
+    content: '';
+    position: absolute;
+    left: 50%; bottom: -8px;
+    width: 14px; height: 14px;
+    transform: translateX(-50%) rotate(45deg);
+    background: #fff9e9;
+    border-right: 1px solid #8f6a24;
+    border-bottom: 1px solid #8f6a24;
+  }
+  .demo-balloon.on {
+    opacity: 1;
+    pointer-events: auto;
+    cursor: pointer;
+  }
+  .demo-balloon.on:hover, .demo-balloon.on:focus-visible {
+    border-color: #4e3509;
+    box-shadow: 0 7px 24px rgba(15, 10, 2, .35), 0 0 0 3px rgba(242, 207, 120, .5);
+    outline: none;
+  }
+  .demo-balloon .continue {
+    display: block;
+    margin-top: .5rem;
+    font-size: .68em;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: #79591d;
+  }
+  .demo-balloon.insist { animation: balloon-insist .48s ease both; }
+  @keyframes balloon-insist {
+    0%, 100% { transform: translate(-50%, calc(-100% - 18px)) rotate(0); }
+    20% { transform: translate(-50%, calc(-100% - 18px)) rotate(-2deg) scale(1.035); }
+    40% { transform: translate(-50%, calc(-100% - 18px)) rotate(2deg) scale(1.035); }
+    60% { transform: translate(-50%, calc(-100% - 18px)) rotate(-1.5deg) scale(1.025); }
+    80% { transform: translate(-50%, calc(-100% - 18px)) rotate(1.5deg) scale(1.015); }
+  }
+  .demo-balloon.below { transform: translate(-50%, 18px); }
+  .demo-balloon.below.insist { animation-name: balloon-insist-below; }
+  @keyframes balloon-insist-below {
+    0%, 100% { transform: translate(-50%, 18px) rotate(0); }
+    20% { transform: translate(-50%, 18px) rotate(-2deg) scale(1.035); }
+    40% { transform: translate(-50%, 18px) rotate(2deg) scale(1.035); }
+    60% { transform: translate(-50%, 18px) rotate(-1.5deg) scale(1.025); }
+    80% { transform: translate(-50%, 18px) rotate(1.5deg) scale(1.015); }
+  }
+  .demo-balloon.below::after {
+    top: -8px; bottom: auto;
+    border: 0;
+    border-left: 1px solid #8f6a24;
+    border-top: 1px solid #8f6a24;
+  }
+  .demo-balloon.right {
+    width: min(30rem, calc(100vw - 4.5rem));
+    transform: translate(18px, -50%);
+  }
+  .demo-balloon.right::after {
+    left: -8px; right: auto;
+    top: 50%; bottom: auto;
+    transform: translateY(-50%) rotate(45deg);
+    border: 0;
+    border-left: 1px solid #8f6a24;
+    border-bottom: 1px solid #8f6a24;
+  }
+  .demo-balloon.right.insist { animation-name: balloon-insist-right; }
+  @keyframes balloon-insist-right {
+    0%, 100% { transform: translate(18px, -50%) rotate(0); }
+    20% { transform: translate(18px, -50%) rotate(-2deg) scale(1.035); }
+    40% { transform: translate(18px, -50%) rotate(2deg) scale(1.035); }
+    60% { transform: translate(18px, -50%) rotate(-1.5deg) scale(1.025); }
+    80% { transform: translate(18px, -50%) rotate(1.5deg) scale(1.015); }
+  }
   header {
     width: 100%;
     text-align: center;
@@ -151,11 +246,38 @@
   @media (max-width: 899px) {
     header { transform: translateY(-.4rem); }
     .stage { margin-top: 2.2rem; }
+    body.intro-running .stage { pointer-events: none; }
     #wheel .label-outer,
     #wheel .label-inner,
     #wheel .wheel-num {
       fill: #000 !important;
       stroke: none !important;
+    }
+    .demo-light {
+      position: fixed;
+      left: 50%; top: 50%;
+      width: 15px; height: 15px;
+      z-index: 9;
+      border-radius: 50%;
+      pointer-events: none;
+      opacity: 0;
+      transform: translate(-50%, -50%);
+      background: #fff8cf;
+      border: 1px solid rgba(91, 61, 9, .8);
+      box-shadow: 0 0 6px 3px #fff7bd, 0 0 18px 7px rgba(226, 174, 51, .72);
+      transition: left .8s cubic-bezier(.2, .72, .2, 1), top .8s cubic-bezier(.2, .72, .2, 1), opacity .3s ease;
+    }
+    .demo-light.on { opacity: 1; }
+    #wheel .sector-outer.demo-focus,
+    #wheel .sector-inner.demo-focus {
+      stroke: #fff5b0;
+      stroke-width: 6;
+      filter: drop-shadow(0 0 5px rgba(213, 155, 25, .95));
+    }
+    #wheel .label-outer.demo-focus,
+    #wheel .label-inner.demo-focus {
+      font-weight: 700;
+      filter: drop-shadow(0 0 2px #fff) drop-shadow(0 0 5px #f4c95a);
     }
   }
   /* The outer ring reaches r=344 in a 700-unit viewBox, so its halo — and the
@@ -227,6 +349,9 @@
     text-align: center; padding: 4%; gap: .35rem;
   }
   .hub .result, .hub button { position: relative; z-index: 2; }
+  .hub.demo-result {
+    box-shadow: 0 0 0 4px rgba(255, 247, 189, .88), 0 0 24px 10px rgba(213, 155, 25, .65);
+  }
 
   .hub .eyebrow { display: none; }
   .hub .match {
@@ -659,6 +784,7 @@
   </div>
 </div>
 <div class="demo-light" id="demoLight" aria-hidden="true"></div>
+<div class="demo-balloon" id="demoBalloon" role="button" tabindex="0" aria-live="polite"></div>
 </div>
 
 <div class="overlay" id="overlay" role="dialog" aria-modal="true">
@@ -1607,6 +1733,7 @@ function buildBaseSectors() {
     g.setAttribute('pointer-events', 'none');
     const fo = document.createElementNS(ns, 'foreignObject');
     fo.setAttribute('pointer-events', 'none');
+    fo.dataset.index = pIdx;
     const box = document.createElement('div');
     box.className = 'bs-box';
     box.style.setProperty('--seg-color', color);
@@ -2489,12 +2616,15 @@ function applyLanguage(newLang) {
   applyRotation('inner');
   updateHub();
   if (document.getElementById('demoOverlay')?.classList.contains('open')) renderDemoChooser();
+  if (document.getElementById('guideBtn')?.classList.contains('attention'))
+    showDemoBalloon(DEMO_GUIDE[lang].nudge, document.getElementById('guideBtn'), 'right');
 }
 
 document.querySelectorAll('.lang-switch button').forEach(btn =>
   btn.addEventListener('click', () => applyLanguage(btn.dataset.lang)));
 
 const demoLight = document.getElementById('demoLight');
+const demoBalloon = document.getElementById('demoBalloon');
 const demoOverlay = document.getElementById('demoOverlay');
 const demoOptions = document.getElementById('demoOptions');
 
@@ -2505,32 +2635,109 @@ const DEMO_EXAMPLES = {
 };
 const DEMO_TEXT = {
   de: {
-    eyebrow: 'Geführte Beispiele', title: 'Wählen Sie ein Beispiel', open: 'Geführte Beispiele öffnen',
+    eyebrow: 'Geführte Beispiele', title: 'Wählen Sie ein Beispiel', open: 'Geführte Beispiele öffnen', continue: 'Klicken zum Fortfahren',
     siblingChild: 'Geburt des Kindes eines Geschwisters',
     friendJob: 'Ein Freund beginnt eine neue Arbeit',
     promotion: 'Ein Kollege wird befördert'
   },
   en: {
-    eyebrow: 'Guided examples', title: 'Choose an example', open: 'Open guided examples',
+    eyebrow: 'Guided examples', title: 'Choose an example', open: 'Open guided examples', continue: 'Click to continue',
     siblingChild: "Birth of a sibling's child",
     friendJob: 'A friend starts a new job',
     promotion: 'A colleague gets promoted'
   },
   ru: {
-    eyebrow: 'Примеры', title: 'Выберите пример', open: 'Открыть примеры',
+    eyebrow: 'Примеры', title: 'Выберите пример', open: 'Открыть примеры', continue: 'Нажмите, чтобы продолжить',
     siblingChild: 'Рождение ребёнка у брата или сестры',
     friendJob: 'Друг начинает новую работу',
     promotion: 'Коллегу повышают'
   },
   bg: {
-    eyebrow: 'Примери', title: 'Изберете пример', open: 'Отвори примерите',
+    eyebrow: 'Примери', title: 'Изберете пример', open: 'Отвори примерите', continue: 'Натиснете за продължение',
     siblingChild: 'Раждане на дете на брат или сестра',
     friendJob: 'Приятел започва нова работа',
     promotion: 'Колега получава повишение'
   }
 };
+const DEMO_GUIDE = {
+  de: {
+    nudge: 'Hier klicken, um zu lernen, wie das Rad benutzt wird.',
+    siblingChild: {
+      person: 'Finden Sie auf der Basis das Prinzip, bei dem die Geschwister stehen.',
+      event: 'Kinder gehören bei Ihrem Geschwister zum 5. Prinzip.',
+      result: 'Die Geburt des Kindes eines Geschwisters spiegelt Ihr 7. Lebensprinzip wider.'
+    },
+    friendJob: {
+      person: 'Finden Sie auf der Basis das Prinzip, bei dem die Freunde stehen.',
+      event: 'Eine neue Arbeit gehört bei Ihrem Freund zum 6. Prinzip.',
+      result: 'Der neue Arbeitsplatz eines Freundes spiegelt Ihr 4. Lebensprinzip wider.'
+    },
+    promotion: {
+      person: 'Finden Sie auf der Basis das Prinzip, bei dem die Kollegen stehen.',
+      event: 'Eine Beförderung gehört bei Ihrem Kollegen zum 9. Prinzip.',
+      result: 'Die Beförderung eines Kollegen spiegelt Ihr 2. Lebensprinzip wider.'
+    }
+  },
+  en: {
+    nudge: 'Click here to learn how to use the wheel.',
+    siblingChild: {
+      person: 'Find the principle on the base where siblings are represented.',
+      event: "Children are in principle 5 of your sibling's outer world.",
+      result: "The birth of a sibling's child reflects your 7th life principle."
+    },
+    friendJob: {
+      person: 'Find the principle on the base where friends are represented.',
+      event: "A new job is in principle 6 of your friend's outer world.",
+      result: "A friend starting a new job reflects your 4th life principle."
+    },
+    promotion: {
+      person: 'Find the principle on the base where colleagues are represented.',
+      event: "A promotion is in principle 9 of your colleague's outer world.",
+      result: "A colleague's promotion reflects your 2nd life principle."
+    }
+  },
+  ru: {
+    nudge: 'Нажмите здесь, чтобы узнать, как пользоваться колесом.',
+    siblingChild: {
+      person: 'Найдите на основе принцип, где указаны братья и сёстры.',
+      event: 'Дети относятся к 5-му принципу внешнего мира вашего брата или сестры.',
+      result: 'Рождение ребёнка у брата или сестры отражает ваш 7-й жизненный принцип.'
+    },
+    friendJob: {
+      person: 'Найдите на основе принцип, где указаны друзья.',
+      event: 'Новая работа относится к 6-му принципу внешнего мира вашего друга.',
+      result: 'Новая работа друга отражает ваш 4-й жизненный принцип.'
+    },
+    promotion: {
+      person: 'Найдите на основе принцип, где указаны коллеги.',
+      event: 'Повышение относится к 9-му принципу внешнего мира вашего коллеги.',
+      result: 'Повышение коллеги отражает ваш 2-й жизненный принцип.'
+    }
+  },
+  bg: {
+    nudge: 'Натиснете тук, за да научите как се използва колелото.',
+    siblingChild: {
+      person: 'Намерете в основата принципа, в който са братята и сестрите.',
+      event: 'Децата са в 5-и принцип от външния свят на вашия брат или сестра.',
+      result: 'Раждането на дете на брат или сестра отразява вашия 7-и жизнен принцип.'
+    },
+    friendJob: {
+      person: 'Намерете в основата принципа, в който са приятелите.',
+      event: 'Новата работа е в 6-и принцип от външния свят на вашия приятел.',
+      result: 'Новата работа на приятел отразява вашия 4-и жизнен принцип.'
+    },
+    promotion: {
+      person: 'Намерете в основата принципа, в който са колегите.',
+      event: 'Повишението е в 9-и принцип от външния свят на вашия колега.',
+      result: 'Повишението на колега отразява вашия 2-и жизнен принцип.'
+    }
+  }
+};
 
 let demoTimers = [];
+let demoActive = false;
+let demoCompleting = false;
+let balloonAdvance = null;
 const demoLater = (fn, delay) => {
   const id = setTimeout(fn, delay);
   demoTimers.push(id);
@@ -2541,29 +2748,83 @@ function clearDemoTimers() {
   demoTimers = [];
 }
 
-function moveDemoLightTo(el) {
-  if (!el || !demoLight || !pcbaseEl) return;
+function showDemoBalloon(text, el, placement = 'auto') {
+  if (!text || !el || !demoBalloon) return;
   const target = el.getBoundingClientRect();
-  const base = pcbaseEl.getBoundingClientRect();
-  demoLight.style.left = (target.left + target.width / 2 - base.left) + 'px';
-  demoLight.style.top = (target.top + target.height / 2 - base.top) + 'px';
+  const useRight = placement === 'right';
+  const half = Math.min(240, (window.innerWidth - 16) / 2);
+  const x = useRight ? target.right : Math.max(half + 8, Math.min(window.innerWidth - half - 8, target.left + target.width / 2));
+  const below = !useRight && target.top < 135;
+  demoBalloon.textContent = text;
+  const prompt = document.createElement('span');
+  prompt.className = 'continue';
+  prompt.textContent = DEMO_TEXT[lang].continue;
+  demoBalloon.appendChild(prompt);
+  demoBalloon.style.left = x + 'px';
+  demoBalloon.style.top = (useRight ? target.top + target.height / 2 : (below ? target.bottom : target.top)) + 'px';
+  demoBalloon.classList.toggle('below', below);
+  demoBalloon.classList.toggle('right', useRight);
+  demoBalloon.classList.add('on');
+}
+
+function presentDemoStep(text, el, onAdvance, placement = 'auto') {
+  balloonAdvance = onAdvance;
+  if (placement === 'right') demoLight?.classList.remove('on');
+  else moveDemoLightTo(el);
+  showDemoBalloon(text, el, placement);
+  demoBalloon.focus({ preventScroll: true });
+}
+
+function advanceDemoBalloon() {
+  if (!balloonAdvance) return;
+  const next = balloonAdvance;
+  balloonAdvance = null;
+  demoBalloon.classList.remove('on', 'insist');
+  next();
+}
+
+function insistOnDemoBalloon() {
+  if (!balloonAdvance || !demoBalloon.classList.contains('on')) return;
+  demoBalloon.classList.remove('insist');
+  void demoBalloon.offsetWidth;
+  demoBalloon.classList.add('insist');
+}
+
+function moveDemoLightTo(el) {
+  if (!el || !demoLight) return;
+  const target = el.getBoundingClientRect();
+  if (isPcBase() && pcbaseEl) {
+    const base = pcbaseEl.getBoundingClientRect();
+    demoLight.style.left = (target.left + target.width / 2 - base.left) + 'px';
+    demoLight.style.top = (target.top + target.height / 2 - base.top) + 'px';
+  } else {
+    demoLight.style.left = (target.left + target.width / 2) + 'px';
+    demoLight.style.top = (target.top + target.height / 2) + 'px';
+  }
   demoLight.classList.add('on');
 }
 
-function focusDemoWheelSector(index) {
+function focusDemoWheelSector(index, ring = 'outer') {
   outerG.querySelectorAll('.demo-focus').forEach(el => el.classList.remove('demo-focus'));
-  const sector = outerG.querySelector(`.sector-outer[data-index="${index}"]`);
-  const label = outerG.querySelector(`.label-outer[data-index="${index}"]`);
+  innerG.querySelectorAll('.demo-focus').forEach(el => el.classList.remove('demo-focus'));
+  const group = ring === 'outer' ? outerG : innerG;
+  const sector = group.querySelector(`.sector-${ring}[data-index="${index}"]`);
+  const label = group.querySelector(`.label-${ring}[data-index="${index}"]`);
   sector?.classList.add('demo-focus');
   label?.classList.add('demo-focus');
   moveDemoLightTo(label || sector);
 }
 
 function clearDemoVisuals() {
+  balloonAdvance = null;
   demoLight?.classList.remove('on');
+  demoBalloon?.classList.remove('on', 'below', 'right', 'insist');
+  document.getElementById('guideBtn').classList.remove('attention');
   outerG.querySelectorAll('.demo-focus').forEach(el => el.classList.remove('demo-focus'));
+  innerG.querySelectorAll('.demo-focus').forEach(el => el.classList.remove('demo-focus'));
   baseSvg?.querySelectorAll('.demo-result, .demo-person').forEach(el =>
     el.classList.remove('demo-result', 'demo-person'));
+  hubEl.classList.remove('demo-result');
   overlay.querySelectorAll('.demo-heading').forEach(el => el.classList.remove('demo-heading'));
 }
 
@@ -2593,12 +2854,33 @@ function showDemoChooser() {
   demoOptions.querySelector('button')?.focus();
 }
 
-function closeDemoChooser() {
+function resetWheelsToOne() {
+  animateTo('outer', 0, 850, easeSettle);
+  animateTo('inner', 0, 850, easeSettle);
+}
+
+function interruptGuidedDemo(showChooser = true) {
   clearDemoTimers();
+  demoActive = false;
   clearDemoVisuals();
+  overlay.classList.remove('open');
   demoOverlay.classList.remove('open');
   document.body.classList.remove('intro-running');
-  animateTo('outer', 0, 850, easeSettle);
+  resetWheelsToOne();
+  if (showChooser) demoLater(showDemoChooser, 300);
+}
+
+function closeDemoChooser() {
+  interruptGuidedDemo(false);
+}
+
+function showGuideNudge() {
+  clearDemoTimers();
+  clearDemoVisuals();
+  document.body.classList.remove('intro-running');
+  const guide = document.getElementById('guideBtn');
+  guide.classList.add('attention');
+  presentDemoStep(DEMO_GUIDE[lang].nudge, guide, openGuideOnDemand, 'right');
 }
 
 function tourResultHeadings() {
@@ -2619,37 +2901,90 @@ function tourResultHeadings() {
   }, 500 + i * 950));
   demoLater(() => {
     headings.forEach(el => el.classList.remove('demo-heading'));
+    demoCompleting = true;
     document.getElementById('closeModal').click();
+    demoActive = false;
     showDemoChooser();
+    demoCompleting = false;
   }, 500 + headings.length * 950 + 1500);
 }
 
-function runGuidedExample({ person, event }) {
+function runDesktopGuidedExample(key, { person, event }) {
   const result = resultLP(person, event);
+  const copy = DEMO_GUIDE[lang][key];
   animateTo('outer', -person * STEP, 1100, easeRoll);
 
-  demoLater(() => moveDemoLightTo(outerG.querySelector('.wheel-pointer')), 1350);
+  const showResult = () => {
+    /* Re-establish the person on the wheel, then carry the light outward to
+       the base result so both sides of the relationship remain visible. */
+    focusDemoWheelSector(person);
+    demoLater(() => {
+      const resultWedge = baseSvg?.querySelector(`.base-wedge[data-index="${result}"]`);
+      resultWedge?.classList.add('demo-result');
+      presentDemoStep(copy.result, resultWedge, () => {
+        resultWedge?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        demoLight?.classList.remove('on');
+        const modal = overlay.querySelector('.modal');
+        if (modal) modal.scrollTop = 0;
+        demoLater(tourResultHeadings, 800);
+      });
+    }, 950);
+  };
+  const showEventOnBase = () => {
+    const eventBase = baseSvg?.querySelector(`.base-wedge[data-index="${event}"]`);
+    const eventText = baseSvg?.querySelector(`foreignObject[data-index="${event}"] .bs-line`);
+    presentDemoStep(copy.event, eventText || eventBase, showResult);
+  };
+  const showEventOnWheel = () => {
+    focusDemoWheelSector(event);
+    const eventLabel = outerG.querySelector(`.label-outer[data-index="${event}"]`);
+    presentDemoStep(copy.event, eventLabel, showEventOnBase);
+  };
   demoLater(() => {
     const personBase = baseSvg?.querySelector(`.base-wedge[data-index="${person}"]`);
+    const personText = baseSvg?.querySelector(`foreignObject[data-index="${person}"] .bs-line`);
     personBase?.classList.add('demo-person');
-    moveDemoLightTo(personBase);
-  }, 1850);
-  demoLater(() => focusDemoWheelSector(person), 3650);
-  demoLater(() => focusDemoWheelSector(event), 5550);
+    presentDemoStep(copy.person, personText || personBase, showEventOnWheel);
+  }, 1300);
+}
+
+function runMobileGuidedExample(key, { person, event }) {
+  const copy = DEMO_GUIDE[lang][key];
+  animateTo('outer', -person * STEP, 1050, easeRoll);
+
+  const showResult = () => {
+    focusDemoWheelSector(person, 'outer');
+    demoLater(() => {
+      hubEl.classList.add('demo-result');
+      presentDemoStep(copy.result, hubEl, () => {
+        document.getElementById('readMoreBtn').click();
+        demoLight?.classList.remove('on');
+        const modal = overlay.querySelector('.modal');
+        if (modal) modal.scrollTop = 0;
+        demoLater(tourResultHeadings, 800);
+      });
+    }, 950);
+  };
+  const showEvent = () => {
+    focusDemoWheelSector(event, 'inner');
+    const eventLabel = innerG.querySelector(`.label-inner[data-index="${event}"]`);
+    presentDemoStep(copy.event, eventLabel, showResult);
+  };
+  const rotateEvent = () => {
+    demoBalloon.classList.remove('on');
+    animateTo('inner', -event * STEP, 1050, easeRoll);
+    demoLater(showEvent, 1250);
+  };
   demoLater(() => {
-    outerG.querySelectorAll('.demo-focus').forEach(el => el.classList.remove('demo-focus'));
-    const resultWedge = baseSvg?.querySelector(`.base-wedge[data-index="${result}"]`);
-    resultWedge?.classList.add('demo-result');
-    moveDemoLightTo(resultWedge);
-  }, 7450);
-  demoLater(() => {
-    const resultWedge = baseSvg?.querySelector(`.base-wedge[data-index="${result}"]`);
-    resultWedge?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    demoLight?.classList.remove('on');
-    const modal = overlay.querySelector('.modal');
-    if (modal) modal.scrollTop = 0;
-  }, 9300);
-  demoLater(tourResultHeadings, 10100);
+    focusDemoWheelSector(person, 'outer');
+    const personLabel = outerG.querySelector(`.label-outer[data-index="${person}"]`);
+    presentDemoStep(copy.person, personLabel, rotateEvent);
+  }, 1250);
+}
+
+function runGuidedExample(key, example) {
+  if (isPcBase()) runDesktopGuidedExample(key, example);
+  else runMobileGuidedExample(key, example);
 }
 
 function startGuidedDemo(key) {
@@ -2659,21 +2994,48 @@ function startGuidedDemo(key) {
   clearDemoVisuals();
   demoOverlay.classList.remove('open');
   document.body.classList.add('intro-running');
-  runGuidedExample(example);
+  demoActive = true;
+  runGuidedExample(key, example);
 }
 
 function openGuideOnDemand() {
+  if (demoActive) {
+    interruptGuidedDemo(true);
+    return;
+  }
   clearDemoTimers();
-  overlay.classList.remove('open');
+  clearDemoVisuals();
   document.body.classList.remove('intro-base-away', 'intro-wheel-away', 'intro-running');
   showDemoChooser();
 }
 
 document.getElementById('guideBtn').addEventListener('click', openGuideOnDemand);
+demoBalloon.addEventListener('click', advanceDemoBalloon);
+demoBalloon.addEventListener('keydown', ev => {
+  if (ev.key === 'Enter' || ev.key === ' ') {
+    ev.preventDefault();
+    advanceDemoBalloon();
+  }
+});
+demoBalloon.addEventListener('animationend', () => demoBalloon.classList.remove('insist'));
+document.addEventListener('pointerdown', ev => {
+  if (!balloonAdvance || demoBalloon.contains(ev.target)) return;
+  if (ev.target.closest && ev.target.closest('#guideBtn')) return;
+  ev.preventDefault();
+  ev.stopPropagation();
+  insistOnDemoBalloon();
+}, true);
 document.getElementById('closeDemo').addEventListener('click', closeDemoChooser);
 demoOverlay.addEventListener('click', ev => { if (ev.target === demoOverlay) closeDemoChooser(); });
+document.getElementById('closeModal').addEventListener('click', () => {
+  if (demoActive && !demoCompleting) interruptGuidedDemo(true);
+});
+overlay.addEventListener('click', ev => {
+  if (ev.target === overlay && demoActive && !demoCompleting) interruptGuidedDemo(true);
+});
 document.addEventListener('keydown', ev => {
   if (ev.key === 'Escape' && demoOverlay.classList.contains('open')) closeDemoChooser();
+  else if (ev.key === 'Escape' && demoActive && !demoCompleting) interruptGuidedDemo(true);
 });
 
 /* Desktop introduction: land the parchment base and wheel, then let the user
@@ -2681,16 +3043,17 @@ document.addEventListener('keydown', ev => {
 function scheduleLandingIntro() {
   if (!isPcBase()) {
     document.body.classList.remove('intro-base-away', 'intro-wheel-away', 'intro-running');
+    demoLater(showGuideNudge, 650);
     return;
   }
   if (reduceMotion()) {
     document.body.classList.remove('intro-base-away', 'intro-wheel-away', 'intro-running');
-    showDemoChooser();
+    showGuideNudge();
     return;
   }
   demoLater(() => document.body.classList.remove('intro-base-away'), 300);
   demoLater(() => document.body.classList.remove('intro-wheel-away'), 1300);
-  demoLater(showDemoChooser, 2850);
+  demoLater(showGuideNudge, 2850);
 }
 if (document.readyState === 'complete') scheduleLandingIntro();
 else window.addEventListener('load', scheduleLandingIntro, { once: true });
