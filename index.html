@@ -1433,7 +1433,7 @@ function buildBaseSectors() {
         return true;
       };
       const rects = [];
-      for (const asp of [0.55, 0.85, 1.2, 1.7, 2.4, 3.3, 4.5]) {   // hW/hH, wide → tall
+      for (const asp of [0.55, 0.85, 1.2, 1.7, 2.4, 3.3, 4.5, 6, 8]) {   // hW/hH, wide → tall
         let lo = 0, hi = Math.max(W, H);
         for (let it = 0; it < 20; it++) { const s = (lo + hi) / 2; if (fits(asp * s, s)) lo = s; else hi = s; }
         if (lo > 4) rects.push({ cx: bx, cy: by, hW: asp * lo, hH: lo });
@@ -1472,13 +1472,14 @@ function buildBaseSectors() {
     g.appendChild(fo);
     baseSvg.appendChild(g);
 
-    /* The fitter: binary-search the largest font whose wrapped block fits a
-       given box, trying single-line and wrapped, using the live element's own
-       rendered metrics. */
-    const measureFit = (hW, hH) => {
+    /* The fitter: binary-search the largest font whose block fits a given box,
+       using the live element's own rendered metrics. Tries single-line and
+       wrapped; `nowrapOnly` keeps every subtext on one line (used for the thin
+       top/bottom wedges, whose wide outer part suits single lines). */
+    const measureFit = (hW, hH, nowrapOnly) => {
       fo.setAttribute('width', (hW * 2).toFixed(1)); fo.setAttribute('height', (hH * 2).toFixed(1));
       let bf = null;
-      for (const nowrap of [true, false]) {
+      for (const nowrap of (nowrapOnly ? [true] : [true, false])) {
         content.style.whiteSpace = nowrap ? 'nowrap' : 'normal';
         /* Binary-search the largest font whose rendered block fits the box in
            both axes. The ceiling is derived from the box, not hardcoded, so a
@@ -1518,7 +1519,7 @@ function buildBaseSectors() {
          centres out along the radius, so they can claim their wide outer part and
          grow the text larger instead of being pinned to the narrow centre. */
       const centres = [[cX, cY]];
-      if (!isSide) for (const u of [0.45, 0.6, 0.72, 0.83]) {
+      if (!isSide) for (const u of [0.5, 0.62, 0.72, 0.82, 0.9]) {
         const px = spineInner[0] + (spineOuter[0] - spineInner[0]) * u;
         const py = spineInner[1] + (spineOuter[1] - spineInner[1]) * u;
         centres.push(rotP(px, py, -tilt));
@@ -1527,7 +1528,9 @@ function buildBaseSectors() {
         for (const r0 of maxRectAt(plR, bx, by, nRx, nRy)) {
           const r = { cx: r0.cx, cy: r0.cy, hW: r0.hW * 0.97, hH: r0.hH * 0.97 };
           if (r.hW < 12 || r.hH < 9) continue;
-          const f = measureFit(r.hW, r.hH);
+          /* Top/bottom wedges: keep every subtext on one line, filling the wide
+             outer part rather than wrapping into the narrow centre. */
+          const f = measureFit(r.hW, r.hH, !isSide);
           if (!gBest || f.sc > gBest.sc) gBest = { sc: f.sc, fs: f.fs, nowrap: f.nowrap, r, tilt };
         }
     }
