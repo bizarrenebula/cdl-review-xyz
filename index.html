@@ -289,7 +289,8 @@
       filter: drop-shadow(0 0 2px #fff) drop-shadow(0 0 5px #f4c95a);
     }
     .mobile-correspondences {
-      display: none;
+      display: grid;
+      grid-template-rows: auto auto minmax(0, 1fr);
       position: relative;
       width: min(92vw, 42rem);
       margin: .45rem auto 1.5rem;
@@ -303,8 +304,11 @@
       box-shadow: 0 5px 18px rgba(31, 21, 5, .14);
       transition: border-color .25s ease, opacity .18s ease, transform .18s ease;
       overflow: hidden;
+      visibility: hidden;
+      opacity: 0;
+      pointer-events: none;
     }
-    .mobile-correspondences.open { display: grid; grid-template-rows: auto auto minmax(0, 1fr); }
+    .mobile-correspondences.open { visibility: visible; opacity: 1; pointer-events: auto; }
     .mobile-correspondences.updating { opacity: .55; transform: translateY(3px); }
     .corr-close {
       position: absolute;
