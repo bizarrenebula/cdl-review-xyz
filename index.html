@@ -344,6 +344,10 @@
       border-top: 1px solid rgba(0, 0, 0, .24);
       overflow: hidden;
     }
+    .corr-field.demo-focus {
+      background: rgba(255, 239, 166, .72);
+      box-shadow: 0 0 0 3px rgba(222, 169, 43, .42), 0 0 15px rgba(222, 169, 43, .6);
+    }
     .corr-key {
       font-size: clamp(.52rem, 2.25vw, .61rem);
       letter-spacing: .1em;
@@ -2878,6 +2882,24 @@ const DEMO_GUIDE = {
     }
   }
 };
+const MOBILE_CORR_GUIDE = {
+  de: {
+    person: n => `Die hervorgehobene Personen-Entsprechung erklärt, warum Prinzip ${n} gewählt wurde.`,
+    event: n => `Die hervorgehobene Entsprechung erklärt, warum das Ereignis zu Prinzip ${n} gehört.`
+  },
+  en: {
+    person: n => `The highlighted people correspondence explains why principle ${n} was selected.`,
+    event: n => `The highlighted correspondence explains why the event belongs to principle ${n}.`
+  },
+  ru: {
+    person: n => `Выделенное соответствие людей объясняет выбор принципа ${n}.`,
+    event: n => `Выделенное соответствие объясняет, почему событие относится к принципу ${n}.`
+  },
+  bg: {
+    person: n => `Подчертаното съответствие за хората обяснява защо е избран принцип ${n}.`,
+    event: n => `Подчертаното съответствие обяснява защо събитието принадлежи към принцип ${n}.`
+  }
+};
 
 let demoTimers = [];
 let demoActive = false;
@@ -2972,6 +2994,16 @@ function clearDemoVisuals() {
     el.classList.remove('demo-result', 'demo-person'));
   hubEl.classList.remove('demo-result');
   overlay.querySelectorAll('.demo-heading').forEach(el => el.classList.remove('demo-heading'));
+  document.querySelectorAll('#correspondencePanel .demo-focus').forEach(el => el.classList.remove('demo-focus'));
+}
+
+function focusDemoCorrespondence(field = 'people') {
+  document.querySelectorAll('#correspondencePanel .demo-focus').forEach(el => el.classList.remove('demo-focus'));
+  const value = document.getElementById(field === 'keys' ? 'corrKeys' : 'corrPeople');
+  const row = value?.closest('.corr-field');
+  row?.classList.add('demo-focus');
+  moveDemoLightTo(value || row);
+  return value || row;
 }
 
 function renderDemoChooser() {
@@ -3052,23 +3084,10 @@ function tourResultHeadings() {
     headings.forEach(el => el.classList.remove('demo-heading'));
     demoCompleting = true;
     document.getElementById('closeModal').click();
-    if (!isPcBase()) {
-      showMobileCorrespondences('inner', true);
-      const panel = document.getElementById('correspondencePanel');
-      const copy = DEMO_GUIDE[lang][activeDemoKey]?.correspondences;
-      demoCompleting = false;
-      panel?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      demoLater(() => presentDemoStep(copy, panel, () => {
-          demoActive = false;
-          activeDemoKey = null;
-          showDemoChooser();
-        }), 650);
-    } else {
-      demoActive = false;
-      activeDemoKey = null;
-      showDemoChooser();
-      demoCompleting = false;
-    }
+    demoActive = false;
+    activeDemoKey = null;
+    showDemoChooser();
+    demoCompleting = false;
   }, 500 + headings.length * 950 + 1500);
 }
 
@@ -3114,8 +3133,13 @@ function runDesktopGuidedExample(key, { person, event }) {
 function runMobileGuidedExample(key, { person, event }) {
   const copy = DEMO_GUIDE[lang][key];
   animateTo('outer', -person * STEP, 1050, easeRoll);
+  const stage = document.getElementById('stage');
+  const panel = document.getElementById('correspondencePanel');
+  const eventField = key === 'siblingChild' ? 'people' : 'keys';
 
   const showResult = () => {
+    document.querySelectorAll('#correspondencePanel .demo-focus').forEach(el => el.classList.remove('demo-focus'));
+    stage?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     focusDemoWheelSector(person, 'outer');
     demoLater(() => {
       hubEl.classList.add('demo-result');
@@ -3130,18 +3154,30 @@ function runMobileGuidedExample(key, { person, event }) {
   };
   const showEvent = () => {
     focusDemoWheelSector(event, 'inner');
-    const eventLabel = innerG.querySelector(`.label-inner[data-index="${event}"]`);
-    presentDemoStep(copy.event, eventLabel, showResult);
+    showMobileCorrespondences('inner', true);
+    panel?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    demoLater(() => {
+      const correspondence = focusDemoCorrespondence(eventField);
+      presentDemoStep(`${copy.event} ${MOBILE_CORR_GUIDE[lang].event(event + 1)}`, correspondence, showResult);
+    }, 650);
   };
   const rotateEvent = () => {
     demoBalloon.classList.remove('on');
-    animateTo('inner', -event * STEP, 1050, easeRoll);
-    demoLater(showEvent, 1250);
+    document.querySelectorAll('#correspondencePanel .demo-focus').forEach(el => el.classList.remove('demo-focus'));
+    stage?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    demoLater(() => {
+      animateTo('inner', -event * STEP, 1050, easeRoll);
+      demoLater(showEvent, 1250);
+    }, 500);
   };
   demoLater(() => {
     focusDemoWheelSector(person, 'outer');
-    const personLabel = outerG.querySelector(`.label-outer[data-index="${person}"]`);
-    presentDemoStep(copy.person, personLabel, rotateEvent);
+    showMobileCorrespondences('outer', true);
+    panel?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    demoLater(() => {
+      const correspondence = focusDemoCorrespondence('people');
+      presentDemoStep(MOBILE_CORR_GUIDE[lang].person(person + 1), correspondence, rotateEvent);
+    }, 650);
   }, 1250);
 }
 
