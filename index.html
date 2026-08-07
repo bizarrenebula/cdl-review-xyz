@@ -110,10 +110,10 @@
     z-index: 9;
     width: min(30rem, calc(100vw - 1rem));
     padding: 1rem 1.2rem;
-    border: 1px solid #8f6a24;
+    border: 3px solid #853b38;
     border-radius: 10px;
-    background: #fff9e9;
-    color: #171106;
+    background: #b85a56;
+    color: #fff;
     font-size: clamp(1rem, 2.1vw, 1.18rem);
     line-height: 1.45;
     text-align: center;
@@ -129,9 +129,9 @@
     left: 50%; bottom: -8px;
     width: 14px; height: 14px;
     transform: translateX(-50%) rotate(45deg);
-    background: #fff9e9;
-    border-right: 1px solid #8f6a24;
-    border-bottom: 1px solid #8f6a24;
+    background: #b85a56;
+    border-right: 3px solid #853b38;
+    border-bottom: 3px solid #853b38;
   }
   .demo-balloon.on {
     opacity: 1;
@@ -139,7 +139,7 @@
     cursor: pointer;
   }
   .demo-balloon.on:hover, .demo-balloon.on:focus-visible {
-    border-color: #4e3509;
+    border-color: #672724;
     box-shadow: 0 7px 24px rgba(15, 10, 2, .35), 0 0 0 3px rgba(242, 207, 120, .5);
     outline: none;
   }
@@ -149,7 +149,7 @@
     font-size: .68em;
     letter-spacing: .14em;
     text-transform: uppercase;
-    color: #79591d;
+    color: #fff3ed;
   }
   .demo-balloon.insist { animation: balloon-insist .48s ease both; }
   @keyframes balloon-insist {
@@ -171,8 +171,8 @@
   .demo-balloon.below::after {
     top: -8px; bottom: auto;
     border: 0;
-    border-left: 1px solid #8f6a24;
-    border-top: 1px solid #8f6a24;
+    border-left: 3px solid #853b38;
+    border-top: 3px solid #853b38;
   }
   .demo-balloon.right {
     width: min(30rem, calc(100vw - 4.5rem));
@@ -183,8 +183,8 @@
     top: 50%; bottom: auto;
     transform: translateY(-50%) rotate(45deg);
     border: 0;
-    border-left: 1px solid #8f6a24;
-    border-bottom: 1px solid #8f6a24;
+    border-left: 3px solid #853b38;
+    border-bottom: 3px solid #853b38;
   }
   .demo-balloon.right.insist { animation-name: balloon-insist-right; }
   @keyframes balloon-insist-right {
