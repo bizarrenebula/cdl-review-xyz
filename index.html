@@ -180,7 +180,7 @@
   }
   .demo-balloon.right::after {
     left: -8px; right: auto;
-    top: 50%; bottom: auto;
+    top: var(--arrow-top, 50%); bottom: auto;
     transform: translateY(-50%) rotate(45deg);
     border: 0;
     border-left: 3px solid #853b38;
@@ -2932,10 +2932,21 @@ function showDemoBalloon(text, el, placement = 'auto') {
   prompt.className = 'continue';
   prompt.textContent = DEMO_TEXT[lang].continue;
   demoBalloon.appendChild(prompt);
-  demoBalloon.style.left = x + 'px';
-  demoBalloon.style.top = (useRight ? target.top + target.height / 2 : (below ? target.bottom : target.top)) + 'px';
   demoBalloon.classList.toggle('below', below);
   demoBalloon.classList.toggle('right', useRight);
+  let top = useRight ? target.top + target.height / 2 : (below ? target.bottom : target.top);
+  if (useRight) {
+    const halfHeight = demoBalloon.offsetHeight / 2;
+    const unclampedTop = top;
+    top = Math.max(halfHeight + 8, Math.min(window.innerHeight - halfHeight - 8, top));
+    const renderedTop = top - halfHeight;
+    const arrowTop = Math.max(12, Math.min(demoBalloon.offsetHeight - 12, unclampedTop - renderedTop));
+    demoBalloon.style.setProperty('--arrow-top', `${arrowTop}px`);
+  } else {
+    demoBalloon.style.removeProperty('--arrow-top');
+  }
+  demoBalloon.style.left = x + 'px';
+  demoBalloon.style.top = top + 'px';
   demoBalloon.classList.add('on');
 }
 
