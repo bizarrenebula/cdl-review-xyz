@@ -1357,8 +1357,6 @@ function buildBaseSectors() {
   baseSvg.setAttribute('viewBox', `0 0 ${W} ${H}`);
   baseSvg.innerHTML = '';
 
-  const sideFits = [];                              // side wedges, unified to one font size after the loop
-
   for (let i = 0; i < 12; i++) {
     const pIdx = wedgePrincipleIndex(i);           // which principle sits in this wedge
     const item = LP()[pIdx];
@@ -1506,8 +1504,11 @@ function buildBaseSectors() {
       let bf = null;
       for (const nowrap of [true, false]) {
         content.style.whiteSpace = nowrap ? 'nowrap' : 'normal';
-        let lo = 6, hi = 30;
-        for (let it = 0; it < 6; it++) {
+        /* Binary-search the largest font whose rendered block fits the box in
+           both axes. The ceiling is derived from the box, not hardcoded, so a
+           roomy sector can grow as large as it needs. */
+        let lo = 6, hi = Math.max(12, Math.min(hH * 2, hW));
+        for (let it = 0; it < 9; it++) {
           const mid = (lo + hi) / 2;
           box.style.fontSize = mid.toFixed(2) + 'px';
           if (content.offsetHeight <= hH * 2 && content.scrollWidth <= hW * 2) lo = mid; else hi = mid;
@@ -1579,7 +1580,6 @@ function buildBaseSectors() {
     fo.setAttribute('width', (gBest.r.hW * 2).toFixed(1));
     fo.setAttribute('height', (gBest.r.hH * 2).toFixed(1));
     if (gBest.tilt) fo.setAttribute('transform', `rotate(${gBest.tilt.toFixed(2)}, ${acx.toFixed(1)}, ${acy.toFixed(1)})`);
-    if (isSide) sideFits.push({ box, fs: gBest.fs });
 
     /* The principle number, near the outer edge on the mid-angle (kept clear of
        the text above). */
@@ -1592,14 +1592,6 @@ function buildBaseSectors() {
     num.style.setProperty('--seg-color', color);
     num.textContent = pIdx + 1;
     baseSvg.appendChild(num);
-  }
-
-  /* Unify the eight side wedges to one font size — the smallest that every one
-     of them fits — so they read as a single set of rays rather than a jumble of
-     sizes. */
-  if (sideFits.length) {
-    const commonFs = Math.min(...sideFits.map(s => s.fs));
-    sideFits.forEach(s => { s.box.style.fontSize = commonFs.toFixed(2) + 'px'; });
   }
 }
 
