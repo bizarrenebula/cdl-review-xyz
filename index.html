@@ -243,6 +243,7 @@
     header p { margin-top: .9rem; }
     .stage { margin: 1.8rem auto; }
   }
+  .mobile-correspondences { display: none; }
   @media (max-width: 899px) {
     header { transform: translateY(-.4rem); }
     .stage { margin-top: 2.2rem; }
@@ -279,6 +280,47 @@
       font-weight: 700;
       filter: drop-shadow(0 0 2px #fff) drop-shadow(0 0 5px #f4c95a);
     }
+    .mobile-correspondences {
+      display: block;
+      width: min(92vw, 42rem);
+      margin: .45rem auto 1.5rem;
+      padding: 1rem;
+      border: 1px solid var(--line);
+      border-top: 5px solid var(--principle-color, var(--gold));
+      background: #faf4e6 url('assets/parchment-base.webp') center / cover;
+      color: var(--ink);
+      box-shadow: 0 5px 18px rgba(31, 21, 5, .14);
+      transition: border-color .25s ease, opacity .18s ease, transform .18s ease;
+    }
+    .mobile-correspondences.updating { opacity: .55; transform: translateY(3px); }
+    .corr-source {
+      font-size: .62rem;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: #6e521e;
+    }
+    .corr-title {
+      margin: .15rem 0 .75rem;
+      font-family: 'Marcellus', serif;
+      font-size: 1.12rem;
+      font-weight: 700;
+    }
+    .corr-grid { display: grid; gap: .7rem; }
+    .corr-field {
+      padding-top: .55rem;
+      border-top: 1px solid rgba(0, 0, 0, .24);
+    }
+    .corr-key {
+      margin-bottom: .2rem;
+      font-size: .61rem;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+    .corr-value { font-size: .88rem; line-height: 1.4; }
+  }
+  @media (min-width: 640px) and (max-width: 899px) {
+    .corr-grid { grid-template-columns: repeat(3, 1fr); }
   }
   /* The outer ring reaches r=344 in a 700-unit viewBox, so its halo — and the
      counting ring past it — would be clipped flat by the SVG viewport. Let
@@ -786,6 +828,16 @@
 <div class="demo-light" id="demoLight" aria-hidden="true"></div>
 <div class="demo-balloon" id="demoBalloon" role="button" tabindex="0" aria-live="polite"></div>
 </div>
+
+<section class="mobile-correspondences" id="correspondencePanel" aria-live="polite">
+  <div class="corr-source" id="corrSource"></div>
+  <div class="corr-title" id="corrTitle"></div>
+  <div class="corr-grid">
+    <div class="corr-field"><div class="corr-key" id="corrKeysLabel"></div><div class="corr-value" id="corrKeys"></div></div>
+    <div class="corr-field"><div class="corr-key" id="corrPeopleLabel"></div><div class="corr-value" id="corrPeople"></div></div>
+    <div class="corr-field"><div class="corr-key" id="corrBodyLabel"></div><div class="corr-value" id="corrBody"></div></div>
+  </div>
+</section>
 
 <div class="overlay" id="overlay" role="dialog" aria-modal="true">
   <div class="modal">
@@ -2056,6 +2108,30 @@ const state = {
   outer: { angle: 0, group: outerG },
   inner: { angle: 0, group: innerG }
 };
+let mobileCorrState = { ring: null, index: -1, lang: null };
+
+function updateMobileCorrespondences(ring = 'outer', force = false) {
+  if (isPcBase()) return;
+  const index = selectedIndex(ring);
+  if (!force && mobileCorrState.ring === ring && mobileCorrState.index === index && mobileCorrState.lang === lang) return;
+  mobileCorrState = { ring, index, lang };
+
+  const item = LP()[index];
+  const panel = document.getElementById('correspondencePanel');
+  if (!panel || !item) return;
+  panel.style.setProperty('--principle-color', LP_COLORS[index % 4]);
+  document.getElementById('corrSource').textContent = ring === 'outer' ? T().outer : T().inner;
+  document.getElementById('corrTitle').textContent = `${index + 1}. ${item.title}`;
+  document.getElementById('corrKeysLabel').textContent = T().catKeys;
+  document.getElementById('corrPeopleLabel').textContent = T().catPeople;
+  document.getElementById('corrBodyLabel').textContent = T().catBody;
+  document.getElementById('corrKeys').textContent = item.keys;
+  document.getElementById('corrPeople').textContent = item.people;
+  document.getElementById('corrBody').textContent = item.body;
+  panel.classList.add('updating');
+  requestAnimationFrame(() => panel.classList.remove('updating'));
+}
+
 function applyRotation(ring) {
   const s = state[ring];
   s.group.setAttribute('transform', `rotate(${s.angle}, ${CX}, ${CY})`);
@@ -2063,6 +2139,7 @@ function applyRotation(ring) {
     orientPcWheel(s.angle);   // keep labels upright
     updatePcBase();           // tint the base sector currently under the arrow
   }
+  if (!isPcBase()) updateMobileCorrespondences(ring);
   if (ring === numTrack) turnNumRing();
 }
 function selectedIndex(ring) {
@@ -2108,6 +2185,7 @@ function turnNumRing() {
 }
 
 function trackNumRing(ring) {
+  updateMobileCorrespondences(ring);
   if (ring === (numPending ?? numTrack)) return;    // already going there
   /* Whatever was in flight is over: the hand moved again. Taking hold of the
      wheel the ring is already on, mid-fade, has to land here too — otherwise
@@ -2329,6 +2407,7 @@ window.addEventListener('resize', () => {
     fitHubText();
     buildBaseSectors();
     updateHub();
+    updateMobileCorrespondences(numTrack, true);
   });
 });
 /* ================= ROTATION MOTION ================= */
@@ -2615,6 +2694,7 @@ function applyLanguage(newLang) {
   applyRotation('outer');
   applyRotation('inner');
   updateHub();
+  updateMobileCorrespondences(numTrack, true);
   if (document.getElementById('demoOverlay')?.classList.contains('open')) renderDemoChooser();
   if (document.getElementById('guideBtn')?.classList.contains('attention'))
     showDemoBalloon(DEMO_GUIDE[lang].nudge, document.getElementById('guideBtn'), 'right');
