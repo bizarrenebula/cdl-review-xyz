@@ -73,6 +73,32 @@
   .lang-switch button.active,
   .lang-switch button:hover { background: var(--ink); color: var(--paper); border-color: var(--line); }
 
+  .guide-help {
+    position: fixed;
+    top: .85rem; left: .9rem;
+    z-index: 6;
+    width: 2.15rem; height: 2.15rem;
+    display: grid; place-items: center;
+    border: 1px solid #c99a39;
+    border-radius: 50%;
+    background: rgba(4, 13, 34, .9);
+    color: #f2cf78;
+    font-family: 'Marcellus', serif;
+    font-size: 1.15rem;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 2px 9px rgba(0, 0, 0, .28);
+    transition: transform .18s ease, background .18s ease, color .18s ease;
+  }
+  .guide-help:hover, .guide-help:focus-visible {
+    transform: scale(1.08);
+    background: #f2cf78;
+    color: #08142e;
+    outline: none;
+  }
+  @media (max-width: 899px) { .guide-help { display: none; } }
+
   header {
     width: 100%;
     text-align: center;
@@ -331,6 +357,32 @@
     font-size: .78rem; font-style: italic; color: var(--ink);
     border-top: 1px dashed var(--line); padding-top: .7rem; margin-top: .4rem;
   }
+  .demo-picker { max-width: 30rem; }
+  .demo-picker h2 { padding-right: 1.5rem; }
+  .demo-options { display: grid; gap: .65rem; margin-top: 1.2rem; }
+  .demo-option {
+    width: 100%;
+    border: 1px solid var(--line);
+    background: #faf4e6 url('assets/parchment-base.webp') center / cover;
+    color: var(--ink);
+    padding: .8rem 1rem;
+    font-family: 'Marcellus', serif;
+    font-size: .96rem;
+    text-align: left;
+    cursor: pointer;
+    transition: transform .18s ease, box-shadow .18s ease;
+  }
+  .demo-option:hover, .demo-option:focus-visible {
+    transform: translateX(.25rem);
+    box-shadow: -4px 0 0 var(--gold);
+    outline: none;
+  }
+  .modal .demo-heading {
+    border-radius: 4px;
+    background: rgba(242, 221, 126, .58);
+    box-shadow: 0 0 0 4px rgba(242, 221, 126, .28), 0 0 16px rgba(180, 135, 45, .42);
+    transition: background .25s ease, box-shadow .25s ease;
+  }
   .explain-btn {
     display: block; margin: 1rem auto .2rem;
     font-family: 'Spectral', serif;
@@ -401,6 +453,21 @@
       background: #faf4e6 url('assets/parchment-base.webp') center / cover no-repeat;
       min-height: 0;
       overflow: hidden;
+      transform: translateX(0) rotate(0);
+      opacity: 1;
+      transition: transform .9s cubic-bezier(.16, .84, .25, 1.08), opacity .5s ease, box-shadow .9s ease;
+      will-change: transform;
+    }
+    body.intro-base-away .pcbase {
+      transform: translateX(-108vw) rotate(-1.8deg);
+      opacity: .15;
+      box-shadow: 18px 12px 35px rgba(28, 17, 3, .28);
+    }
+    body.intro-running .pcbase { pointer-events: none; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .pcbase { transition: none; will-change: auto; }
+      body.intro-base-away .pcbase { transform: none; opacity: 1; box-shadow: none; }
     }
 
     .base-svg {
@@ -425,6 +492,51 @@
       max-width: 60%;
       margin: 0;
       z-index: 2;
+      opacity: 1;
+      transition: transform 1.3s cubic-bezier(.12, .72, .2, 1.06), opacity .42s ease;
+      will-change: transform;
+    }
+    body.intro-wheel-away #pcbase .stage {
+      transform: translate(-50%, -50%) translateY(-115vh) rotate(-540deg);
+      opacity: 0;
+    }
+    .demo-light {
+      position: absolute;
+      left: 50%; top: 50%;
+      width: 17px; height: 17px;
+      z-index: 5;
+      border-radius: 50%;
+      pointer-events: none;
+      opacity: 0;
+      transform: translate(-50%, -50%);
+      background: #fff8cf;
+      border: 1px solid rgba(91, 61, 9, .8);
+      box-shadow: 0 0 7px 3px #fff7bd, 0 0 22px 9px rgba(226, 174, 51, .7);
+      transition: left .9s cubic-bezier(.2, .72, .2, 1), top .9s cubic-bezier(.2, .72, .2, 1), opacity .3s ease;
+    }
+    .demo-light.on { opacity: 1; }
+    #pcbase .sector-outer.demo-focus {
+      stroke: #fff5b0;
+      stroke-width: 5;
+      filter: drop-shadow(0 0 5px rgba(213, 155, 25, .95));
+    }
+    #pcbase .label-outer.demo-focus {
+      font-weight: 700;
+      filter: drop-shadow(0 0 2px #fff) drop-shadow(0 0 5px #f4c95a);
+    }
+    .base-wedge.demo-result {
+      fill: var(--seg-color, var(--paper));
+      stroke-width: 4;
+      filter: drop-shadow(0 0 7px rgba(207, 147, 14, .9));
+    }
+    .base-wedge.demo-person {
+      stroke: #fff5b0;
+      stroke-width: 4;
+      filter: drop-shadow(0 0 6px rgba(213, 155, 25, .9));
+    }
+    @media (prefers-reduced-motion: reduce) {
+      #pcbase .stage { transition: none; will-change: auto; }
+      body.intro-wheel-away #pcbase .stage { transform: translate(-50%, -50%); opacity: 1; }
     }
 
     /* One wheel on the base: hide the inner (life-area) ring and the counting
@@ -510,7 +622,9 @@
   }
 </style>
 </head>
-<body>
+<body class="intro-base-away intro-wheel-away intro-running">
+
+<button class="guide-help" id="guideBtn" type="button" aria-label="Open guided examples">?</button>
 
 <div class="lang-switch" id="langSwitch">
   <button data-lang="de">DE</button>
@@ -544,6 +658,7 @@
     <button id="readMoreBtn" type="button"></button>
   </div>
 </div>
+<div class="demo-light" id="demoLight" aria-hidden="true"></div>
 </div>
 
 <div class="overlay" id="overlay" role="dialog" aria-modal="true">
@@ -553,6 +668,16 @@
     <h2 id="modalTitle"></h2>
     <div class="rule"></div>
     <div id="modalBody"></div>
+  </div>
+</div>
+
+<div class="overlay" id="demoOverlay" role="dialog" aria-modal="true" aria-labelledby="demoTitle">
+  <div class="modal demo-picker">
+    <button class="close" id="closeDemo" aria-label="Close">×</button>
+    <div class="eyebrow" id="demoEyebrow"></div>
+    <h2 id="demoTitle"></h2>
+    <div class="rule"></div>
+    <div class="demo-options" id="demoOptions"></div>
   </div>
 </div>
 
@@ -2363,10 +2488,212 @@ function applyLanguage(newLang) {
   applyRotation('outer');
   applyRotation('inner');
   updateHub();
+  if (document.getElementById('demoOverlay')?.classList.contains('open')) renderDemoChooser();
 }
 
 document.querySelectorAll('.lang-switch button').forEach(btn =>
   btn.addEventListener('click', () => applyLanguage(btn.dataset.lang)));
+
+const demoLight = document.getElementById('demoLight');
+const demoOverlay = document.getElementById('demoOverlay');
+const demoOptions = document.getElementById('demoOptions');
+
+const DEMO_EXAMPLES = {
+  siblingChild: { person: 2, event: 4 },  // 3 + 5 - 1 = 7
+  friendJob:    { person: 10, event: 5 }, // 11 + 6 - 1 = 4
+  promotion:    { person: 5, event: 8 }   // 6 + 9 - 1 = 2
+};
+const DEMO_TEXT = {
+  de: {
+    eyebrow: 'Geführte Beispiele', title: 'Wählen Sie ein Beispiel', open: 'Geführte Beispiele öffnen',
+    siblingChild: 'Geburt des Kindes eines Geschwisters',
+    friendJob: 'Ein Freund beginnt eine neue Arbeit',
+    promotion: 'Ein Kollege wird befördert'
+  },
+  en: {
+    eyebrow: 'Guided examples', title: 'Choose an example', open: 'Open guided examples',
+    siblingChild: "Birth of a sibling's child",
+    friendJob: 'A friend starts a new job',
+    promotion: 'A colleague gets promoted'
+  },
+  ru: {
+    eyebrow: 'Примеры', title: 'Выберите пример', open: 'Открыть примеры',
+    siblingChild: 'Рождение ребёнка у брата или сестры',
+    friendJob: 'Друг начинает новую работу',
+    promotion: 'Коллегу повышают'
+  },
+  bg: {
+    eyebrow: 'Примери', title: 'Изберете пример', open: 'Отвори примерите',
+    siblingChild: 'Раждане на дете на брат или сестра',
+    friendJob: 'Приятел започва нова работа',
+    promotion: 'Колега получава повишение'
+  }
+};
+
+let demoTimers = [];
+const demoLater = (fn, delay) => {
+  const id = setTimeout(fn, delay);
+  demoTimers.push(id);
+  return id;
+};
+function clearDemoTimers() {
+  demoTimers.forEach(clearTimeout);
+  demoTimers = [];
+}
+
+function moveDemoLightTo(el) {
+  if (!el || !demoLight || !pcbaseEl) return;
+  const target = el.getBoundingClientRect();
+  const base = pcbaseEl.getBoundingClientRect();
+  demoLight.style.left = (target.left + target.width / 2 - base.left) + 'px';
+  demoLight.style.top = (target.top + target.height / 2 - base.top) + 'px';
+  demoLight.classList.add('on');
+}
+
+function focusDemoWheelSector(index) {
+  outerG.querySelectorAll('.demo-focus').forEach(el => el.classList.remove('demo-focus'));
+  const sector = outerG.querySelector(`.sector-outer[data-index="${index}"]`);
+  const label = outerG.querySelector(`.label-outer[data-index="${index}"]`);
+  sector?.classList.add('demo-focus');
+  label?.classList.add('demo-focus');
+  moveDemoLightTo(label || sector);
+}
+
+function clearDemoVisuals() {
+  demoLight?.classList.remove('on');
+  outerG.querySelectorAll('.demo-focus').forEach(el => el.classList.remove('demo-focus'));
+  baseSvg?.querySelectorAll('.demo-result, .demo-person').forEach(el =>
+    el.classList.remove('demo-result', 'demo-person'));
+  overlay.querySelectorAll('.demo-heading').forEach(el => el.classList.remove('demo-heading'));
+}
+
+function renderDemoChooser() {
+  const copy = DEMO_TEXT[lang];
+  document.getElementById('guideBtn').setAttribute('aria-label', copy.open);
+  document.getElementById('demoEyebrow').textContent = copy.eyebrow;
+  document.getElementById('demoTitle').textContent = copy.title;
+  demoOptions.textContent = '';
+  Object.keys(DEMO_EXAMPLES).forEach(key => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'demo-option';
+    button.dataset.demo = key;
+    button.textContent = copy[key];
+    button.addEventListener('click', () => startGuidedDemo(key));
+    demoOptions.appendChild(button);
+  });
+}
+
+function showDemoChooser() {
+  clearDemoTimers();
+  clearDemoVisuals();
+  document.body.classList.remove('intro-running');
+  renderDemoChooser();
+  demoOverlay.classList.add('open');
+  demoOptions.querySelector('button')?.focus();
+}
+
+function closeDemoChooser() {
+  clearDemoTimers();
+  clearDemoVisuals();
+  demoOverlay.classList.remove('open');
+  document.body.classList.remove('intro-running');
+  animateTo('outer', 0, 850, easeSettle);
+}
+
+function tourResultHeadings() {
+  const modal = overlay.querySelector('.modal');
+  const headings = [
+    document.getElementById('modalEyebrow'),
+    document.getElementById('modalTitle'),
+    ...document.querySelectorAll('#modalBody .field .k, #modalBody .impulse .k')
+  ].filter(Boolean);
+  modal.scrollTop = 0;
+  headings.forEach((heading, i) => demoLater(() => {
+    headings.forEach(el => el.classList.remove('demo-heading'));
+    heading.classList.add('demo-heading');
+    modal.scrollTo({
+      top: Math.max(0, heading.offsetTop - modal.clientHeight * .42),
+      behavior: 'smooth'
+    });
+  }, 500 + i * 950));
+  demoLater(() => {
+    headings.forEach(el => el.classList.remove('demo-heading'));
+    document.getElementById('closeModal').click();
+    showDemoChooser();
+  }, 500 + headings.length * 950 + 1500);
+}
+
+function runGuidedExample({ person, event }) {
+  const result = resultLP(person, event);
+  animateTo('outer', -person * STEP, 1100, easeRoll);
+
+  demoLater(() => moveDemoLightTo(outerG.querySelector('.wheel-pointer')), 1350);
+  demoLater(() => {
+    const personBase = baseSvg?.querySelector(`.base-wedge[data-index="${person}"]`);
+    personBase?.classList.add('demo-person');
+    moveDemoLightTo(personBase);
+  }, 1850);
+  demoLater(() => focusDemoWheelSector(person), 3650);
+  demoLater(() => focusDemoWheelSector(event), 5550);
+  demoLater(() => {
+    outerG.querySelectorAll('.demo-focus').forEach(el => el.classList.remove('demo-focus'));
+    const resultWedge = baseSvg?.querySelector(`.base-wedge[data-index="${result}"]`);
+    resultWedge?.classList.add('demo-result');
+    moveDemoLightTo(resultWedge);
+  }, 7450);
+  demoLater(() => {
+    const resultWedge = baseSvg?.querySelector(`.base-wedge[data-index="${result}"]`);
+    resultWedge?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    demoLight?.classList.remove('on');
+    const modal = overlay.querySelector('.modal');
+    if (modal) modal.scrollTop = 0;
+  }, 9300);
+  demoLater(tourResultHeadings, 10100);
+}
+
+function startGuidedDemo(key) {
+  const example = DEMO_EXAMPLES[key];
+  if (!example) return;
+  clearDemoTimers();
+  clearDemoVisuals();
+  demoOverlay.classList.remove('open');
+  document.body.classList.add('intro-running');
+  runGuidedExample(example);
+}
+
+function openGuideOnDemand() {
+  clearDemoTimers();
+  overlay.classList.remove('open');
+  document.body.classList.remove('intro-base-away', 'intro-wheel-away', 'intro-running');
+  showDemoChooser();
+}
+
+document.getElementById('guideBtn').addEventListener('click', openGuideOnDemand);
+document.getElementById('closeDemo').addEventListener('click', closeDemoChooser);
+demoOverlay.addEventListener('click', ev => { if (ev.target === demoOverlay) closeDemoChooser(); });
+document.addEventListener('keydown', ev => {
+  if (ev.key === 'Escape' && demoOverlay.classList.contains('open')) closeDemoChooser();
+});
+
+/* Desktop introduction: land the parchment base and wheel, then let the user
+   choose which real-world example to explore. */
+function scheduleLandingIntro() {
+  if (!isPcBase()) {
+    document.body.classList.remove('intro-base-away', 'intro-wheel-away', 'intro-running');
+    return;
+  }
+  if (reduceMotion()) {
+    document.body.classList.remove('intro-base-away', 'intro-wheel-away', 'intro-running');
+    showDemoChooser();
+    return;
+  }
+  demoLater(() => document.body.classList.remove('intro-base-away'), 300);
+  demoLater(() => document.body.classList.remove('intro-wheel-away'), 1300);
+  demoLater(showDemoChooser, 2850);
+}
+if (document.readyState === 'complete') scheduleLandingIntro();
+else window.addEventListener('load', scheduleLandingIntro, { once: true });
 
 applyLanguage('de');
 </script>
