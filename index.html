@@ -781,6 +781,121 @@
   .impulse .lead { font-style: italic; font-size: .9rem; margin-bottom: .3rem; }
   .impulse ul { margin: .1rem 0 .7rem 1.2rem; }
   .impulse li { font-size: .88rem; line-height: 1.5; margin-bottom: .15rem; }
+  .result-principle-label { margin-left: .35em; }
+
+  /* Wide editorial result layout on desktop. Category cards and the mobile
+     result keep the compact modal above. */
+  @media (min-width: 900px) {
+    #overlay.result-open { padding: 2rem; }
+    #overlay.result-open .modal {
+      width: min(92vw, 88rem);
+      max-width: 88rem;
+      max-height: 90vh;
+      padding: 2rem 2.6rem 2.4rem;
+      border-color: rgba(52, 43, 34, .78);
+    }
+    #overlay.result-open .modal > .eyebrow {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: .15rem;
+      color: #6e521e;
+      letter-spacing: .16em;
+    }
+    #overlay.result-open .result-principle-number {
+      font-family: 'Marcellus', serif;
+      font-size: clamp(2.8rem, 5vw, 5rem);
+      line-height: .92;
+      letter-spacing: 0;
+      color: var(--ink);
+    }
+    #overlay.result-open .result-principle-label {
+      margin-left: 0;
+      font-size: .68rem;
+      text-transform: uppercase;
+    }
+    #overlay.result-open .modal > h2 {
+      max-width: 64rem;
+      margin: .65rem auto 1.15rem;
+      font-size: clamp(1.35rem, 2.15vw, 2.05rem);
+      line-height: 1.25;
+      text-align: center;
+    }
+    #overlay.result-open .rule {
+      width: min(11rem, 28%);
+      height: 2px;
+      margin: 0 auto 1.6rem;
+      background: linear-gradient(90deg, transparent, #9c7225 20% 80%, transparent);
+    }
+    #overlay.result-open #modalBody {
+      display: flex;
+      flex-direction: column;
+    }
+    #overlay.result-open .result-correspondences {
+      order: 1;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: clamp(.8rem, 1.6vw, 1.5rem);
+    }
+    #overlay.result-open .result-correspondences .field {
+      margin: 0;
+      padding: 1.15rem 1.25rem 1.25rem;
+      border-top: 3px solid rgba(156, 114, 37, .58);
+      background: rgba(180, 135, 45, .055);
+      box-shadow: inset 0 0 0 1px rgba(52, 43, 34, .12);
+    }
+    #overlay.result-open .result-correspondences .field .k {
+      min-height: 2.8em;
+      margin-bottom: .65rem;
+      font-size: .7rem;
+      line-height: 1.4;
+    }
+    #overlay.result-open .result-correspondences .field .v {
+      font-size: 1rem;
+      line-height: 1.55;
+    }
+    #overlay.result-open .result-mottos {
+      order: 2;
+      margin: 1.4rem auto 0;
+      max-width: 58rem;
+      text-align: center;
+    }
+    #overlay.result-open .result-mottos .motto {
+      margin-bottom: .35rem;
+      font-size: 1.03rem;
+    }
+    #overlay.result-open .impulse {
+      order: 3;
+      width: min(100%, 70rem);
+      margin: 1.5rem auto 0;
+      padding: 1.25rem 1.5rem 1.35rem 1.8rem;
+      border-top: 0;
+      border-left: 3px solid rgba(156, 114, 37, .66);
+      background: linear-gradient(90deg, rgba(180, 135, 45, .09), rgba(180, 135, 45, .025));
+    }
+    #overlay.result-open .impulse > .k {
+      margin-bottom: .75rem;
+      font-size: .78rem;
+    }
+    #overlay.result-open .impulse .lead {
+      margin: .75rem 0 .45rem;
+      font-size: 1.02rem;
+      font-weight: 600;
+    }
+    #overlay.result-open .impulse ul {
+      columns: 2;
+      column-gap: 3rem;
+      margin: .2rem 0 .8rem;
+      padding-left: 1.35rem;
+    }
+    #overlay.result-open .impulse li {
+      break-inside: avoid;
+      padding-left: .2rem;
+      font-size: .96rem;
+      line-height: 1.5;
+    }
+    #overlay.result-open .impulse li::marker { color: #8b641e; }
+  }
 
   /* ============ PC LAYOUT — one wheel on a rectangular base ============
      Phones/tablets keep the two-wheel stage exactly as before: the .pcbase
@@ -3079,6 +3194,7 @@ function field(k, v) {
 }
 
 function openCategoryModal(idx, ring) {
+  overlay.classList.remove('result-open');
   const item = LP()[idx];
   document.getElementById('modalEyebrow').textContent =
     `${idx + 1}. ${T().lpWord}` + (ring === 'outer' ? ` · ${item.label}` : ` · ${item.area}`);
@@ -3186,8 +3302,9 @@ function bookHTML(p, e) {
   if (!sec) return '';
   const L = FIELD_L[lang];
   let html = '';
-  if (sec.m && sec.m.length) html += sec.m.map(t => `<p class="motto">${t}</p>`).join('');
-  html += field(L.a, sec.a) + field(L.i, sec.i) + field(L.b, sec.b);
+  if (sec.m && sec.m.length)
+    html += `<div class="result-mottos">${sec.m.map(t => `<p class="motto">${t}</p>`).join('')}</div>`;
+  html += `<div class="result-correspondences">${field(L.a, sec.a)}${field(L.i, sec.i)}${field(L.b, sec.b)}</div>`;
   html += `<div class="impulse"><div class="k">${L.s}</div>`;
   const sourceSolutions = BOOK_DE[key]?.s || [];
   let listOpen = false;
@@ -3213,9 +3330,16 @@ function bookHTML(p, e) {
 /* The result reading for a person (p) and an event (e); result LP = p + e − 1. */
 function openResultModalFor(p, e) {
   const r = resultLP(p, e);
-  // eyebrow shows the formula person + event − 1; title is the reflect sentence
-  document.getElementById('modalEyebrow').textContent =
-    `${p + 1} + ${e + 1} − 1 → ${r + 1}. ${T().lpWord}`;
+  overlay.classList.add('result-open');
+  const eyebrow = document.getElementById('modalEyebrow');
+  eyebrow.textContent = '';
+  const number = document.createElement('span');
+  number.className = 'result-principle-number';
+  number.textContent = r + 1;
+  const label = document.createElement('span');
+  label.className = 'result-principle-label';
+  label.textContent = T().lpWord;
+  eyebrow.append(number, label);
   document.getElementById('modalTitle').textContent =
     REFLECT[lang](LP()[e].area, LP()[p].label, r + 1, p, e);
   // body: book text from the quotation (motto) down to the Je-mehr…desto block,
