@@ -1751,9 +1751,9 @@
   }
 </style>
 </head>
-<body class="trial-locked intro-base-away intro-wheel-away intro-wheel-geometry-away intro-wheel-colors-away intro-wheel-copy-away intro-wheel-sun intro-selection-away intro-running">
+<body class="intro-base-away intro-wheel-away intro-wheel-geometry-away intro-wheel-colors-away intro-wheel-copy-away intro-wheel-sun intro-selection-away intro-running">
 
-<section class="trial-gate" id="trialGate" role="dialog" aria-modal="true" aria-labelledby="trialTitle">
+<section class="trial-gate" id="trialGate" role="dialog" aria-modal="true" aria-labelledby="trialTitle" hidden>
   <div class="trial-card">
     <div class="trial-eyebrow" id="trialEyebrow">7-day trial</div>
     <h2 id="trialTitle">Begin your trial</h2>
@@ -4707,6 +4707,10 @@ function showExpiredTrial() {
   trialGate.hidden = false;
   document.body.classList.add('trial-locked');
 }
+function showTrialGate() {
+  trialGate.hidden = false;
+  document.body.classList.add('trial-locked');
+}
 async function expireTrialAtDeadline() {
   try { await trialApi('status'); } catch { /* The local barrier still closes on time. */ }
   showExpiredTrial();
@@ -4752,9 +4756,10 @@ async function initializeTrialGate() {
       showExpiredTrial();
       return;
     }
-    trialGate.hidden = false;
+    showTrialGate();
     trialCode.focus({ preventScroll:true });
   } catch (error) {
+    showTrialGate();
     setTrialStatus(error.message, 'error');
   }
 }
