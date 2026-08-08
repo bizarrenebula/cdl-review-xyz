@@ -605,6 +605,30 @@
     box-shadow: 0 0 0 4px rgba(242, 221, 126, .28), 0 0 16px rgba(180, 135, 45, .42);
     transition: background .25s ease, box-shadow .25s ease;
   }
+  /* Guided examples underline the exact driving word in a principle's text
+     instead of pointing at it: a bold line that flashes in and stays until the
+     user advances the step. */
+  .demo-underline {
+    font-weight: 700;
+    text-decoration: underline;
+    text-decoration-color: var(--gold, #c8892e);
+    text-decoration-thickness: .17em;
+    text-underline-offset: .16em;
+    border-radius: 3px;
+    animation: demo-underline-in .6s ease-out both;
+  }
+  @keyframes demo-underline-in {
+    0%   { background: rgba(200, 137, 46, .55); }
+    100% { background: rgba(200, 137, 46, 0); }
+  }
+  /* The whole text block of the chosen principle is lit while its word is
+     underlined, so the eye lands on the right sector first. */
+  .bs-box.demo-lit {
+    background: rgba(242, 221, 126, .32);
+    box-shadow: 0 0 0 3px rgba(200, 137, 46, .4);
+    border-radius: 6px;
+    transition: background .3s ease, box-shadow .3s ease;
+  }
   .explain-btn {
     display: block; margin: 1rem auto .2rem;
     font-family: 'Spectral', serif;
@@ -2794,6 +2818,15 @@ const DEMO_EXAMPLES = {
   friendJob:    { person: 10, event: 5 }, // 11 + 6 - 1 = 4
   promotion:    { person: 5, event: 8 }   // 6 + 9 - 1 = 2
 };
+/* The exact driving word to underline in the person's and the event's principle
+   text, per example and language. Must match a word in that language's base
+   sector text; if it isn't found the step falls back to the moving spotlight. */
+const DEMO_WORDS = {
+  de: { siblingChild:{pw:'Geschwister',ew:'Kinder'}, friendJob:{pw:'Freunde',ew:'Arbeitsmethoden'}, promotion:{pw:'Mitarbeiter',ew:'Expansion'} },
+  en: { siblingChild:{pw:'siblings',ew:'children'},   friendJob:{pw:'friends',ew:'Work'},            promotion:{pw:'coworkers',ew:'expansion'} },
+  ru: { siblingChild:{pw:'братья',ew:'дети'},         friendJob:{pw:'друзья',ew:'работ'},            promotion:{pw:'сотрудник',ew:'расширение'} },
+  bg: { siblingChild:{pw:'братя',ew:'деца'},          friendJob:{pw:'приятел',ew:'работ'},           promotion:{pw:'служител',ew:'разширение'} }
+};
 const DEMO_TEXT = {
   de: {
     eyebrow: 'Geführte Beispiele', title: 'Wählen Sie ein Beispiel', open: 'Geführte Beispiele öffnen', continue: 'Klicken zum Fortfahren',
@@ -2970,9 +3003,9 @@ function showDemoBalloon(text, el, placement = 'auto') {
   demoBalloon.classList.add('on');
 }
 
-function presentDemoStep(text, el, onAdvance, placement = 'auto') {
+function presentDemoStep(text, el, onAdvance, placement = 'auto', showLight = true) {
   balloonAdvance = onAdvance;
-  if (placement === 'right') demoLight?.classList.remove('on');
+  if (placement === 'right' || !showLight) demoLight?.classList.remove('on');
   else moveDemoLightTo(el);
   showDemoBalloon(text, el, placement);
   demoBalloon.focus({ preventScroll: true });
@@ -3007,6 +3040,46 @@ function moveDemoLightTo(el) {
   demoLight.classList.add('on');
 }
 
+/* Underline the first occurrence of `word` inside `container` (an SVG
+   foreignObject with the principle's HTML text). Returns true if found. */
+function underlineWordIn(container, word) {
+  if (!container || !word) return false;
+  const lower = String(word).toLowerCase();
+  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+  let node;
+  while ((node = walker.nextNode())) {
+    const idx = node.nodeValue.toLowerCase().indexOf(lower);
+    if (idx === -1) continue;
+    try {
+      const range = document.createRange();
+      range.setStart(node, idx);
+      range.setEnd(node, idx + word.length);
+      const span = document.createElement('span');
+      span.className = 'demo-underline';
+      range.surroundContents(span);
+      return true;
+    } catch (e) { return false; }
+  }
+  return false;
+}
+/* Light a chosen principle's whole text block and underline its driving word.
+   Returns true if the word was underlined (so the caller can skip the pointer). */
+function demoHighlightPrinciple(index, word) {
+  const fo = baseSvg?.querySelector(`foreignObject[data-index="${index}"]`);
+  if (!fo) return false;
+  fo.querySelector('.bs-box')?.classList.add('demo-lit');
+  return underlineWordIn(fo, word);
+}
+function clearDemoHighlights() {
+  baseSvg?.querySelectorAll('.bs-box.demo-lit').forEach(el => el.classList.remove('demo-lit'));
+  document.querySelectorAll('.demo-underline').forEach(s => {
+    const parent = s.parentNode; if (!parent) return;
+    while (s.firstChild) parent.insertBefore(s.firstChild, s);
+    parent.removeChild(s);
+    parent.normalize();
+  });
+}
+
 function focusDemoWheelSector(index, ring = 'outer') {
   outerG.querySelectorAll('.demo-focus').forEach(el => el.classList.remove('demo-focus'));
   innerG.querySelectorAll('.demo-focus').forEach(el => el.classList.remove('demo-focus'));
@@ -3027,6 +3100,7 @@ function clearDemoVisuals() {
   innerG.querySelectorAll('.demo-focus').forEach(el => el.classList.remove('demo-focus'));
   baseSvg?.querySelectorAll('.demo-result, .demo-person').forEach(el =>
     el.classList.remove('demo-result', 'demo-person'));
+  clearDemoHighlights();
   hubEl.classList.remove('demo-result');
   overlay.querySelectorAll('.demo-heading').forEach(el => el.classList.remove('demo-heading'));
   document.querySelectorAll('#correspondencePanel .demo-focus').forEach(el => el.classList.remove('demo-focus'));
@@ -3129,15 +3203,19 @@ function tourResultHeadings() {
 function runDesktopGuidedExample(key, { person, event }) {
   const result = resultLP(person, event);
   const copy = DEMO_GUIDE[lang][key];
+  const words = (DEMO_WORDS[lang] && DEMO_WORDS[lang][key]) || {};
   animateTo('outer', -person * STEP, 1100, easeRoll);
 
+  const personBase = baseSvg?.querySelector(`.base-wedge[data-index="${person}"]`);
+  const eventBase  = baseSvg?.querySelector(`.base-wedge[data-index="${event}"]`);
+
   const showResult = () => {
-    /* Re-establish the person on the wheel, then carry the light outward to
-       the base result so both sides of the relationship remain visible. */
+    clearDemoHighlights();
     focusDemoWheelSector(person);
     demoLater(() => {
       const resultWedge = baseSvg?.querySelector(`.base-wedge[data-index="${result}"]`);
       resultWedge?.classList.add('demo-result');
+      baseSvg?.querySelector(`foreignObject[data-index="${result}"] .bs-box`)?.classList.add('demo-lit');
       presentDemoStep(copy.result, resultWedge, () => {
         resultWedge?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
         demoLight?.classList.remove('on');
@@ -3147,21 +3225,16 @@ function runDesktopGuidedExample(key, { person, event }) {
       });
     }, 950);
   };
-  const showEventOnBase = () => {
-    const eventBase = baseSvg?.querySelector(`.base-wedge[data-index="${event}"]`);
-    const eventText = baseSvg?.querySelector(`foreignObject[data-index="${event}"] .bs-line`);
-    presentDemoStep(copy.event, eventText || eventBase, showResult);
+  /* Step 2: light the event principle's text block and underline its word. */
+  const showEvent = () => {
+    clearDemoHighlights();
+    const lit = demoHighlightPrinciple(event, words.ew);
+    presentDemoStep(copy.event, eventBase, showResult, 'auto', !lit);
   };
-  const showEventOnWheel = () => {
-    focusDemoWheelSector(event);
-    const eventLabel = outerG.querySelector(`.label-outer[data-index="${event}"]`);
-    presentDemoStep(copy.event, eventLabel, showEventOnBase);
-  };
+  /* Step 1: light the person principle's text block and underline its word. */
   demoLater(() => {
-    const personBase = baseSvg?.querySelector(`.base-wedge[data-index="${person}"]`);
-    const personText = baseSvg?.querySelector(`foreignObject[data-index="${person}"] .bs-line`);
-    personBase?.classList.add('demo-person');
-    presentDemoStep(copy.person, personText || personBase, showEventOnWheel);
+    const lit = demoHighlightPrinciple(person, words.pw);
+    presentDemoStep(copy.person, personBase, showEvent, 'auto', !lit);
   }, 1300);
 }
 
