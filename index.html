@@ -4671,6 +4671,9 @@ let trialEndAt = 0;
 let trialExpiryTimer = null;
 let releaseTrialGateReveal;
 let trialGateRevealReleased = false;
+let trialIntroReady = false;
+let trialAccessState = 'pending';
+let initialGuideNudgeShown = false;
 const trialGateReveal = new Promise(resolve => { releaseTrialGateReveal = resolve; });
 const trialGate = document.getElementById('trialGate');
 const trialCode = document.getElementById('trialCode');
@@ -4719,6 +4722,16 @@ function signalTrialGateReveal() {
   trialGateRevealReleased = true;
   releaseTrialGateReveal();
 }
+function showInitialGuideNudgeWhenReady() {
+  if (!trialIntroReady || trialAccessState !== 'bypass' || initialGuideNudgeShown) return;
+  initialGuideNudgeShown = true;
+  showGuideNudge();
+}
+function finishIntroBeforeTrial() {
+  trialIntroReady = true;
+  signalTrialGateReveal();
+  showInitialGuideNudgeWhenReady();
+}
 async function expireTrialAtDeadline() {
   try { await trialApi('status'); } catch { /* The local barrier still closes on time. */ }
   showExpiredTrial();
@@ -4752,22 +4765,31 @@ async function initializeTrialGate() {
   try {
     const state = await trialApi('status');
     if (!state.configured || state.state === 'disabled') {
+      trialAccessState = 'bypass';
       unlockTrial(false);
+      showInitialGuideNudgeWhenReady();
       return;
     }
     if (state.state === 'active') {
+      trialAccessState = 'bypass';
       scheduleTrialExpiry(state.trialEndAt);
       unlockTrial(false);
+      showInitialGuideNudgeWhenReady();
       return;
     }
     if (state.state === 'expired') {
+      trialAccessState = 'expired';
+      await trialGateReveal;
       showExpiredTrial();
       return;
     }
+    trialAccessState = 'required';
     await trialGateReveal;
     showTrialGate();
     trialCode.focus({ preventScroll:true });
   } catch (error) {
+    trialAccessState = 'error';
+    await trialGateReveal;
     showTrialGate();
     setTrialStatus(error.message, 'error');
   }
@@ -4837,15 +4859,13 @@ document.addEventListener('visibilitychange', () => {
    reveal the copy and selected sector. */
 function scheduleLandingIntro() {
   if (!isPcBase()) {
-    signalTrialGateReveal();
     document.body.classList.remove('intro-base-away', 'intro-wheel-away', 'intro-wheel-landing', 'intro-wheel-geometry-away', 'intro-wheel-colors-away', 'intro-wheel-copy-away', 'intro-wheel-sun', 'intro-selection-away', 'intro-running');
-    demoLater(showGuideNudge, 650);
+    demoLater(finishIntroBeforeTrial, 650);
     return;
   }
   if (reduceMotion()) {
-    signalTrialGateReveal();
     document.body.classList.remove('intro-base-away', 'intro-wheel-away', 'intro-wheel-landing', 'intro-wheel-geometry-away', 'intro-wheel-colors-away', 'intro-wheel-copy-away', 'intro-wheel-sun', 'intro-selection-away', 'intro-running');
-    showGuideNudge();
+    finishIntroBeforeTrial();
     return;
   }
   demoLater(() => {
@@ -4856,11 +4876,10 @@ function scheduleLandingIntro() {
   demoLater(() => document.body.classList.remove('intro-wheel-colors-away'), 1120);
   demoLater(() => {
     document.body.classList.remove('intro-wheel-landing', 'intro-wheel-copy-away', 'intro-wheel-sun');
-    signalTrialGateReveal();
   }, 1700);
   demoLater(() => document.body.classList.remove('intro-base-away'), 1850);
   demoLater(() => document.body.classList.remove('intro-selection-away'), 3200);
-  demoLater(showGuideNudge, 3400);
+  demoLater(finishIntroBeforeTrial, 3400);
 }
 if (document.readyState === 'complete') scheduleLandingIntro();
 else window.addEventListener('load', scheduleLandingIntro, { once: true });
