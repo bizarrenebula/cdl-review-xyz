@@ -471,14 +471,81 @@
   .mobile-guidance-slot,
   .mobile-correspondences { display: none; }
   @media (max-width: 899px) {
-    header { transform: translateY(-.4rem); }
+    header { z-index: 3; transform: translateY(-.4rem); }
     .guide-help {
       position: absolute;
       top: calc(100% + .55rem);
       left: .65rem;
     }
-    .stage { margin-top: 2.2rem; }
+    .stage {
+      margin-top: 2.2rem;
+      opacity: 1;
+      transition: opacity .3s ease;
+      isolation: isolate;
+    }
     body.intro-running .stage { pointer-events: none; }
+    body.intro-wheel-away .stage {
+      transform: translateY(-105vh);
+      opacity: 0;
+    }
+    body.intro-wheel-landing .stage {
+      animation: mobile-wheel-land 1.45s cubic-bezier(.12, .72, .2, 1.06) both;
+    }
+    @keyframes mobile-wheel-land {
+      0%   { transform: translateY(-105vh); opacity: 0; }
+      12%  { opacity: 1; }
+      44%  { transform: translateY(-48vh); opacity: 1; }
+      100% { transform: translateY(0); opacity: 1; }
+    }
+    body.intro-wheel-landing #outerRing,
+    body.intro-wheel-landing #innerRing {
+      transform-box: view-box;
+      transform-origin: 350px 350px;
+    }
+    body.intro-wheel-landing #outerRing { animation: mobile-outer-arrive 1.45s ease-out both; }
+    body.intro-wheel-landing #innerRing { animation: mobile-inner-arrive 1.45s ease-out both; }
+    @keyframes mobile-outer-arrive {
+      0%, 42% { transform: rotate(0deg); }
+      100% { transform: rotate(720deg); }
+    }
+    @keyframes mobile-inner-arrive {
+      0%, 42% { transform: rotate(0deg); }
+      100% { transform: rotate(-720deg); }
+    }
+    .stage::before {
+      content: '';
+      position: absolute;
+      inset: .9%;
+      z-index: 0;
+      border-radius: 50%;
+      pointer-events: none;
+      opacity: 0;
+      background: radial-gradient(circle at 43% 38%, #fffbd2 0 12%, #ffe779 34%, #f4b52c 67%, #d98109 100%);
+      box-shadow: 0 0 18px 8px rgba(255, 221, 86, .82), 0 0 48px 18px rgba(240, 166, 25, .5);
+      transition: opacity .32s ease;
+    }
+    body.intro-wheel-sun .stage::before { opacity: 1; }
+    .stage #wheel { position: relative; z-index: 1; }
+    .stage .sector-outer,
+    .stage .sector-inner { transition: fill .28s ease, opacity .24s ease; }
+    body.intro-wheel-geometry-away .stage .sector-outer,
+    body.intro-wheel-geometry-away .stage .sector-inner { opacity: 0; }
+    body.intro-wheel-colors-away .stage .sector-outer,
+    body.intro-wheel-colors-away .stage .sector-inner { fill: transparent !important; }
+    .stage .label-outer,
+    .stage .label-inner,
+    .stage .wheel-num,
+    .stage .needle,
+    .stage .hub,
+    .stage .wheel-rim,
+    .stage .wheel-guide { transition: opacity .3s ease; }
+    body.intro-wheel-copy-away .stage .label-outer,
+    body.intro-wheel-copy-away .stage .label-inner,
+    body.intro-wheel-copy-away .stage .wheel-num,
+    body.intro-wheel-copy-away .stage .needle,
+    body.intro-wheel-copy-away .stage .hub,
+    body.intro-wheel-sun .stage .wheel-rim,
+    body.intro-wheel-sun .stage .wheel-guide { opacity: 0; }
     .demo-balloon {
       width: min(22rem, calc(100vw - 2rem));
       padding: .65rem 2.15rem .65rem .8rem;
@@ -4859,8 +4926,25 @@ document.addEventListener('visibilitychange', () => {
    reveal the copy and selected sector. */
 function scheduleLandingIntro() {
   if (!isPcBase()) {
-    document.body.classList.remove('intro-base-away', 'intro-wheel-away', 'intro-wheel-landing', 'intro-wheel-geometry-away', 'intro-wheel-colors-away', 'intro-wheel-copy-away', 'intro-wheel-sun', 'intro-selection-away', 'intro-running');
-    demoLater(finishIntroBeforeTrial, 650);
+    if (reduceMotion()) {
+      document.body.classList.remove('intro-base-away', 'intro-wheel-away', 'intro-wheel-landing', 'intro-wheel-geometry-away', 'intro-wheel-colors-away', 'intro-wheel-copy-away', 'intro-wheel-sun', 'intro-selection-away', 'intro-running');
+      finishIntroBeforeTrial();
+      return;
+    }
+    demoLater(() => {
+      document.body.classList.remove('intro-wheel-away');
+      document.body.classList.add('intro-wheel-landing');
+    }, 250);
+    demoLater(() => document.body.classList.remove('intro-wheel-geometry-away'), 900);
+    demoLater(() => document.body.classList.remove('intro-wheel-colors-away'), 1120);
+    demoLater(() => {
+      state.outer.angle = 0;
+      state.inner.angle = 0;
+      applyRotation('outer');
+      applyRotation('inner');
+      document.body.classList.remove('intro-base-away', 'intro-wheel-landing', 'intro-wheel-copy-away', 'intro-wheel-sun', 'intro-selection-away');
+    }, 1700);
+    demoLater(finishIntroBeforeTrial, 1900);
     return;
   }
   if (reduceMotion()) {
