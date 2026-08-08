@@ -1004,7 +1004,7 @@ const I18N = {
   de: {
     ui: {
       title: 'Der Code des Lebens',
-      subtitle: 'Drehen Sie das äußere Rad nach links und rechts, um die Person zu wählen, und drehen Sie das innere Rad nach links und rechts, um die Kategorie des Ereignisses zu wählen.',
+      subtitle: 'Drehen Sie das äußere Rad (Ihre äußere Welt) nach links und rechts, um die Person zu wählen, und drehen Sie das innere Rad (Ihre innere Welt) nach links und rechts, um die Kategorie des Ereignisses zu wählen.',
       pcSubtitle: 'Bewegen Sie das Rad, um die Person auszuwählen, und wählen Sie dann einen Sektor auf der Basis.',
       alignment: 'Ausrichtung',
       readMore: 'Mehr lesen',
@@ -1117,7 +1117,7 @@ const I18N = {
   en: {
     ui: {
       title: 'The Code of Life',
-      subtitle: 'Rotate the outer wheel left and right to select the person, and rotate the inner wheel left and right to select the category of the event.',
+      subtitle: 'Rotate the outer wheel (your outer world) left and right to select the person, and rotate the inner wheel (your inner world) left and right to select the category of the event.',
       pcSubtitle: 'Move the wheel to select the person, then choose a sector on the base.',
       alignment: 'Alignment',
       readMore: 'Read more',
@@ -1230,7 +1230,7 @@ const I18N = {
   ru: {
     ui: {
       title: 'Код жизни',
-      subtitle: 'Поворачивайте внешнее колесо влево и вправо, чтобы выбрать человека, и поворачивайте внутреннее колесо влево и вправо, чтобы выбрать категорию события.',
+      subtitle: 'Поворачивайте внешнее колесо (ваш внешний мир) влево и вправо, чтобы выбрать человека, и поворачивайте внутреннее колесо (ваш внутренний мир) влево и вправо, чтобы выбрать категорию события.',
       pcSubtitle: 'Двигайте колесо, чтобы выбрать человека, затем выберите сектор на основе.',
       alignment: 'Совмещение',
       readMore: 'Подробнее',
@@ -1343,7 +1343,7 @@ const I18N = {
   bg: {
     ui: {
       title: 'Кодът на живота',
-      subtitle: 'Завъртайте външното колело наляво и надясно, за да изберете човека, и завъртайте вътрешното колело наляво и надясно, за да изберете категорията на събитието.',
+      subtitle: 'Завъртайте външното колело (вашият външен свят) наляво и надясно, за да изберете човека, и завъртайте вътрешното колело (вашият вътрешен свят) наляво и надясно, за да изберете категорията на събитието.',
       pcSubtitle: 'Преместете колелото, за да изберете човека, след което изберете сектор от основата.',
       alignment: 'Подравняване',
       readMore: 'Прочети още',
@@ -3021,6 +3021,30 @@ const DEMO_GUIDE = {
     }
   }
 };
+/* Mobile names the two rings as worlds explicitly. Desktop keeps the shorter
+   base/wheel wording because those relationships are already spatially clear. */
+const MOBILE_DEMO_GUIDE = {
+  de: {
+    siblingChild: { person: 'Ihre Geschwister befinden sich in Ihrem 3. Prinzip der äußeren Welt.', event: 'Kinder befinden sich im 5. Prinzip der inneren Welt eines Menschen.' },
+    friendJob: { person: 'Ihre Freunde befinden sich in Ihrem 11. Prinzip der äußeren Welt.', event: 'Arbeit befindet sich im 6. Prinzip der inneren Welt eines Menschen.' },
+    promotion: { person: 'Ihre Mitarbeiter befinden sich in Ihrem 6. Prinzip der äußeren Welt.', event: 'Expansion befindet sich im 9. Prinzip der inneren Welt eines Menschen.' }
+  },
+  en: {
+    siblingChild: { person: 'Your siblings are in your 3rd principle of the outer world', event: "Children are in the 5th principle of one's inner world" },
+    friendJob: { person: 'Your friends are in your 11th principle of the outer world', event: "Work is in the 6th principle of one's inner world" },
+    promotion: { person: 'Your coworkers are in your 6th principle of the outer world', event: "Expansion is in the 9th principle of one's inner world" }
+  },
+  ru: {
+    siblingChild: { person: 'Ваши братья и сёстры находятся в вашем 3-м принципе внешнего мира.', event: 'Дети находятся в 5-м принципе внутреннего мира человека.' },
+    friendJob: { person: 'Ваши друзья находятся в вашем 11-м принципе внешнего мира.', event: 'Работа находится в 6-м принципе внутреннего мира человека.' },
+    promotion: { person: 'Ваши сотрудники находятся в вашем 6-м принципе внешнего мира.', event: 'Расширение находится в 9-м принципе внутреннего мира человека.' }
+  },
+  bg: {
+    siblingChild: { person: 'Вашите братя и сестри са във вашия 3-ти принцип на външния свят.', event: 'Децата са в 5-ия принцип на вътрешния свят на човека.' },
+    friendJob: { person: 'Вашите приятели са във вашия 11-и принцип на външния свят.', event: 'Работата е в 6-ия принцип на вътрешния свят на човека.' },
+    promotion: { person: 'Вашите служители са във вашия 6-и принцип на външния свят.', event: 'Разширението е в 9-ия принцип на вътрешния свят на човека.' }
+  }
+};
 let demoTimers = [];
 let demoActive = false;
 let demoCompleting = false;
@@ -3314,6 +3338,7 @@ function runDesktopGuidedExample(key, { person, event }) {
 
 function runMobileGuidedExample(key, { person, event }) {
   const copy = DEMO_GUIDE[lang][key];
+  const mobileCopy = MOBILE_DEMO_GUIDE[lang]?.[key] || copy;
   const words = (DEMO_WORDS[lang] && DEMO_WORDS[lang][key]) || {};
   animateTo('outer', -person * STEP, 1050, easeRoll);
   const stage = document.getElementById('stage');
@@ -3344,7 +3369,7 @@ function runMobileGuidedExample(key, { person, event }) {
     demoLater(() => {
       const correspondence = focusDemoCorrespondence(eventField, false);
       const highlightedWord = underlineWordIn(correspondence, words.ew);
-      presentDemoStep(copy.event, highlightedWord || correspondence, showResult, 'auto', false);
+      presentDemoStep(mobileCopy.event, highlightedWord || correspondence, showResult, 'auto', false);
     }, 650);
   };
   const rotateEvent = () => {
@@ -3364,7 +3389,7 @@ function runMobileGuidedExample(key, { person, event }) {
     demoLater(() => {
       const correspondence = focusDemoCorrespondence('people', false);
       const highlightedWord = underlineWordIn(correspondence, words.pw);
-      presentDemoStep(copy.person, highlightedWord || correspondence, rotateEvent, 'auto', false);
+      presentDemoStep(mobileCopy.person, highlightedWord || correspondence, rotateEvent, 'auto', false);
     }, 650);
   }, 1250);
 }
