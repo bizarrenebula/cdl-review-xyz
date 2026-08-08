@@ -946,16 +946,18 @@
       stroke-width: 2;
       stroke-linejoin: round;
       opacity: 1;
-      transform: scale(1);
+      transform: scaleX(1);
       transform-box: fill-box;
       transform-origin: center;
       transition: fill .22s ease,
                   opacity .2s ease-out var(--intro-delay, 0ms),
                   transform .24s cubic-bezier(.2, .9, .3, 1.18) var(--intro-delay, 0ms);
     }
+    .base-wedge-left { transform-origin: right center; }
+    .base-wedge-right { transform-origin: left center; }
     body.intro-base-away .base-wedge {
       opacity: 0;
-      transform: scale(.72);
+      transform: scaleX(0);
     }
     .base-copy {
       opacity: 1;
@@ -964,7 +966,7 @@
     body.intro-base-away .base-copy { opacity: 0; }
     @media (prefers-reduced-motion: reduce) {
       .base-wedge, .base-copy { transition: none; }
-      body.intro-base-away .base-wedge { opacity: 1; transform: scale(1); }
+      body.intro-base-away .base-wedge { opacity: 1; transform: scaleX(1); }
       body.intro-base-away .base-copy { opacity: 1; }
     }
     .base-wedge.event,
@@ -2249,7 +2251,7 @@ function buildBaseSectors() {
     const sectorH = y1 - y0, rowPad = Math.max(4, sectorH * .06);
     const item = LP()[pIdx], color = LP_COLORS[pIdx % 4];
     const wedge = document.createElementNS(ns, 'rect');
-    wedge.setAttribute('class', 'base-wedge');
+    wedge.setAttribute('class', `base-wedge base-wedge-${side}`);
     wedge.setAttribute('x', side === 'left' ? 0 : cx);
     wedge.setAttribute('y', y0.toFixed(1));
     wedge.setAttribute('width', (W / 2).toFixed(1));
@@ -3818,8 +3820,9 @@ document.addEventListener('keydown', ev => {
   else if (ev.key === 'Escape' && demoActive && !demoCompleting) interruptGuidedDemo(true);
 });
 
-/* Desktop introduction: reveal principles 1→12 in a quick wave, fade in the
-   base copy, then keep the existing wheel drop/spin entrance. */
+/* Desktop introduction: land the wheel first. Once it settles, draw principles
+   1→12 from their wheel-side breakpoints out toward the viewport edges, then
+   reveal the copy and selected sector. */
 function scheduleLandingIntro() {
   if (!isPcBase()) {
     document.body.classList.remove('intro-base-away', 'intro-wheel-away', 'intro-selection-away', 'intro-running');
@@ -3831,10 +3834,10 @@ function scheduleLandingIntro() {
     showGuideNudge();
     return;
   }
-  demoLater(() => document.body.classList.remove('intro-base-away'), 250);
-  demoLater(() => document.body.classList.remove('intro-wheel-away'), 1650);
-  demoLater(() => document.body.classList.remove('intro-selection-away'), 3000);
-  demoLater(showGuideNudge, 3200);
+  demoLater(() => document.body.classList.remove('intro-wheel-away'), 250);
+  demoLater(() => document.body.classList.remove('intro-base-away'), 1700);
+  demoLater(() => document.body.classList.remove('intro-selection-away'), 3100);
+  demoLater(showGuideNudge, 3300);
 }
 if (document.readyState === 'complete') scheduleLandingIntro();
 else window.addEventListener('load', scheduleLandingIntro, { once: true });
