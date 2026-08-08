@@ -109,31 +109,31 @@
     left: 50%; top: 50%;
     z-index: 9;
     width: min(30rem, calc(100vw - 1rem));
-    padding: 1rem 2.5rem 1rem 1.2rem;
-    border: 3px solid #713c37;
-    border-radius: 10px;
+    padding: .85rem 2.5rem 1rem 1.05rem;
+    border: 3px solid #6b4b14;
+    border-radius: 2px;
     background:
-      repeating-linear-gradient(97deg, rgba(255, 242, 218, .025) 0 1px, transparent 1px 6px),
-      linear-gradient(180deg, #b75b57, #ad514e);
-    color: #fff;
+      repeating-linear-gradient(97deg, rgba(255, 255, 255, .12) 0 1px, transparent 1px 7px),
+      linear-gradient(145deg, #ffe69a, #efbf4e);
+    color: #2d210c;
     font-size: clamp(1rem, 2.1vw, 1.18rem);
     line-height: 1.45;
     text-align: center;
     pointer-events: none;
     opacity: 0;
     transform: translate(-50%, calc(-100% - 18px));
-    box-shadow: inset 0 0 0 1px rgba(255, 232, 198, .12), 0 5px 20px rgba(31, 20, 12, .28);
+    box-shadow: inset 0 0 0 1px rgba(255, 249, 211, .48), 0 7px 22px rgba(31, 20, 4, .34);
     transition: left .8s cubic-bezier(.2, .72, .2, 1), top .8s cubic-bezier(.2, .72, .2, 1), opacity .25s ease;
   }
   .demo-balloon::after {
     content: '';
     position: absolute;
-    left: 50%; bottom: -8px;
-    width: 14px; height: 14px;
+    left: 50%; bottom: -17px;
+    width: 24px; height: 24px;
     transform: translateX(-50%) rotate(45deg);
-    background: #ad514e;
-    border-right: 3px solid #713c37;
-    border-bottom: 3px solid #713c37;
+    background: #efbf4e;
+    border-right: 3px solid #6b4b14;
+    border-bottom: 3px solid #6b4b14;
   }
   .demo-balloon.on {
     opacity: 1;
@@ -141,17 +141,48 @@
     cursor: pointer;
   }
   .demo-balloon.on:hover, .demo-balloon.on:focus-visible {
-    border-color: #672724;
-    box-shadow: 0 7px 24px rgba(15, 10, 2, .35), 0 0 0 3px rgba(242, 207, 120, .5);
+    border-color: #3f2b08;
+    box-shadow: 0 8px 26px rgba(15, 10, 2, .38), 0 0 0 4px rgba(239, 191, 78, .35);
     outline: none;
   }
   .demo-balloon .continue {
-    display: block;
-    margin-top: .5rem;
+    display: inline-block;
+    margin-top: .7rem;
+    padding: .32rem .65rem;
     font-size: .68em;
     letter-spacing: .14em;
     text-transform: uppercase;
-    color: #fff3ed;
+    color: #ffe59a;
+    background: #3b2a0c;
+    border: 1px solid rgba(59, 42, 12, .85);
+  }
+  .balloon-meta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .45rem;
+    margin: 0 1rem .42rem;
+    color: #65450d;
+    font-size: .61em;
+    font-weight: 800;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+  }
+  .balloon-icon {
+    font-size: 1.35em;
+    line-height: 1;
+  }
+  .balloon-message {
+    display: block;
+    font-family: 'Marcellus', serif;
+    font-size: 1.05em;
+    font-weight: 700;
+    line-height: 1.38;
+  }
+  .balloon-emphasis {
+    padding: 0 .12em;
+    background: rgba(255, 249, 216, .72);
+    border-bottom: 2px solid #6b4b14;
   }
   .demo-balloon .tutorial-close {
     position: absolute;
@@ -162,14 +193,14 @@
     border: 0;
     border-radius: 50%;
     background: transparent;
-    color: #fff;
+    color: #3b2a0c;
     font: 700 1.25rem/1 'Spectral', serif;
     cursor: pointer;
   }
   .demo-balloon .tutorial-close:hover,
   .demo-balloon .tutorial-close:focus-visible {
-    background: rgba(70, 18, 18, .35);
-    outline: 2px solid #fff3ed;
+    background: rgba(91, 61, 9, .14);
+    outline: 2px solid #65450d;
     outline-offset: 1px;
   }
   .demo-balloon.insist { animation: balloon-insist .48s ease both; }
@@ -190,22 +221,22 @@
     80% { transform: translate(-50%, 18px) rotate(1.5deg) scale(1.015); }
   }
   .demo-balloon.below::after {
-    top: -8px; bottom: auto;
+    top: -17px; bottom: auto;
     border: 0;
-    border-left: 3px solid #853b38;
-    border-top: 3px solid #853b38;
+    border-left: 3px solid #6b4b14;
+    border-top: 3px solid #6b4b14;
   }
   .demo-balloon.right {
     width: min(30rem, calc(100vw - 4.5rem));
     transform: translate(18px, -50%);
   }
   .demo-balloon.right::after {
-    left: -8px; right: auto;
+    left: -17px; right: auto;
     top: var(--arrow-top, 50%); bottom: auto;
     transform: translateY(-50%) rotate(45deg);
     border: 0;
-    border-left: 3px solid #853b38;
-    border-bottom: 3px solid #853b38;
+    border-left: 3px solid #6b4b14;
+    border-bottom: 3px solid #6b4b14;
   }
   .demo-balloon.right.insist { animation-name: balloon-insist-right; }
   @keyframes balloon-insist-right {
@@ -214,41 +245,6 @@
     40% { transform: translate(18px, -50%) rotate(2deg) scale(1.035); }
     60% { transform: translate(18px, -50%) rotate(-1.5deg) scale(1.025); }
     80% { transform: translate(18px, -50%) rotate(1.5deg) scale(1.015); }
-  }
-  @media (min-width: 900px) {
-    .demo-balloon {
-      border-color: rgba(216, 166, 71, .88);
-      background:
-        linear-gradient(rgba(2, 9, 26, .08), rgba(2, 9, 26, .28)),
-        url('assets/cosmic-header.webp') center 47% / cover no-repeat;
-      color: #f0d58d;
-      box-shadow: inset 0 0 0 1px rgba(255, 224, 145, .16), 0 8px 26px rgba(0, 0, 0, .42);
-    }
-    .demo-balloon::after {
-      background: #07132e;
-      border-right-color: rgba(216, 166, 71, .88);
-      border-bottom-color: rgba(216, 166, 71, .88);
-    }
-    .demo-balloon.below::after {
-      border-left-color: rgba(216, 166, 71, .88);
-      border-top-color: rgba(216, 166, 71, .88);
-    }
-    .demo-balloon.right::after {
-      border-left-color: rgba(216, 166, 71, .88);
-      border-bottom-color: rgba(216, 166, 71, .88);
-    }
-    .demo-balloon.on:hover,
-    .demo-balloon.on:focus-visible {
-      border-color: #efd07e;
-      box-shadow: 0 8px 28px rgba(0, 0, 0, .48), 0 0 0 3px rgba(216, 166, 71, .28);
-    }
-    .demo-balloon .continue { color: #d7a94e; }
-    .demo-balloon .tutorial-close { color: #efd07e; }
-    .demo-balloon .tutorial-close:hover,
-    .demo-balloon .tutorial-close:focus-visible {
-      background: rgba(216, 166, 71, .14);
-      outline-color: #efd07e;
-    }
   }
   header {
     position: relative;
@@ -3772,7 +3768,7 @@ function applyLanguage(newLang) {
   updateMobileCorrespondences(numTrack, true);
   if (document.getElementById('demoOverlay')?.classList.contains('open')) renderDemoChooser();
   if (document.getElementById('guideBtn')?.classList.contains('attention'))
-    showDemoBalloon(DEMO_GUIDE[lang].nudge, document.getElementById('guideBtn'), 'right');
+    showDemoBalloon(DEMO_GUIDE[lang].nudge, document.getElementById('guideBtn'), 'right', { kind:'guide' });
 }
 
 document.querySelectorAll('.lang-switch button').forEach(btn =>
@@ -3825,6 +3821,12 @@ const DEMO_TEXT = {
     friendJob: 'Приятел започва нова работа',
     promotion: 'Колега получава повишение'
   }
+};
+const BALLOON_META = {
+  de: { step:'Schritt', guide:'Anleitung', person:'Person finden', event:'Entsprechung finden', relationship:'Verbindung', result:'Ergebnis' },
+  en: { step:'Step', guide:'Guide', person:'Find the person', event:'Find the correspondence', relationship:'Connection', result:'Result' },
+  ru: { step:'Шаг', guide:'Инструкция', person:'Найдите человека', event:'Найдите соответствие', relationship:'Связь', result:'Результат' },
+  bg: { step:'Стъпка', guide:'Упътване', person:'Намерете човека', event:'Намерете съответствието', relationship:'Връзка', result:'Резултат' }
 };
 const DEMO_GUIDE = {
   de: {
@@ -3964,14 +3966,42 @@ function clearDemoTimers() {
   demoTimers = [];
 }
 
-function showDemoBalloon(text, el, placement = 'auto') {
+function showDemoBalloon(text, el, placement = 'auto', meta = {}) {
   if (!text || !el || !demoBalloon) return;
   const target = el.getBoundingClientRect();
   const useRight = placement === 'right';
   const half = Math.min(240, (window.innerWidth - 16) / 2);
   const x = useRight ? target.right : Math.max(half + 8, Math.min(window.innerWidth - half - 8, target.left + target.width / 2));
   const below = !useRight && target.top < 135;
-  demoBalloon.textContent = text;
+  demoBalloon.textContent = '';
+  const metaLine = document.createElement('span');
+  metaLine.className = 'balloon-meta';
+  const icon = document.createElement('span');
+  icon.className = 'balloon-icon';
+  icon.setAttribute('aria-hidden', 'true');
+  icon.textContent = ({ guide:'➜', person:'♟', event:'✧', relationship:'↔', result:'✦' })[meta.kind] || '✧';
+  const metaText = document.createElement('span');
+  const labels = BALLOON_META[lang];
+  const label = labels[meta.kind] || labels.guide;
+  metaText.textContent = meta.step && meta.total
+    ? `${label} · ${labels.step} ${meta.step}/${meta.total}`
+    : label;
+  metaLine.append(icon, metaText);
+  const message = document.createElement('span');
+  message.className = 'balloon-message';
+  /* Give principle references a typographic highlight in every supported
+     language without baking presentation markup into the translations. */
+  const emphasisPattern = /\b\d+(?:st|nd|rd|th|\.(?=\s)|-[\p{L}]+)?\s+(?:principle|Prinzip|принцип[\p{L}]*)/giu;
+  let cursor = 0;
+  for (const match of text.matchAll(emphasisPattern)) {
+    message.append(document.createTextNode(text.slice(cursor, match.index)));
+    const emphasis = document.createElement('span');
+    emphasis.className = 'balloon-emphasis';
+    emphasis.textContent = match[0];
+    message.append(emphasis);
+    cursor = match.index + match[0].length;
+  }
+  message.append(document.createTextNode(text.slice(cursor)));
   const close = document.createElement('button');
   close.type = 'button';
   close.className = 'tutorial-close';
@@ -3984,7 +4014,7 @@ function showDemoBalloon(text, el, placement = 'auto') {
   const prompt = document.createElement('span');
   prompt.className = 'continue';
   prompt.textContent = DEMO_TEXT[lang].continue;
-  demoBalloon.append(close, prompt);
+  demoBalloon.append(close, metaLine, message, prompt);
   demoBalloon.classList.toggle('below', below);
   demoBalloon.classList.toggle('right', useRight);
   let top = useRight ? target.top + target.height / 2 : (below ? target.bottom : target.top);
@@ -4003,12 +4033,12 @@ function showDemoBalloon(text, el, placement = 'auto') {
   demoBalloon.classList.add('on');
 }
 
-function presentDemoStep(text, el, onAdvance, placement = 'auto', showLight = true, allowTargetInteraction = false) {
+function presentDemoStep(text, el, onAdvance, placement = 'auto', showLight = true, allowTargetInteraction = false, meta = {}) {
   balloonAdvance = onAdvance;
   balloonInteractiveTarget = allowTargetInteraction ? el : null;
   if (placement === 'right' || !showLight) demoLight?.classList.remove('on');
   else moveDemoLightTo(el);
-  showDemoBalloon(text, el, placement);
+  showDemoBalloon(text, el, placement, meta);
   demoBalloon.focus({ preventScroll: true });
 }
 
@@ -4171,7 +4201,7 @@ function showGuideNudge() {
   document.body.classList.remove('intro-running');
   const guide = document.getElementById('guideBtn');
   guide.classList.add('attention');
-  presentDemoStep(DEMO_GUIDE[lang].nudge, guide, openGuideOnDemand, 'right');
+  presentDemoStep(DEMO_GUIDE[lang].nudge, guide, openGuideOnDemand, 'right', true, false, { kind:'guide' });
 }
 
 function waitForTutorialResultClose() {
@@ -4211,7 +4241,7 @@ function runDesktopGuidedExample(key, { person, event }) {
         const modal = overlay.querySelector('.modal');
         if (modal) modal.scrollTop = 0;
         waitForTutorialResultClose();
-      }, 'auto', true, true);
+      }, 'auto', true, true, { kind:'result', step:4, total:4 });
     }, 950);
   };
   /* Step 3: connect the event principle on the base to the same numbered
@@ -4220,18 +4250,18 @@ function runDesktopGuidedExample(key, { person, event }) {
     clearDemoHighlights();
     focusDemoWheelSector(event);
     const wheelNumber = outerG.querySelector(`.wheel-num-pc[data-index="${event}"]`);
-    presentDemoStep(copy.relationship, wheelNumber || outerG.querySelector(`.sector-outer[data-index="${event}"]`), showResult);
+    presentDemoStep(copy.relationship, wheelNumber || outerG.querySelector(`.sector-outer[data-index="${event}"]`), showResult, 'auto', true, false, { kind:'relationship', step:3, total:4 });
   };
   /* Step 2: light the event principle's text block and underline its word. */
   const showEvent = () => {
     clearDemoHighlights();
     const highlightedWord = demoHighlightPrinciple(event, words.ew);
-    presentDemoStep(copy.event, highlightedWord || eventBase, showRelationship, 'auto', !highlightedWord);
+    presentDemoStep(copy.event, highlightedWord || eventBase, showRelationship, 'auto', !highlightedWord, false, { kind:'event', step:2, total:4 });
   };
   /* Step 1: light the person principle's text block and underline its word. */
   demoLater(() => {
     const highlightedWord = demoHighlightPrinciple(person, words.pw);
-    presentDemoStep(copy.person, highlightedWord || personBase, showEvent, 'auto', !highlightedWord);
+    presentDemoStep(copy.person, highlightedWord || personBase, showEvent, 'auto', !highlightedWord, false, { kind:'person', step:1, total:4 });
   }, 1300);
 }
 
@@ -4257,7 +4287,7 @@ function runMobileGuidedExample(key, { person, event }) {
         const modal = overlay.querySelector('.modal');
         if (modal) modal.scrollTop = 0;
         waitForTutorialResultClose();
-      }, 'auto', false);
+      }, 'auto', false, false, { kind:'result', step:3, total:3 });
     }, 950);
   };
   const showEvent = () => {
@@ -4268,7 +4298,7 @@ function runMobileGuidedExample(key, { person, event }) {
     demoLater(() => {
       const correspondence = focusDemoCorrespondence(eventField, false);
       const highlightedWord = underlineWordIn(correspondence, words.ew);
-      presentDemoStep(mobileCopy.event, highlightedWord || correspondence, showResult, 'auto', false);
+      presentDemoStep(mobileCopy.event, highlightedWord || correspondence, showResult, 'auto', false, false, { kind:'event', step:2, total:3 });
     }, 650);
   };
   const rotateEvent = () => {
@@ -4288,7 +4318,7 @@ function runMobileGuidedExample(key, { person, event }) {
     demoLater(() => {
       const correspondence = focusDemoCorrespondence('people', false);
       const highlightedWord = underlineWordIn(correspondence, words.pw);
-      presentDemoStep(mobileCopy.person, highlightedWord || correspondence, rotateEvent, 'auto', false);
+      presentDemoStep(mobileCopy.person, highlightedWord || correspondence, rotateEvent, 'auto', false, false, { kind:'person', step:1, total:3 });
     }, 650);
   }, 1250);
 }
