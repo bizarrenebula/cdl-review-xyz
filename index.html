@@ -2896,10 +2896,41 @@ function openCategoryModal(idx, ring) {
 
 /* ---- Original book text rendering ---- */
 
+/* Russian needs declined phrases rather than inserting UI labels verbatim.
+   These two lists preserve the 12×12 meaning while making every generated
+   result read as a natural sentence without quoted people or event areas. */
+const RU_REFLECT_PEOPLE = [
+  'братьями и сёстрами ваших друзей',
+  'партнёрами ваших бывших',
+  'вашими братьями, сёстрами и соседями',
+  'вашей матерью',
+  'вашими детьми',
+  'вашими сотрудниками',
+  'вашим партнёром',
+  'вашими бывшими партнёрами',
+  'братьями и сёстрами вашего партнёра',
+  'вашим отцом',
+  'вашими друзьями',
+  'вашими дядями и тётями по отцовской линии'
+];
+const RU_REFLECT_AREAS = [
+  'самоутверждения',
+  'финансов',
+  'общения',
+  'семьи и дома',
+  'самореализации',
+  'работы и быта',
+  'любви и партнёрства',
+  'планов и связей',
+  'успеха и путешествий',
+  'карьеры и целей',
+  'свободы и досуга',
+  'мечтаний и надежд'
+];
 const REFLECT = {
   de: (area, label, n) => `Die ${area} Ihrer ${label} spiegelt Ihr ${n}. Lebensprinzip wider.`,
   en: (area, label, n) => `What happens to your ${label.toLowerCase()} in the area of ${area.toLowerCase()} reflects your ${n}${ordEn(n)} life principle.`,
-  ru: (area, label, n) => `То, что происходит с человеком «${label}» в сфере «${area.toLowerCase()}», отражает ваш ${n}-й жизненный принцип.`,
+  ru: (area, label, n, person, event) => `То, что происходит с ${RU_REFLECT_PEOPLE[person]} в сфере ${RU_REFLECT_AREAS[event]}, отражает ваш ${n}-й жизненный принцип.`,
   bg: (area, label, n) => `Това, което се случва с човека „${label}“ в сферата „${area.toLowerCase()}“, отразява вашия ${n}-и жизнен принцип.`
 };
 function ordEn(n){ const s=['th','st','nd','rd'], v=n%100; return s[(v-20)%10]||s[v]||s[0]; }
@@ -2958,7 +2989,7 @@ function openResultModalFor(p, e) {
   document.getElementById('modalEyebrow').textContent =
     `${p + 1} + ${e + 1} − 1 → ${r + 1}. ${T().lpWord}`;
   document.getElementById('modalTitle').textContent =
-    REFLECT[lang](LP()[e].area, LP()[p].label, r + 1);
+    REFLECT[lang](LP()[e].area, LP()[p].label, r + 1, p, e);
   // body: book text from the quotation (motto) down to the Je-mehr…desto block,
   // WITHOUT the Themen/keys field. bookHTML already omits Themen.
   const bh = bookHTML(p, e);
