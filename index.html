@@ -843,10 +843,10 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      height: 82%;
+      height: 75%;
       width: auto;
       aspect-ratio: 1;
-      max-width: 82%;
+      max-width: 75%;
       margin: 0;
       z-index: 2;
       opacity: 1;
@@ -2157,8 +2157,8 @@ function buildRadialBaseSectorsLegacy() {
 /* Desktop's simplified base: six equal horizontal rows on either side of the
    wheel. The wheel is layered above the rows, so its rim becomes their visible
    curved inner edge while the other three exposed edges remain straight. This
-   gives every principle the same predictable space and keeps all three lines
-   of copy horizontal. */
+   gives every principle the same predictable space and keeps all three text
+   groups horizontal. */
 function buildBaseSectors() {
   if (!baseSvg || !pcbaseEl) return;
   const W = pcbaseEl.clientWidth, H = pcbaseEl.clientHeight;
@@ -2176,7 +2176,7 @@ function buildBaseSectors() {
   const outerPad = Math.max(12, W * .009);
   const numberGap = fNum * 1.75;
   const rowPad = Math.max(5, rowH * .09);
-  const capFont = Math.max(12, Math.min(24, rowH * .19));
+  const capFont = Math.max(16, Math.min(30, rowH * .28));
   const columns = [
     { side: 'left', principles: [9, 10, 11, 0, 1, 2] },
     { side: 'right', principles: [8, 7, 6, 5, 4, 3] }
@@ -2186,7 +2186,7 @@ function buildBaseSectors() {
     const dy = Math.max(-rim, Math.min(rim, y - cy));
     return Math.sqrt(Math.max(0, rim * rim - dy * dy));
   };
-  const makeCopy = (item, color, pIdx, x, y, width, height) => {
+  const makeCopy = (item, color, pIdx, side, x, y, width, height) => {
     const fo = document.createElementNS(ns, 'foreignObject');
     fo.dataset.index = pIdx;
     fo.setAttribute('class', 'base-copy');
@@ -2200,9 +2200,11 @@ function buildBaseSectors() {
     const box = document.createElement('div');
     box.className = 'bs-box';
     box.style.setProperty('--seg-color', color);
+    box.style.textAlign = side === 'left' ? 'left' : 'right';
     const content = document.createElement('div');
     content.className = 'bs-content';
-    content.style.whiteSpace = 'nowrap';
+    content.style.whiteSpace = 'normal';
+    content.style.overflowWrap = 'anywhere';
     const keys = document.createElement('div');
     keys.className = 'bs-keys';
     keys.textContent = item.keys;
@@ -2221,7 +2223,7 @@ function buildBaseSectors() {
     fo.appendChild(box);
     baseSvg.appendChild(fo);
 
-    let lo = 6, hi = capFont;
+    let lo = 8, hi = capFont;
     for (let i = 0; i < 10; i++) {
       const mid = (lo + hi) / 2;
       box.style.fontSize = `${mid}px`;
@@ -2250,7 +2252,7 @@ function buildBaseSectors() {
 
     /* Reserve a clear strip beside the rim for the principle number. The text
        box ends at the wheel's widest intrusion into this row, so none of its
-       three single-line entries can disappear underneath the wheel. */
+       three independently wrapping entries can disappear under the wheel. */
     const closestY = Math.max(y0 + rowPad, Math.min(cy, y1 - rowPad));
     const widest = circleHalfWidth(closestY);
     const midHalf = circleHalfWidth(midY);
@@ -2264,7 +2266,7 @@ function buildBaseSectors() {
       textRight = W - outerPad;
       numX = cx + midHalf + fNum * 1.05;
     }
-    makeCopy(item, color, pIdx, textX, y0 + rowPad,
+    makeCopy(item, color, pIdx, side, textX, y0 + rowPad,
              Math.max(40, textRight - textX), rowH - rowPad * 2);
 
     const num = document.createElementNS(ns, 'text');
