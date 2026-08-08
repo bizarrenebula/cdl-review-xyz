@@ -2188,7 +2188,6 @@ function buildBaseSectors() {
   const outerPad = Math.max(12, W * .009);
   const numberGap = fNum * 1.75;
   const capFont = Math.max(16, Math.min(30, nominalRowH * .28));
-  const floorFont = Math.max(10, Math.min(15, W * .008));
   const columns = [
     { side: 'left', principles: [9, 10, 11, 0, 1, 2] },
     { side: 'right', principles: [8, 7, 6, 5, 4, 3] }
@@ -2236,10 +2235,10 @@ function buildBaseSectors() {
     fo.appendChild(box);
     baseSvg.appendChild(fo);
 
-    /* Long translated people lines used to collapse the whole middle block to
-       8px. Wrapping now absorbs that length; this responsive floor keeps every
-       row readable while still allowing narrower desktop windows to fit. */
-    let lo = floorFont, hi = capFont;
+    /* Measure against this sector's real rendered width and height. The shared
+       size is chosen after all twelve measurements, so viewport size, language
+       length, browser zoom, and wrapping are all accounted for together. */
+    let lo = 6, hi = capFont;
     for (let i = 0; i < 10; i++) {
       const mid = (lo + hi) / 2;
       box.style.fontSize = `${mid}px`;
@@ -2302,13 +2301,15 @@ function buildBaseSectors() {
     baseSvg.appendChild(num);
   }));
 
-  /* Principle 11 is the visual reference chosen for the base typography.
-     Measure it responsively, then give every other sector exactly that size so
-     the chart reads as one system instead of twelve independently fitted cards. */
-  const reference = copyBoxes.find(entry => entry.pIdx === 10);
-  if (reference) copyBoxes.forEach(entry => {
-    entry.box.style.fontSize = `${reference.fontSize.toFixed(2)}px`;
-  });
+  /* One chart, one type size: use the largest size all twelve measured boxes
+     can hold. A small safety step prevents glyph descenders or browser rounding
+     from being clipped exactly at a row edge. */
+  if (copyBoxes.length) {
+    const commonFont = Math.max(6, Math.min(...copyBoxes.map(entry => entry.fontSize)) - .65);
+    copyBoxes.forEach(entry => {
+      entry.box.style.fontSize = `${commonFont.toFixed(2)}px`;
+    });
+  }
 }
 
 /* Rotation (screen degrees) that lays text along the radius at angle A (from
