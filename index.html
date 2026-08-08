@@ -1530,8 +1530,13 @@
     }
     .bs-box .bs-line { font-size: .92em; }
     .bs-box .bs-line b { color: var(--ink); font-weight: 600; }
-    /* The person/bone glyphs are colour emoji — flatten them to black silhouettes. */
-    .bs-box .bs-line b { filter: brightness(0); }
+    .bs-box .bs-icon {
+      display: inline-block;
+      min-width: 1.05em;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-weight: 700;
+      text-align: center;
+    }
 
     /* Once the wheel has moved, every wedge is a clickable journey-end. */
     #pcbase.engaged .base-wedge { cursor: pointer; }
@@ -2571,12 +2576,14 @@ function buildRadialBaseSectorsLegacy() {
     box.style.setProperty('--seg-color', color);
     const content = document.createElement('div');
     content.className = 'bs-content';
-    const kEl = document.createElement('div'); kEl.className = 'bs-keys'; kEl.textContent = item.keys;
+    const kEl = document.createElement('div'); kEl.className = 'bs-keys';
+    const kIco = document.createElement('b'); kIco.className = 'bs-icon'; kIco.textContent = '✧';
+    kEl.append(kIco, document.createTextNode(' ' + item.keys));
     const pEl = document.createElement('div'); pEl.className = 'bs-line';
-    const pIco = document.createElement('b'); pIco.textContent = '👤';
+    const pIco = document.createElement('b'); pIco.className = 'bs-icon'; pIco.textContent = '♟';
     pEl.append(pIco, document.createTextNode(' ' + item.people));
     const bEl = document.createElement('div'); bEl.className = 'bs-line';
-    const bIco = document.createElement('b'); bIco.textContent = '🦴';
+    const bIco = document.createElement('b'); bIco.className = 'bs-icon'; bIco.textContent = '⚕';
     bEl.append(bIco, document.createTextNode(' ' + item.body));
     content.append(kEl, pEl, bEl);
     box.appendChild(content);
@@ -2740,16 +2747,21 @@ function buildBaseSectors() {
     content.style.overflowWrap = 'anywhere';
     const keys = document.createElement('div');
     keys.className = 'bs-keys';
-    keys.textContent = item.keys;
+    const keysIcon = document.createElement('b');
+    keysIcon.className = 'bs-icon';
+    keysIcon.textContent = '✧';
+    keys.append(keysIcon, document.createTextNode(' ' + item.keys));
     const people = document.createElement('div');
     people.className = 'bs-line';
     const peopleIcon = document.createElement('b');
-    peopleIcon.textContent = '👤';
+    peopleIcon.className = 'bs-icon';
+    peopleIcon.textContent = '♟';
     people.append(peopleIcon, document.createTextNode(' ' + item.people));
     const body = document.createElement('div');
     body.className = 'bs-line';
     const bodyIcon = document.createElement('b');
-    bodyIcon.textContent = '🦴';
+    bodyIcon.className = 'bs-icon';
+    bodyIcon.textContent = '⚕';
     body.append(bodyIcon, document.createTextNode(' ' + item.body));
     content.append(keys, people, body);
     box.appendChild(content);
