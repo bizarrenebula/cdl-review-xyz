@@ -843,10 +843,10 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      height: 60%;
+      height: 82%;
       width: auto;
       aspect-ratio: 1;
-      max-width: 60%;
+      max-width: 82%;
       margin: 0;
       z-index: 2;
       opacity: 1;
@@ -1850,7 +1850,7 @@ const wedgePrincipleIndex = i => (20 - i) % 12;   // reference (astrological) or
 const baseSvg = document.getElementById('baseSvg');
 const pcbaseEl = document.getElementById('pcbase');
 
-function buildBaseSectors() {
+function buildRadialBaseSectorsLegacy() {
   if (!baseSvg || !pcbaseEl) return;
   const W = pcbaseEl.clientWidth, H = pcbaseEl.clientHeight;
   const stageEl = document.getElementById('stage');
@@ -2152,6 +2152,132 @@ function buildBaseSectors() {
     num.textContent = pIdx + 1;
     baseSvg.appendChild(num);
   }
+}
+
+/* Desktop's simplified base: six equal horizontal rows on either side of the
+   wheel. The wheel is layered above the rows, so its rim becomes their visible
+   curved inner edge while the other three exposed edges remain straight. This
+   gives every principle the same predictable space and keeps all three lines
+   of copy horizontal. */
+function buildBaseSectors() {
+  if (!baseSvg || !pcbaseEl) return;
+  const W = pcbaseEl.clientWidth, H = pcbaseEl.clientHeight;
+  const stageEl = document.getElementById('stage');
+  if (!matchMedia('(min-width: 900px)').matches || W < 4 || H < 4 || !stageEl) {
+    baseSvg.innerHTML = '';
+    return;
+  }
+
+  const ns = 'http://www.w3.org/2000/svg';
+  const cx = W / 2, cy = H / 2, rowH = H / 6;
+  const stageH = stageEl.getBoundingClientRect().height;
+  const rim = (stageH / 2) * (344 / 350);
+  const fNum = Math.max(18, Math.min(31, rowH * .27));
+  const outerPad = Math.max(12, W * .009);
+  const numberGap = fNum * 1.75;
+  const rowPad = Math.max(5, rowH * .09);
+  const capFont = Math.max(12, Math.min(24, rowH * .19));
+  const columns = [
+    { side: 'left', principles: [9, 10, 11, 0, 1, 2] },
+    { side: 'right', principles: [8, 7, 6, 5, 4, 3] }
+  ];
+
+  const circleHalfWidth = y => {
+    const dy = Math.max(-rim, Math.min(rim, y - cy));
+    return Math.sqrt(Math.max(0, rim * rim - dy * dy));
+  };
+  const makeCopy = (item, color, pIdx, x, y, width, height) => {
+    const fo = document.createElementNS(ns, 'foreignObject');
+    fo.dataset.index = pIdx;
+    fo.setAttribute('class', 'base-copy');
+    fo.setAttribute('pointer-events', 'none');
+    fo.setAttribute('x', x.toFixed(1));
+    fo.setAttribute('y', y.toFixed(1));
+    fo.setAttribute('width', Math.max(1, width).toFixed(1));
+    fo.setAttribute('height', Math.max(1, height).toFixed(1));
+    fo.style.setProperty('--copy-delay', `${880 + pIdx * 12}ms`);
+
+    const box = document.createElement('div');
+    box.className = 'bs-box';
+    box.style.setProperty('--seg-color', color);
+    const content = document.createElement('div');
+    content.className = 'bs-content';
+    content.style.whiteSpace = 'nowrap';
+    const keys = document.createElement('div');
+    keys.className = 'bs-keys';
+    keys.textContent = item.keys;
+    const people = document.createElement('div');
+    people.className = 'bs-line';
+    const peopleIcon = document.createElement('b');
+    peopleIcon.textContent = '👤';
+    people.append(peopleIcon, document.createTextNode(' ' + item.people));
+    const body = document.createElement('div');
+    body.className = 'bs-line';
+    const bodyIcon = document.createElement('b');
+    bodyIcon.textContent = '🦴';
+    body.append(bodyIcon, document.createTextNode(' ' + item.body));
+    content.append(keys, people, body);
+    box.appendChild(content);
+    fo.appendChild(box);
+    baseSvg.appendChild(fo);
+
+    let lo = 6, hi = capFont;
+    for (let i = 0; i < 10; i++) {
+      const mid = (lo + hi) / 2;
+      box.style.fontSize = `${mid}px`;
+      if (content.scrollWidth <= width && content.offsetHeight <= height) lo = mid;
+      else hi = mid;
+    }
+    box.style.fontSize = `${lo.toFixed(2)}px`;
+  };
+
+  baseSvg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  baseSvg.innerHTML = '';
+
+  columns.forEach(({ side, principles }) => principles.forEach((pIdx, row) => {
+    const y0 = row * rowH, y1 = y0 + rowH, midY = (y0 + y1) / 2;
+    const item = LP()[pIdx], color = LP_COLORS[pIdx % 4];
+    const wedge = document.createElementNS(ns, 'rect');
+    wedge.setAttribute('class', 'base-wedge');
+    wedge.setAttribute('x', side === 'left' ? 0 : cx);
+    wedge.setAttribute('y', y0.toFixed(1));
+    wedge.setAttribute('width', (W / 2).toFixed(1));
+    wedge.setAttribute('height', rowH.toFixed(1));
+    wedge.dataset.index = pIdx;
+    wedge.style.setProperty('--seg-color', color);
+    wedge.style.setProperty('--intro-delay', `${pIdx * 55}ms`);
+    baseSvg.appendChild(wedge);
+
+    /* Reserve a clear strip beside the rim for the principle number. The text
+       box ends at the wheel's widest intrusion into this row, so none of its
+       three single-line entries can disappear underneath the wheel. */
+    const closestY = Math.max(y0 + rowPad, Math.min(cy, y1 - rowPad));
+    const widest = circleHalfWidth(closestY);
+    const midHalf = circleHalfWidth(midY);
+    let textX, textRight, numX;
+    if (side === 'left') {
+      textX = outerPad;
+      textRight = cx - widest - numberGap;
+      numX = cx - midHalf - fNum * 1.05;
+    } else {
+      textX = cx + widest + numberGap;
+      textRight = W - outerPad;
+      numX = cx + midHalf + fNum * 1.05;
+    }
+    makeCopy(item, color, pIdx, textX, y0 + rowPad,
+             Math.max(40, textRight - textX), rowH - rowPad * 2);
+
+    const num = document.createElementNS(ns, 'text');
+    num.setAttribute('class', 'base-num base-copy');
+    num.style.setProperty('--copy-delay', `${880 + pIdx * 12}ms`);
+    num.setAttribute('text-anchor', 'middle');
+    num.setAttribute('x', numX.toFixed(1));
+    num.setAttribute('y', midY.toFixed(1));
+    num.style.fontSize = `${fNum.toFixed(1)}px`;
+    num.style.setProperty('--seg-color', color);
+    num.textContent = pIdx + 1;
+    baseSvg.appendChild(num);
+  }));
 }
 
 /* Rotation (screen degrees) that lays text along the radius at angle A (from
