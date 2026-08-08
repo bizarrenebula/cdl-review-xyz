@@ -19,6 +19,7 @@ NOTE: the mottos ("m") are the author's rhyming couplets — machine translation
 will convey the meaning but lose the rhyme. Have the author review those.
 """
 import json, re, sys, time, pathlib
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from deep_translator import GoogleTranslator   # or swap for DeepL, see below
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -28,27 +29,43 @@ TARGETS = sys.argv[1:] or ["en", "ru", "bg"]
 src = HTML.read_text(encoding="utf-8")
 book_de = json.loads(re.search(r"const BOOK_DE = (\{.*?\});", src, re.S).group(1))
 
-# One translator per target; cache identical strings so we don't re-request them.
-def make(tgt):
-    tr = GoogleTranslator(source="de", target=tgt)
+# Translate each unique source string once. A small worker pool keeps the
+# one-time build practical without overwhelming the free endpoint.
+def make_cache(tgt):
+    strings = []
+    seen = set()
+    for sec in book_de.values():
+        values = [*sec.get("m", []), sec.get("a", ""), sec.get("i", ""),
+                  sec.get("b", ""), *sec.get("s", [])]
+        for value in values:
+            value = (value or "").strip()
+            if value and value not in seen:
+                seen.add(value)
+                strings.append(value)
+
+    def translate_one(s):
+        tr = GoogleTranslator(source="de", target=tgt)
+        for attempt in range(5):
+            try:
+                return s, tr.translate(s), None
+            except Exception as ex:
+                if attempt == 4:
+                    return s, s, ex
+                time.sleep(2 * (attempt + 1))
+
     cache = {}
-    def t(s):
-        s = (s or "").strip()
-        if not s:
-            return s
-        if s not in cache:
-            for attempt in range(5):
-                try:
-                    cache[s] = tr.translate(s)
-                    break
-                except Exception as ex:
-                    if attempt == 4:
-                        print("  ! failed:", s[:60], ex)
-                        cache[s] = s
-                    time.sleep(2 * (attempt + 1))
-            time.sleep(0.2)          # be gentle on the free endpoint
-        return cache[s]
-    return t
+    done = 0
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        futures = [pool.submit(translate_one, s) for s in strings]
+        for future in as_completed(futures):
+            source, translated, error = future.result()
+            cache[source] = translated
+            done += 1
+            if error:
+                print("  ! failed:", source[:60], error, flush=True)
+            if done % 100 == 0 or done == len(strings):
+                print(f"  {done}/{len(strings)} unique strings", flush=True)
+    return cache
 
 def translate_entry(t, sec):
     return {
@@ -60,8 +77,9 @@ def translate_entry(t, sec):
     }
 
 for tgt in TARGETS:
-    print(f"== {tgt} ==")
-    t = make(tgt)
+    print(f"== {tgt} ==", flush=True)
+    cache = make_cache(tgt)
+    t = lambda s: cache.get((s or "").strip(), (s or "").strip())
     out = {}
     for n, (key, sec) in enumerate(book_de.items(), 1):
         out[key] = translate_entry(t, sec)
