@@ -207,7 +207,7 @@
   }
   header h1 {
     font-family: 'Marcellus', serif; font-weight: 700;
-    font-size: clamp(1.55rem, 4.4vw, 2.5rem);
+    font-size: clamp(1.85rem, 5.2vw, 3.25rem);
     letter-spacing: .12em; text-transform: uppercase;
     color: var(--gold);
     background: linear-gradient(105deg, #9f7020 0%, #f8e4a0 24%, #c38d2c 49%, #ffe9a6 72%, #a06d1d 100%);
@@ -218,7 +218,7 @@
     filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .85));
   }
   header p {
-    margin-top: .5rem; font-size: .92rem; font-weight: 300; font-style: italic;
+    margin-top: .5rem; font-size: clamp(1.02rem, 2vw, 1.3rem); font-weight: 300; font-style: italic;
     color: var(--gold); max-width: 36rem; margin-inline: auto;
     background: linear-gradient(100deg, #b9852a, #f5dda0 32%, #d5a746 62%, #ffe8ac);
     -webkit-background-clip: text; background-clip: text;
@@ -692,7 +692,7 @@
     header p {
       max-width: none;
       white-space: nowrap;
-      font-size: clamp(.72rem, 1.2vw, 1.25rem);
+      font-size: clamp(1rem, 1.45vw, 1.4rem);
     }
 
     /* The base rectangle. The twelve principle wedges (SVG) fill it and wrap
@@ -822,6 +822,13 @@
       stroke: #6f4a0b;
       stroke-width: 2;
       stroke-linejoin: round;
+      pointer-events: none;
+      filter: drop-shadow(0 1px 2px rgba(55, 35, 5, .45));
+    }
+    #pcbase .wheel-pointer-base {
+      stroke: var(--gold);
+      stroke-width: 10;
+      stroke-linecap: round;
       pointer-events: none;
       filter: drop-shadow(0 1px 2px rgba(55, 35, 5, .45));
     }
@@ -2069,8 +2076,19 @@ function buildWheelPc(group) {
     pcWheelLabels.push({ el: num, A, tx: nx, ty: ny });
   });
 
-  /* Large gold arrow on principle 1, pointing to the selected base sector. */
+  /* Gold principle-1 arrow: its shaft spans the sector's full radius and its
+     head projects beyond the rim toward the selected base sector. */
   const A0 = WHEEL_ANGLE(0);
+  const [shaftStartX, shaftStartY] = polar(4, A0);
+  const [shaftEndX, shaftEndY] = polar(R_OUT + 3, A0);
+  const shaft = document.createElementNS(NS, 'line');
+  shaft.setAttribute('class', 'wheel-pointer-base');
+  shaft.setAttribute('x1', shaftStartX.toFixed(2));
+  shaft.setAttribute('y1', shaftStartY.toFixed(2));
+  shaft.setAttribute('x2', shaftEndX.toFixed(2));
+  shaft.setAttribute('y2', shaftEndY.toFixed(2));
+  group.insertBefore(shaft, group.firstChild);
+
   const [tipx, tipy] = polar(R_OUT + 36, A0);
   const b1 = polar(R_OUT - 3, A0 - 5.2), b2 = polar(R_OUT - 3, A0 + 5.2);
   const arrow = document.createElementNS(NS, 'path');
