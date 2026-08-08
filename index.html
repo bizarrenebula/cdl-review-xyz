@@ -147,14 +147,86 @@
   }
   .trial-status.error { color: #ff9d8c; }
   .trial-status.success { color: #a9d9a8; }
-  .trial-code-wrap[hidden], .trial-expired[hidden], .trial-turnstile[hidden] { display: none; }
-  .trial-code-wrap { margin-top: 1rem; }
+  .trial-generated[hidden], .trial-expired[hidden] { display: none; }
+  .trial-generate-prompt {
+    width: 100%;
+    padding: 1rem;
+    color: #f0d486;
+    background: rgba(1, 7, 22, .48);
+    border: 1px dashed rgba(239, 205, 126, .55);
+    border-radius: 5px;
+    font: 700 .9rem 'Spectral', Georgia, serif;
+    cursor: pointer;
+    transition: background .2s ease, border-color .2s ease, transform .2s ease;
+  }
+  .trial-generate-prompt:hover,
+  .trial-generate-prompt:focus-visible {
+    background: rgba(20, 31, 57, .72);
+    border-color: #edca73;
+    transform: translateY(-1px);
+    outline: none;
+  }
+  .trial-generated {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: rgba(1, 7, 22, .52);
+    border: 1px solid rgba(239, 205, 126, .22);
+    border-radius: 5px;
+  }
+  .trial-generated-label {
+    color: #cfa047;
+    font-size: .66rem;
+    font-weight: 700;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+  }
+  .trial-generated-code {
+    display: block;
+    margin: .55rem 0 .7rem;
+    color: #ffe5a0;
+    font: 700 clamp(1.05rem, 5vw, 1.35rem)/1.3 ui-monospace, SFMono-Regular, Menlo, monospace;
+    letter-spacing: .08em;
+    overflow-wrap: anywhere;
+  }
+  .trial-copy-button {
+    padding: .4rem .8rem;
+    color: #071027;
+    background: #e4bd62;
+    border: 0;
+    border-radius: 3px;
+    font: 700 .72rem 'Spectral', Georgia, serif;
+    cursor: pointer;
+  }
+  .trial-generated p {
+    margin: .7rem 0 0;
+    color: #e8d7a7;
+    font-size: .82rem;
+    line-height: 1.4;
+  }
+  .trial-divider {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+    margin: 1.25rem 0 .9rem;
+    color: #b9964e;
+    font-size: .66rem;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+  .trial-divider::before, .trial-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(239, 205, 126, .22);
+  }
+  .trial-code-wrap { margin-top: 0; }
   .trial-code-wrap input {
     text-align: center;
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     font-size: 1.35rem;
     font-weight: 700;
-    letter-spacing: .35em;
+    letter-spacing: .12em;
   }
   .trial-turnstile { display: flex; justify-content: center; margin-top: .85rem; }
   .trial-expired .trial-copy { margin-bottom: 0; }
@@ -1685,17 +1757,19 @@
   <div class="trial-card">
     <div class="trial-eyebrow" id="trialEyebrow">7-day trial</div>
     <h2 id="trialTitle">Begin your trial</h2>
-    <p class="trial-copy" id="trialCopy">Enter your email and we will send you a verification code.</p>
+    <p class="trial-copy" id="trialCopy">Enter your saved trial code or generate a new one.</p>
     <div id="trialEntry">
-      <form class="trial-form" id="trialEmailForm" novalidate>
-        <label for="trialEmail" id="trialEmailLabel">Email address</label>
-        <input id="trialEmail" name="email" type="email" autocomplete="email" inputmode="email" required>
-        <div class="trial-turnstile" id="trialTurnstile" hidden></div>
-        <button class="trial-button" id="trialSend" type="submit" disabled>Send trial code</button>
-      </form>
-      <form class="trial-form trial-code-wrap" id="trialCodeForm" hidden novalidate>
-        <label for="trialCode" id="trialCodeLabel">Verification code</label>
-        <input id="trialCode" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="000000" required>
+      <button class="trial-generate-prompt" id="trialGenerate" type="button">Click to generate your trial code</button>
+      <div class="trial-generated" id="trialGenerated" hidden>
+        <div class="trial-generated-label" id="trialGeneratedLabel">Your trial code</div>
+        <output class="trial-generated-code" id="trialGeneratedCode"></output>
+        <button class="trial-copy-button" id="trialCopyCode" type="button">Copy code</button>
+        <p id="trialSaveAdvice">Copy and save this code. You will need it to access your trial again.</p>
+      </div>
+      <div class="trial-divider" id="trialDivider">Enter your trial code</div>
+      <form class="trial-form trial-code-wrap" id="trialCodeForm" novalidate>
+        <label for="trialCode" id="trialCodeLabel">Trial code</label>
+        <input id="trialCode" name="code" type="text" inputmode="text" autocomplete="off" maxlength="19" placeholder="XXXX-XXXX-XXXX-XXXX" required>
         <button class="trial-button" id="trialBegin" type="submit" disabled>Begin trial</button>
       </form>
       <div class="trial-status" id="trialStatus" role="status" aria-live="polite"></div>
@@ -4557,51 +4631,57 @@ document.addEventListener('keydown', ev => {
 const TRIAL_COPY = {
   de: {
     eyebrow:'7 Tage kostenlos', title:'Testphase beginnen',
-    copy:'Geben Sie Ihre E-Mail-Adresse ein. Wir senden Ihnen einen Bestätigungscode.',
-    email:'E-Mail-Adresse', send:'Testcode senden', code:'Bestätigungscode', begin:'Testphase beginnen',
-    sent:'Der Code wurde gesendet. Prüfen Sie Ihren Posteingang.', checking:'Wird geprüft …', sending:'Wird gesendet …',
-    invalidEmail:'Geben Sie eine gültige E-Mail-Adresse ein.', invalidCode:'Geben Sie den sechsstelligen Code ein.',
-    expiredTitle:'Die Testphase ist beendet', expired:'Ihre siebentägige Testphase ist abgelaufen.'
+    copy:'Geben Sie Ihren gespeicherten Testcode ein oder erzeugen Sie einen neuen.',
+    generate:'Klicken, um einen Testcode zu erzeugen', generated:'Ihr Testcode', copyCode:'Code kopieren', copied:'Code kopiert.',
+    save:'Kopieren und speichern Sie diesen Code. Sie benötigen ihn, um später wieder auf Ihre Testphase zuzugreifen.',
+    divider:'Testcode eingeben', code:'Testcode', begin:'Testphase beginnen', generating:'Code wird erzeugt …', checking:'Wird geprüft …',
+    invalidCode:'Geben Sie den vollständigen Testcode ein.', invalid:'Dieser Testcode ist ungültig.', codeExpired:'Dieser Testcode ist abgelaufen.',
+    expiredTitle:'Die Testphase ist beendet', expired:'Ihre siebentägige Testphase ist abgelaufen. Dieser Code kann nicht mehr verwendet werden.'
   },
   en: {
     eyebrow:'7-day trial', title:'Begin your trial',
-    copy:'Enter your email address and we will send you a verification code.',
-    email:'Email address', send:'Send trial code', code:'Verification code', begin:'Begin trial',
-    sent:'Code sent. Check your inbox.', checking:'Checking …', sending:'Sending …',
-    invalidEmail:'Enter a valid email address.', invalidCode:'Enter the six-digit code.',
-    expiredTitle:'Trial period has ended', expired:'Your seven-day trial period has ended.'
+    copy:'Enter your saved trial code or generate a new one.',
+    generate:'Click to generate your trial code', generated:'Your trial code', copyCode:'Copy code', copied:'Code copied.',
+    save:'Copy and save this code. You will need it to access your trial again.',
+    divider:'Enter your trial code', code:'Trial code', begin:'Begin trial', generating:'Generating code …', checking:'Checking …',
+    invalidCode:'Enter the complete trial code.', invalid:'That trial code is not valid.', codeExpired:'This trial code has expired.',
+    expiredTitle:'Trial period has ended', expired:'Your seven-day trial period has ended. This code can no longer be used.'
   },
   ru: {
     eyebrow:'7 дней бесплатно', title:'Начните пробный период',
-    copy:'Введите адрес электронной почты, и мы отправим вам код подтверждения.',
-    email:'Электронная почта', send:'Отправить пробный код', code:'Код подтверждения', begin:'Начать пробный период',
-    sent:'Код отправлен. Проверьте входящие сообщения.', checking:'Проверяем …', sending:'Отправляем …',
-    invalidEmail:'Введите действительный адрес электронной почты.', invalidCode:'Введите шестизначный код.',
-    expiredTitle:'Пробный период завершён', expired:'Ваш семидневный пробный период завершён.'
+    copy:'Введите сохранённый пробный код или создайте новый.',
+    generate:'Нажмите, чтобы создать пробный код', generated:'Ваш пробный код', copyCode:'Копировать код', copied:'Код скопирован.',
+    save:'Скопируйте и сохраните этот код. Он понадобится для повторного доступа к пробному периоду.',
+    divider:'Введите пробный код', code:'Пробный код', begin:'Начать пробный период', generating:'Создаём код …', checking:'Проверяем …',
+    invalidCode:'Введите пробный код полностью.', invalid:'Этот пробный код недействителен.', codeExpired:'Срок действия этого пробного кода истёк.',
+    expiredTitle:'Пробный период завершён', expired:'Ваш семидневный пробный период завершён. Этот код больше нельзя использовать.'
   },
   bg: {
     eyebrow:'7 дни безплатно', title:'Започнете пробния период',
-    copy:'Въведете имейл адрес и ще ви изпратим код за потвърждение.',
-    email:'Имейл адрес', send:'Изпрати пробен код', code:'Код за потвърждение', begin:'Започни пробния период',
-    sent:'Кодът е изпратен. Проверете входящата си поща.', checking:'Проверка …', sending:'Изпращане …',
-    invalidEmail:'Въведете валиден имейл адрес.', invalidCode:'Въведете шестцифрения код.',
-    expiredTitle:'Пробният период приключи', expired:'Вашият седемдневен пробен период приключи.'
+    copy:'Въведете запазения си пробен код или създайте нов.',
+    generate:'Натиснете, за да създадете пробен код', generated:'Вашият пробен код', copyCode:'Копирай кода', copied:'Кодът е копиран.',
+    save:'Копирайте и запазете този код. Ще ви е необходим за повторен достъп до пробния период.',
+    divider:'Въведете пробния си код', code:'Пробен код', begin:'Започни пробния период', generating:'Създаване на код …', checking:'Проверка …',
+    invalidCode:'Въведете целия пробен код.', invalid:'Този пробен код е невалиден.', codeExpired:'Срокът на този пробен код е изтекъл.',
+    expiredTitle:'Пробният период приключи', expired:'Вашият седемдневен пробен период приключи. Този код вече не може да се използва.'
   }
 };
 
-let trialTurnstileToken = '';
-let trialTurnstileWidget = null;
 let trialEndAt = 0;
 let trialExpiryTimer = null;
 const trialGate = document.getElementById('trialGate');
-const trialEmail = document.getElementById('trialEmail');
 const trialCode = document.getElementById('trialCode');
-const trialSend = document.getElementById('trialSend');
 const trialBegin = document.getElementById('trialBegin');
+const trialGenerate = document.getElementById('trialGenerate');
+const trialGeneratedCode = document.getElementById('trialGeneratedCode');
 const trialStatus = document.getElementById('trialStatus');
 
 function trialCopy() { return TRIAL_COPY[lang] || TRIAL_COPY.en; }
-function validTrialEmail() { return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(trialEmail.value.trim()); }
+function compactTrialCode(value) { return String(value || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 16); }
+function formatTrialCode(value) {
+  const compact = compactTrialCode(value);
+  return compact.match(/.{1,4}/g)?.join('-') || '';
+}
 function setTrialStatus(message = '', type = '') {
   trialStatus.textContent = message;
   trialStatus.className = `trial-status${type ? ` ${type}` : ''}`;
@@ -4611,9 +4691,12 @@ function applyTrialCopy(expired = false) {
   document.getElementById('trialEyebrow').textContent = copy.eyebrow;
   document.getElementById('trialTitle').textContent = expired ? copy.expiredTitle : copy.title;
   document.getElementById('trialCopy').textContent = copy.copy;
-  document.getElementById('trialEmailLabel').textContent = copy.email;
   document.getElementById('trialCodeLabel').textContent = copy.code;
-  trialSend.textContent = copy.send;
+  trialGenerate.textContent = copy.generate;
+  document.getElementById('trialGeneratedLabel').textContent = copy.generated;
+  document.getElementById('trialCopyCode').textContent = copy.copyCode;
+  document.getElementById('trialSaveAdvice').textContent = copy.save;
+  document.getElementById('trialDivider').textContent = copy.divider;
   trialBegin.textContent = copy.begin;
   document.getElementById('trialExpiredCopy').textContent = copy.expired;
 }
@@ -4624,13 +4707,17 @@ function showExpiredTrial() {
   trialGate.hidden = false;
   document.body.classList.add('trial-locked');
 }
+async function expireTrialAtDeadline() {
+  try { await trialApi('status'); } catch { /* The local barrier still closes on time. */ }
+  showExpiredTrial();
+}
 function scheduleTrialExpiry(endAt) {
   trialEndAt = Number(endAt || 0);
   clearTimeout(trialExpiryTimer);
   if (!trialEndAt) return;
   const remaining = trialEndAt - Date.now();
-  if (remaining <= 0) { showExpiredTrial(); return; }
-  trialExpiryTimer = setTimeout(showExpiredTrial, remaining + 250);
+  if (remaining <= 0) { expireTrialAtDeadline(); return; }
+  trialExpiryTimer = setTimeout(expireTrialAtDeadline, remaining + 250);
 }
 function unlockTrial(startTutorial = false) {
   trialGate.hidden = true;
@@ -4647,29 +4734,6 @@ async function trialApi(path, body) {
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(data.error || 'The trial service is temporarily unavailable.');
   return data;
-}
-function loadTrialTurnstile(siteKey) {
-  if (!siteKey || window.turnstile) {
-    if (siteKey && window.turnstile && trialTurnstileWidget == null) renderTrialTurnstile(siteKey);
-    return;
-  }
-  const script = document.createElement('script');
-  script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
-  script.async = true;
-  script.defer = true;
-  script.onload = () => renderTrialTurnstile(siteKey);
-  document.head.appendChild(script);
-}
-function renderTrialTurnstile(siteKey) {
-  const container = document.getElementById('trialTurnstile');
-  container.hidden = false;
-  trialSend.disabled = true;
-  trialTurnstileWidget = window.turnstile.render(container, {
-    sitekey: siteKey,
-    theme: 'dark',
-    callback: token => { trialTurnstileToken = token; trialSend.disabled = !validTrialEmail(); },
-    'expired-callback': () => { trialTurnstileToken = ''; trialSend.disabled = true; }
-  });
 }
 async function initializeTrialGate() {
   applyTrialCopy();
@@ -4688,63 +4752,70 @@ async function initializeTrialGate() {
       showExpiredTrial();
       return;
     }
-    loadTrialTurnstile(state.turnstileSiteKey);
     trialGate.hidden = false;
-    trialEmail.focus({ preventScroll:true });
+    trialCode.focus({ preventScroll:true });
   } catch (error) {
     setTrialStatus(error.message, 'error');
   }
 }
 
-trialEmail.addEventListener('input', () => {
-  const valid = validTrialEmail();
-  trialEmail.classList.toggle('valid', valid);
-  trialEmail.classList.toggle('invalid', trialEmail.value.length > 0 && !valid);
-  const turnstileRequired = !document.getElementById('trialTurnstile').hidden;
-  trialSend.disabled = !valid || (turnstileRequired && !trialTurnstileToken);
-});
 trialCode.addEventListener('input', () => {
-  trialCode.value = trialCode.value.replace(/\D/g, '').slice(0, 6);
-  trialBegin.disabled = trialCode.value.length !== 6;
+  trialCode.value = formatTrialCode(trialCode.value);
+  trialBegin.disabled = compactTrialCode(trialCode.value).length !== 16;
 });
-document.getElementById('trialEmailForm').addEventListener('submit', async event => {
-  event.preventDefault();
+trialGenerate.addEventListener('click', async () => {
   const copy = trialCopy();
-  if (!validTrialEmail()) { setTrialStatus(copy.invalidEmail, 'error'); return; }
-  trialSend.disabled = true;
-  setTrialStatus(copy.sending);
+  trialGenerate.disabled = true;
+  setTrialStatus(copy.generating);
   try {
-    await trialApi('request', { email: trialEmail.value.trim(), turnstileToken: trialTurnstileToken });
-    document.getElementById('trialCodeForm').hidden = false;
-    setTrialStatus(copy.sent, 'success');
+    const result = await trialApi('generate', {});
+    trialGeneratedCode.textContent = result.code;
+    document.getElementById('trialGenerated').hidden = false;
+    setTrialStatus('', '');
     trialCode.focus();
   } catch (error) {
     setTrialStatus(error.message, 'error');
   } finally {
-    trialSend.disabled = !validTrialEmail() || (!document.getElementById('trialTurnstile').hidden && !trialTurnstileToken);
+    trialGenerate.disabled = false;
+  }
+});
+document.getElementById('trialCopyCode').addEventListener('click', async () => {
+  const code = trialGeneratedCode.textContent;
+  if (!code) return;
+  try {
+    await navigator.clipboard.writeText(code);
+    setTrialStatus(trialCopy().copied, 'success');
+  } catch {
+    const range = document.createRange();
+    range.selectNodeContents(trialGeneratedCode);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
   }
 });
 document.getElementById('trialCodeForm').addEventListener('submit', async event => {
   event.preventDefault();
   const copy = trialCopy();
-  if (trialCode.value.length !== 6) { setTrialStatus(copy.invalidCode, 'error'); return; }
+  const code = compactTrialCode(trialCode.value);
+  if (code.length !== 16) { setTrialStatus(copy.invalidCode, 'error'); return; }
   trialBegin.disabled = true;
   setTrialStatus(copy.checking);
   try {
-    const result = await trialApi('verify', { email: trialEmail.value.trim(), code: trialCode.value });
+    const result = await trialApi('verify', { code });
     if (result.state === 'expired') showExpiredTrial();
     else {
       scheduleTrialExpiry(result.trialEndAt);
       unlockTrial(true);
     }
   } catch (error) {
-    setTrialStatus(error.message, 'error');
+    const expired = /expired/i.test(error.message);
+    setTrialStatus(expired ? copy.codeExpired : copy.invalid, 'error');
     trialBegin.disabled = false;
     trialCode.select();
   }
 });
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && trialEndAt && Date.now() >= trialEndAt) showExpiredTrial();
+  if (document.visibilityState === 'visible' && trialEndAt && Date.now() >= trialEndAt) expireTrialAtDeadline();
 });
 
 /* Desktop introduction: land the wheel first. Once it settles, draw principles

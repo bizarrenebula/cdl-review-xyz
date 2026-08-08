@@ -1,11 +1,6 @@
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const TRIAL_LENGTH_MS = 7 * 24 * 60 * 60 * 1000;
-const CODE_LIFETIME_MS = 10 * 60 * 1000;
-const SEND_COOLDOWN_MS = 60 * 1000;
-const SEND_WINDOW_MS = 24 * 60 * 60 * 1000;
-const MAX_SENDS_PER_WINDOW = 8;
-const MAX_VERIFY_ATTEMPTS = 5;
 const SESSION_COOKIE = 'codeoflife_trial';
+const TRIAL_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
 export function json(data, status = 200, headers = {}) {
   return new Response(JSON.stringify(data), {
@@ -16,14 +11,6 @@ export function json(data, status = 200, headers = {}) {
 
 export function trialsConfigured(env) {
   return env.TRIALS_ENABLED === 'true' && !!env.TRIAL_DB && !!env.SESSION_SECRET;
-}
-
-export function normalizeEmail(value) {
-  return String(value || '').trim().toLowerCase();
-}
-
-export function validEmail(email) {
-  return email.length <= 254 && EMAIL_PATTERN.test(email);
 }
 
 export async function readJson(request) {
@@ -54,14 +41,23 @@ async function hmac(secret, value) {
   return crypto.subtle.sign('HMAC', key, encoder.encode(value));
 }
 
-export async function codeHash(env, email, code) {
-  return bytesToHex(await hmac(env.SESSION_SECRET, `${email}:${code}`));
+export function normalizeTrialCode(value) {
+  return String(value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 }
 
-export function generateCode() {
-  const values = new Uint32Array(1);
+export async function codeHash(env, code) {
+  return bytesToHex(await hmac(env.SESSION_SECRET, `trial-code:${normalizeTrialCode(code)}`));
+}
+
+export async function identifierHash(env, value) {
+  return bytesToHex(await hmac(env.SESSION_SECRET, `identifier:${value}`));
+}
+
+export function generateTrialCode() {
+  const values = new Uint8Array(16);
   crypto.getRandomValues(values);
-  return String(values[0] % 1000000).padStart(6, '0');
+  const compact = [...values].map(value => TRIAL_CODE_ALPHABET[value % TRIAL_CODE_ALPHABET.length]).join('');
+  return compact.match(/.{1,4}/g).join('-');
 }
 
 export async function createSession(env, user) {
@@ -102,46 +98,4 @@ export function sessionCookie(request, token, trialEnd) {
   return `${SESSION_COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=31536000${secure}`;
 }
 
-export async function verifyTurnstile(env, token, request) {
-  if (!env.TURNSTILE_SECRET_KEY) return true;
-  if (!token) return false;
-  const form = new FormData();
-  form.set('secret', env.TURNSTILE_SECRET_KEY);
-  form.set('response', token);
-  const ip = request.headers.get('CF-Connecting-IP');
-  if (ip) form.set('remoteip', ip);
-  const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-    method: 'POST', body: form
-  });
-  if (!response.ok) return false;
-  const result = await response.json();
-  return result.success === true;
-}
-
-export async function sendTrialEmail(env, email, code) {
-  if (!env.RESEND_API_KEY || !env.EMAIL_FROM) throw new Error('Email service is not configured');
-  const response = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      authorization: `Bearer ${env.RESEND_API_KEY}`,
-      'content-type': 'application/json'
-    },
-    body: JSON.stringify({
-      from: env.EMAIL_FROM,
-      to: [email],
-      subject: 'Your Code of Life trial code',
-      html: `<div style="font-family:Georgia,serif;color:#111827"><h2>Your trial code</h2><p>Enter this code to begin your seven-day Code of Life trial:</p><p style="font-size:32px;font-weight:700;letter-spacing:8px">${code}</p><p>This code expires in 10 minutes.</p></div>`,
-      text: `Your Code of Life trial code is ${code}. It expires in 10 minutes.`
-    })
-  });
-  if (!response.ok) throw new Error(`Email delivery failed (${response.status})`);
-}
-
-export {
-  CODE_LIFETIME_MS,
-  MAX_SENDS_PER_WINDOW,
-  MAX_VERIFY_ATTEMPTS,
-  SEND_COOLDOWN_MS,
-  SEND_WINDOW_MS,
-  TRIAL_LENGTH_MS
-};
+export { TRIAL_LENGTH_MS };
