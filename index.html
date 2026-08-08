@@ -2154,11 +2154,11 @@ function buildRadialBaseSectorsLegacy() {
   }
 }
 
-/* Desktop's simplified base: six equal horizontal rows on either side of the
+/* Desktop's simplified base: six horizontal rows on either side of the
    wheel. The wheel is layered above the rows, so its rim becomes their visible
    curved inner edge while the other three exposed edges remain straight. This
-   gives every principle the same predictable space and keeps all three text
-   groups horizontal. */
+   keeps all three text groups horizontal; row boundaries are adjusted below
+   so each one meets the corresponding 30° wheel spoke exactly. */
 function buildBaseSectors() {
   if (!baseSvg || !pcbaseEl) return;
   const W = pcbaseEl.clientWidth, H = pcbaseEl.clientHeight;
@@ -2169,14 +2169,25 @@ function buildBaseSectors() {
   }
 
   const ns = 'http://www.w3.org/2000/svg';
-  const cx = W / 2, cy = H / 2, rowH = H / 6;
+  const cx = W / 2, cy = H / 2, nominalRowH = H / 6;
   const stageH = stageEl.getBoundingClientRect().height;
   const rim = (stageH / 2) * (344 / 350);
-  const fNum = Math.max(18, Math.min(31, rowH * .27));
+  /* Each internal horizontal divider lands on the outer endpoint of a 30°
+     wheel spoke. The top and bottom rows therefore grow slightly while the
+     intervening rows absorb the difference, eliminating visible near-misses. */
+  const rowBounds = [
+    0,
+    cy - rim * Math.cos(Math.PI / 6),
+    cy - rim * Math.cos(Math.PI / 3),
+    cy,
+    cy + rim * Math.cos(Math.PI / 3),
+    cy + rim * Math.cos(Math.PI / 6),
+    H
+  ];
+  const fNum = Math.max(18, Math.min(31, nominalRowH * .27));
   const outerPad = Math.max(12, W * .009);
   const numberGap = fNum * 1.75;
-  const rowPad = Math.max(5, rowH * .09);
-  const capFont = Math.max(16, Math.min(30, rowH * .28));
+  const capFont = Math.max(16, Math.min(30, nominalRowH * .28));
   const columns = [
     { side: 'left', principles: [9, 10, 11, 0, 1, 2] },
     { side: 'right', principles: [8, 7, 6, 5, 4, 3] }
@@ -2237,14 +2248,15 @@ function buildBaseSectors() {
   baseSvg.innerHTML = '';
 
   columns.forEach(({ side, principles }) => principles.forEach((pIdx, row) => {
-    const y0 = row * rowH, y1 = y0 + rowH, midY = (y0 + y1) / 2;
+    const y0 = rowBounds[row], y1 = rowBounds[row + 1];
+    const sectorH = y1 - y0, rowPad = Math.max(5, sectorH * .08);
     const item = LP()[pIdx], color = LP_COLORS[pIdx % 4];
     const wedge = document.createElementNS(ns, 'rect');
     wedge.setAttribute('class', 'base-wedge');
     wedge.setAttribute('x', side === 'left' ? 0 : cx);
     wedge.setAttribute('y', y0.toFixed(1));
     wedge.setAttribute('width', (W / 2).toFixed(1));
-    wedge.setAttribute('height', rowH.toFixed(1));
+    wedge.setAttribute('height', sectorH.toFixed(1));
     wedge.dataset.index = pIdx;
     wedge.style.setProperty('--seg-color', color);
     wedge.style.setProperty('--intro-delay', `${pIdx * 55}ms`);
@@ -2255,26 +2267,29 @@ function buildBaseSectors() {
        three independently wrapping entries can disappear under the wheel. */
     const closestY = Math.max(y0 + rowPad, Math.min(cy, y1 - rowPad));
     const widest = circleHalfWidth(closestY);
-    const midHalf = circleHalfWidth(midY);
     let textX, textRight, numX;
     if (side === 'left') {
       textX = outerPad;
       textRight = cx - widest - numberGap;
-      numX = cx - midHalf - fNum * 1.05;
     } else {
       textX = cx + widest + numberGap;
       textRight = W - outerPad;
-      numX = cx + midHalf + fNum * 1.05;
     }
     makeCopy(item, color, pIdx, side, textX, y0 + rowPad,
-             Math.max(40, textRight - textX), rowH - rowPad * 2);
+             Math.max(40, textRight - textX), sectorH - rowPad * 2);
+
+    /* Mirror the wheel number across the rim on the same radial centreline. */
+    const angle = (((20 - pIdx) % 12) * 30 + 15) * Math.PI / 180;
+    const numRadius = rim + fNum * 1.05;
+    numX = cx + numRadius * Math.sin(angle);
+    const numY = cy - numRadius * Math.cos(angle);
 
     const num = document.createElementNS(ns, 'text');
     num.setAttribute('class', 'base-num base-copy');
     num.style.setProperty('--copy-delay', `${880 + pIdx * 12}ms`);
     num.setAttribute('text-anchor', 'middle');
     num.setAttribute('x', numX.toFixed(1));
-    num.setAttribute('y', midY.toFixed(1));
+    num.setAttribute('y', numY.toFixed(1));
     num.style.fontSize = `${fNum.toFixed(1)}px`;
     num.style.setProperty('--seg-color', color);
     num.textContent = pIdx + 1;
