@@ -3077,7 +3077,7 @@ function clearDemoHighlights() {
   });
 }
 
-function focusDemoWheelSector(index, ring = 'outer') {
+function focusDemoWheelSector(index, ring = 'outer', showLight = true) {
   outerG.querySelectorAll('.demo-focus').forEach(el => el.classList.remove('demo-focus'));
   innerG.querySelectorAll('.demo-focus').forEach(el => el.classList.remove('demo-focus'));
   const group = ring === 'outer' ? outerG : innerG;
@@ -3085,7 +3085,8 @@ function focusDemoWheelSector(index, ring = 'outer') {
   const label = group.querySelector(`.label-${ring}[data-index="${index}"]`);
   sector?.classList.add('demo-focus');
   label?.classList.add('demo-focus');
-  moveDemoLightTo(label || sector);
+  if (showLight) moveDemoLightTo(label || sector);
+  else demoLight?.classList.remove('on');
 }
 
 function clearDemoVisuals() {
@@ -3103,12 +3104,13 @@ function clearDemoVisuals() {
   document.querySelectorAll('#correspondencePanel .demo-focus').forEach(el => el.classList.remove('demo-focus'));
 }
 
-function focusDemoCorrespondence(field = 'people') {
+function focusDemoCorrespondence(field = 'people', showLight = true) {
   document.querySelectorAll('#correspondencePanel .demo-focus').forEach(el => el.classList.remove('demo-focus'));
   const value = document.getElementById(field === 'keys' ? 'corrKeys' : 'corrPeople');
   const row = value?.closest('.corr-field');
   row?.classList.add('demo-focus');
-  moveDemoLightTo(value || row);
+  if (showLight) moveDemoLightTo(value || row);
+  else demoLight?.classList.remove('on');
   return value || row;
 }
 
@@ -3245,15 +3247,17 @@ function runDesktopGuidedExample(key, { person, event }) {
 
 function runMobileGuidedExample(key, { person, event }) {
   const copy = DEMO_GUIDE[lang][key];
+  const words = (DEMO_WORDS[lang] && DEMO_WORDS[lang][key]) || {};
   animateTo('outer', -person * STEP, 1050, easeRoll);
   const stage = document.getElementById('stage');
   const panel = document.getElementById('correspondencePanel');
   const eventField = key === 'siblingChild' ? 'people' : 'keys';
 
   const showResult = () => {
+    clearDemoHighlights();
     document.querySelectorAll('#correspondencePanel .demo-focus').forEach(el => el.classList.remove('demo-focus'));
     stage?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    focusDemoWheelSector(person, 'outer');
+    focusDemoWheelSector(person, 'outer', false);
     demoLater(() => {
       hubEl.classList.add('demo-result');
       presentDemoStep(copy.result, hubEl, () => {
@@ -3262,20 +3266,23 @@ function runMobileGuidedExample(key, { person, event }) {
         const modal = overlay.querySelector('.modal');
         if (modal) modal.scrollTop = 0;
         demoLater(tourResultHeadings, 800);
-      });
+      }, 'auto', false);
     }, 950);
   };
   const showEvent = () => {
-    focusDemoWheelSector(event, 'inner');
+    clearDemoHighlights();
+    focusDemoWheelSector(event, 'inner', false);
     showMobileCorrespondences('inner', true);
     panel?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     demoLater(() => {
-      const correspondence = focusDemoCorrespondence(eventField);
-      presentDemoStep(copy.event, correspondence, showResult);
+      const correspondence = focusDemoCorrespondence(eventField, false);
+      const highlightedWord = underlineWordIn(correspondence, words.ew);
+      presentDemoStep(copy.event, highlightedWord || correspondence, showResult, 'auto', false);
     }, 650);
   };
   const rotateEvent = () => {
     demoBalloon.classList.remove('on');
+    clearDemoHighlights();
     document.querySelectorAll('#correspondencePanel .demo-focus').forEach(el => el.classList.remove('demo-focus'));
     stage?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     demoLater(() => {
@@ -3284,12 +3291,13 @@ function runMobileGuidedExample(key, { person, event }) {
     }, 500);
   };
   demoLater(() => {
-    focusDemoWheelSector(person, 'outer');
+    focusDemoWheelSector(person, 'outer', false);
     showMobileCorrespondences('outer', true);
     panel?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     demoLater(() => {
-      const correspondence = focusDemoCorrespondence('people');
-      presentDemoStep(copy.person, correspondence, rotateEvent);
+      const correspondence = focusDemoCorrespondence('people', false);
+      const highlightedWord = underlineWordIn(correspondence, words.pw);
+      presentDemoStep(copy.person, highlightedWord || correspondence, rotateEvent, 'auto', false);
     }, 650);
   }, 1250);
 }
