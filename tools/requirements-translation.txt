@@ -1,0 +1,4 @@
+deep-translator==1.11.4
+openai==2.53.0
+pydantic==2.13.4
+python-dotenv==1.2.2

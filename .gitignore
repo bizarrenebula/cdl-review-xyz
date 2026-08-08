@@ -1,1 +1,4 @@
 drafts/
+.env
+tools/cache/
+__pycache__/
