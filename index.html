@@ -2193,6 +2193,7 @@ function buildBaseSectors() {
     { side: 'left', principles: [9, 10, 11, 0, 1, 2] },
     { side: 'right', principles: [8, 7, 6, 5, 4, 3] }
   ];
+  const copyBoxes = [];
 
   const circleHalfWidth = y => {
     const dy = Math.max(-rim, Math.min(rim, y - cy));
@@ -2246,6 +2247,7 @@ function buildBaseSectors() {
       else hi = mid;
     }
     box.style.fontSize = `${lo.toFixed(2)}px`;
+    copyBoxes.push({ pIdx, box, fontSize: lo });
   };
 
   baseSvg.setAttribute('viewBox', `0 0 ${W} ${H}`);
@@ -2299,6 +2301,14 @@ function buildBaseSectors() {
     num.textContent = pIdx + 1;
     baseSvg.appendChild(num);
   }));
+
+  /* Principle 11 is the visual reference chosen for the base typography.
+     Measure it responsively, then give every other sector exactly that size so
+     the chart reads as one system instead of twelve independently fitted cards. */
+  const reference = copyBoxes.find(entry => entry.pIdx === 10);
+  if (reference) copyBoxes.forEach(entry => {
+    entry.box.style.fontSize = `${reference.fontSize.toFixed(2)}px`;
+  });
 }
 
 /* Rotation (screen degrees) that lays text along the radius at angle A (from
