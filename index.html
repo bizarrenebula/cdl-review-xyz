@@ -3955,24 +3955,24 @@ const DEMO_GUIDE = {
    base/wheel wording because those relationships are already spatially clear. */
 const MOBILE_DEMO_GUIDE = {
   de: {
-    siblingChild: { person: 'Ihre Geschwister befinden sich in Ihrem 3. Prinzip der äußeren Welt.', event: 'Kinder befinden sich im 5. Prinzip der inneren Welt eines Menschen.' },
-    friendJob: { person: 'Ihre Freunde befinden sich in Ihrem 11. Prinzip der äußeren Welt.', event: 'Arbeit befindet sich im 6. Prinzip der inneren Welt eines Menschen.' },
-    promotion: { person: 'Ihre Mitarbeiter befinden sich in Ihrem 6. Prinzip der äußeren Welt.', event: 'Expansion befindet sich im 9. Prinzip der inneren Welt eines Menschen.' }
+    siblingChild: { person: 'Ihre Geschwister befinden sich in Ihrem 3. Prinzip der äußeren Welt.', event: 'Kinder befinden sich im 5. Prinzip der inneren Welt eines Menschen.', result: 'Klicken Sie auf „Mehr lesen“, um zu entdecken, was dies für Sie bedeutet.' },
+    friendJob: { person: 'Ihre Freunde befinden sich in Ihrem 11. Prinzip der äußeren Welt.', event: 'Arbeit befindet sich im 6. Prinzip der inneren Welt eines Menschen.', result: 'Klicken Sie auf „Mehr lesen“, um zu entdecken, was dies für Sie bedeutet.' },
+    promotion: { person: 'Ihre Mitarbeiter befinden sich in Ihrem 6. Prinzip der äußeren Welt.', event: 'Expansion befindet sich im 9. Prinzip der inneren Welt eines Menschen.', result: 'Klicken Sie auf „Mehr lesen“, um zu entdecken, was dies für Sie bedeutet.' }
   },
   en: {
-    siblingChild: { person: 'Your siblings are in your 3rd principle of the outer world', event: "Children are in the 5th principle of one's inner world" },
-    friendJob: { person: 'Your friends are in your 11th principle of the outer world', event: "Work is in the 6th principle of one's inner world" },
-    promotion: { person: 'Your coworkers are in your 6th principle of the outer world', event: "Expansion is in the 9th principle of one's inner world" }
+    siblingChild: { person: 'Your siblings are in your 3rd principle of the outer world', event: "Children are in the 5th principle of one's inner world", result: 'Click “Read more” to discover what this means for you.' },
+    friendJob: { person: 'Your friends are in your 11th principle of the outer world', event: "Work is in the 6th principle of one's inner world", result: 'Click “Read more” to discover what this means for you.' },
+    promotion: { person: 'Your coworkers are in your 6th principle of the outer world', event: "Expansion is in the 9th principle of one's inner world", result: 'Click “Read more” to discover what this means for you.' }
   },
   ru: {
-    siblingChild: { person: 'Ваши братья и сёстры находятся в вашем 3-м принципе внешнего мира.', event: 'Дети находятся в 5-м принципе внутреннего мира человека.' },
-    friendJob: { person: 'Ваши друзья находятся в вашем 11-м принципе внешнего мира.', event: 'Работа находится в 6-м принципе внутреннего мира человека.' },
-    promotion: { person: 'Ваши сотрудники находятся в вашем 6-м принципе внешнего мира.', event: 'Расширение находится в 9-м принципе внутреннего мира человека.' }
+    siblingChild: { person: 'Ваши братья и сёстры находятся в вашем 3-м принципе внешнего мира.', event: 'Дети находятся в 5-м принципе внутреннего мира человека.', result: 'Нажмите «Подробнее», чтобы узнать, что это означает для вас.' },
+    friendJob: { person: 'Ваши друзья находятся в вашем 11-м принципе внешнего мира.', event: 'Работа находится в 6-м принципе внутреннего мира человека.', result: 'Нажмите «Подробнее», чтобы узнать, что это означает для вас.' },
+    promotion: { person: 'Ваши сотрудники находятся в вашем 6-м принципе внешнего мира.', event: 'Расширение находится в 9-м принципе внутреннего мира человека.', result: 'Нажмите «Подробнее», чтобы узнать, что это означает для вас.' }
   },
   bg: {
-    siblingChild: { person: 'Вашите братя и сестри са във вашия 3-ти принцип на външния свят.', event: 'Децата са в 5-ия принцип на вътрешния свят на човека.' },
-    friendJob: { person: 'Вашите приятели са във вашия 11-и принцип на външния свят.', event: 'Работата е в 6-ия принцип на вътрешния свят на човека.' },
-    promotion: { person: 'Вашите служители са във вашия 6-и принцип на външния свят.', event: 'Разширението е в 9-ия принцип на вътрешния свят на човека.' }
+    siblingChild: { person: 'Вашите братя и сестри са във вашия 3-ти принцип на външния свят.', event: 'Децата са в 5-ия принцип на вътрешния свят на човека.', result: 'Натиснете „Прочети още“, за да откриете какво означава това за вас.' },
+    friendJob: { person: 'Вашите приятели са във вашия 11-и принцип на външния свят.', event: 'Работата е в 6-ия принцип на вътрешния свят на човека.', result: 'Натиснете „Прочети още“, за да откриете какво означава това за вас.' },
+    promotion: { person: 'Вашите служители са във вашия 6-и принцип на външния свят.', event: 'Разширението е в 9-ия принцип на вътрешния свят на човека.', result: 'Натиснете „Прочети още“, за да откриете какво означава това за вас.' }
   }
 };
 let demoTimers = [];
@@ -4306,7 +4306,7 @@ function runMobileGuidedExample(key, { person, event }) {
     focusDemoWheelSector(person, 'outer', false);
     demoLater(() => {
       hubEl.classList.add('demo-result');
-      presentDemoStep(copy.result, hubEl, () => {
+      presentDemoStep(mobileCopy.result || copy.result, hubEl, () => {
         document.getElementById('readMoreBtn').click();
         demoLight?.classList.remove('on');
         const modal = overlay.querySelector('.modal');
