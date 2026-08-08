@@ -806,6 +806,16 @@
       pointer-events: none;
       -webkit-user-select: none; user-select: none;
     }
+    /* A prominent gold selector on principle 1. It turns with the wheel. */
+    #pcbase .wheel-pointer {
+      fill: var(--gold);
+      stroke: #6f4a0b;
+      stroke-width: 2;
+      stroke-linejoin: round;
+      pointer-events: none;
+      filter: drop-shadow(0 1px 2px rgba(55, 35, 5, .45));
+    }
+
     /* The wedge shapes and their labels (built in JS). */
     .base-wedge {
       fill: transparent;
@@ -2048,6 +2058,15 @@ function buildWheelPc(group) {
     group.appendChild(num);
     pcWheelLabels.push({ el: num, A, tx: nx, ty: ny });
   });
+
+  /* Large gold arrow on principle 1, pointing to the selected base sector. */
+  const A0 = WHEEL_ANGLE(0);
+  const [tipx, tipy] = polar(R_OUT + 36, A0);
+  const b1 = polar(R_OUT - 3, A0 - 5.2), b2 = polar(R_OUT - 3, A0 + 5.2);
+  const arrow = document.createElementNS(NS, 'path');
+  arrow.setAttribute('class', 'wheel-pointer');
+  arrow.setAttribute('d', `M ${tipx.toFixed(2)} ${tipy.toFixed(2)} L ${b1[0].toFixed(2)} ${b1[1].toFixed(2)} L ${b2[0].toFixed(2)} ${b2[1].toFixed(2)} Z`);
+  group.appendChild(arrow);
 
   orientPcWheel(state.outer.angle);           // set upright immediately
 }
