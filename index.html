@@ -724,6 +724,87 @@
     box-shadow: -4px 0 0 var(--gold);
     outline: none;
   }
+  /* The example chooser shares the result modal's celestial palette. */
+  #demoOverlay .demo-picker {
+    color: #ecd28e;
+    background:
+      linear-gradient(rgba(2, 9, 26, .12), rgba(2, 9, 26, .3)),
+      url('assets/cosmic-header.webp') center 47% / cover no-repeat;
+    border-color: rgba(201, 151, 54, .7);
+    box-shadow: inset 0 0 0 1px rgba(255, 224, 145, .13), 0 18px 55px rgba(0, 0, 0, .48);
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: #d2a143 rgba(1, 7, 22, .45);
+  }
+  #demoOverlay .demo-picker::-webkit-scrollbar { width: 10px; }
+  #demoOverlay .demo-picker::-webkit-scrollbar-track {
+    margin-block: .5rem;
+    background: rgba(1, 7, 22, .45);
+    border-radius: 999px;
+  }
+  #demoOverlay .demo-picker::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    border-radius: 999px;
+    background: linear-gradient(180deg, #f4d889, #b98224) padding-box;
+  }
+  #demoOverlay .demo-picker .close { color: #e8c56e; }
+  #demoOverlay .demo-picker .eyebrow {
+    color: #cfa047;
+  }
+  #demoOverlay .demo-picker h2 {
+    color: #e9c66d;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, .8);
+  }
+  #demoOverlay .demo-picker .rule {
+    background: linear-gradient(90deg, transparent, #9c7225 20% 80%, transparent);
+  }
+  #demoOverlay .demo-option {
+    color: #efd895;
+    border: 1px solid rgba(239, 205, 126, .25);
+    border-left: 3px solid rgba(222, 174, 78, .72);
+    background: rgba(1, 7, 22, .46);
+    box-shadow: inset 0 0 0 1px rgba(239, 205, 126, .06);
+  }
+  #demoOverlay .demo-option:hover,
+  #demoOverlay .demo-option:focus-visible {
+    color: #ffe4a0;
+    border-color: rgba(239, 205, 126, .58);
+    background: rgba(14, 25, 50, .72);
+    box-shadow: -4px 0 0 #d8a647, 0 5px 18px rgba(0, 0, 0, .22);
+  }
+  #demoOverlay .lang-switch.demo-lang {
+    flex-wrap: wrap;
+    gap: .45rem;
+  }
+  #demoOverlay .lang-switch button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .38rem;
+    min-width: 3.9rem;
+    padding: .42em .65em;
+    color: #e7c46e;
+    background: rgba(1, 7, 22, .52);
+    border-color: rgba(222, 174, 78, .48);
+  }
+  #demoOverlay .lang-switch button.active,
+  #demoOverlay .lang-switch button:hover,
+  #demoOverlay .lang-switch button:focus-visible {
+    color: #071027;
+    background: linear-gradient(105deg, #c18a2a, #ffe4a0 48%, #c99532);
+    border-color: #f0cd78;
+    outline: none;
+  }
+  .lang-flag {
+    font-family: system-ui, sans-serif;
+    font-size: 1rem;
+    line-height: 1;
+    letter-spacing: 0;
+  }
+  .lang-code {
+    font-weight: 700;
+    letter-spacing: .09em;
+  }
   .modal .demo-heading {
     border-radius: 4px;
     font-weight: 700;
@@ -1490,10 +1571,10 @@
     <div class="rule"></div>
     <div class="demo-options" id="demoOptions"></div>
     <div class="lang-switch demo-lang" aria-label="Language">
-      <button data-lang="de">DE</button>
-      <button data-lang="en">EN</button>
-      <button data-lang="ru">RU</button>
-      <button data-lang="bg">BG</button>
+      <button data-lang="de" aria-label="Deutsch"><span class="lang-flag" aria-hidden="true">🇩🇪</span><span class="lang-code">DE</span></button>
+      <button data-lang="en" aria-label="English"><span class="lang-flag" aria-hidden="true">🇬🇧</span><span class="lang-code">EN</span></button>
+      <button data-lang="ru" aria-label="Русский"><span class="lang-flag" aria-hidden="true">🇷🇺</span><span class="lang-code">RU</span></button>
+      <button data-lang="bg" aria-label="Български"><span class="lang-flag" aria-hidden="true">🇧🇬</span><span class="lang-code">BG</span></button>
     </div>
   </div>
 </div>
