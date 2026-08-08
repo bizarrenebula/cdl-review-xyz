@@ -1,4 +1,5 @@
 drafts/
 .env
+.dev.vars
 tools/cache/
 __pycache__/

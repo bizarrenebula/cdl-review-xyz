@@ -1,0 +1,9 @@
+# Copy to .dev.vars for local Pages Functions development. Never commit the
+# real file. The trial remains disabled unless this is exactly "true".
+TRIALS_ENABLED=false
+SESSION_SECRET=replace-with-at-least-32-random-bytes
+RESEND_API_KEY=re_replace_me
+EMAIL_FROM=Code of Life <trial@example.com>
+TURNSTILE_SITE_KEY=
+TURNSTILE_SECRET_KEY=
+
