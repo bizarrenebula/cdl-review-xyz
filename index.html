@@ -109,7 +109,7 @@
     left: 50%; top: 50%;
     z-index: 9;
     width: min(30rem, calc(100vw - 1rem));
-    padding: 1rem 1.2rem;
+    padding: 1rem 2.5rem 1rem 1.2rem;
     border: 3px solid #853b38;
     border-radius: 10px;
     background: #b85a56;
@@ -150,6 +150,25 @@
     letter-spacing: .14em;
     text-transform: uppercase;
     color: #fff3ed;
+  }
+  .demo-balloon .tutorial-close {
+    position: absolute;
+    top: .22rem;
+    right: .35rem;
+    width: 1.65rem;
+    height: 1.65rem;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: #fff;
+    font: 700 1.25rem/1 'Spectral', serif;
+    cursor: pointer;
+  }
+  .demo-balloon .tutorial-close:hover,
+  .demo-balloon .tutorial-close:focus-visible {
+    background: rgba(70, 18, 18, .35);
+    outline: 2px solid #fff3ed;
+    outline-offset: 1px;
   }
   .demo-balloon.insist { animation: balloon-insist .48s ease both; }
   @keyframes balloon-insist {
@@ -250,7 +269,7 @@
     body.intro-running .stage { pointer-events: none; }
     .demo-balloon {
       width: min(22rem, calc(100vw - 2rem));
-      padding: .65rem .8rem;
+      padding: .65rem 2.15rem .65rem .8rem;
       font-size: clamp(.8rem, 3.4vw, .94rem);
       line-height: 1.32;
     }
@@ -935,7 +954,7 @@
 </div>
 <div class="demo-light" id="demoLight" aria-hidden="true"></div>
 </div>
-<div class="demo-balloon" id="demoBalloon" role="button" tabindex="0" aria-live="polite"></div>
+<div class="demo-balloon" id="demoBalloon" role="dialog" tabindex="0" aria-live="polite"></div>
 
 <section class="mobile-correspondences" id="correspondencePanel" aria-live="polite">
   <button class="corr-close" id="closeCorrespondences" type="button" aria-label="Close">×</button>
@@ -3025,10 +3044,19 @@ function showDemoBalloon(text, el, placement = 'auto') {
   const x = useRight ? target.right : Math.max(half + 8, Math.min(window.innerWidth - half - 8, target.left + target.width / 2));
   const below = !useRight && target.top < 135;
   demoBalloon.textContent = text;
+  const close = document.createElement('button');
+  close.type = 'button';
+  close.className = 'tutorial-close';
+  close.setAttribute('aria-label', 'Close tutorial');
+  close.textContent = '×';
+  close.addEventListener('click', ev => {
+    ev.stopPropagation();
+    interruptGuidedDemo(false);
+  });
   const prompt = document.createElement('span');
   prompt.className = 'continue';
   prompt.textContent = DEMO_TEXT[lang].continue;
-  demoBalloon.appendChild(prompt);
+  demoBalloon.append(close, prompt);
   demoBalloon.classList.toggle('below', below);
   demoBalloon.classList.toggle('right', useRight);
   let top = useRight ? target.top + target.height / 2 : (below ? target.bottom : target.top);
@@ -3373,6 +3401,7 @@ function openGuideOnDemand() {
 document.getElementById('guideBtn').addEventListener('click', openGuideOnDemand);
 demoBalloon.addEventListener('click', advanceDemoBalloon);
 demoBalloon.addEventListener('keydown', ev => {
+  if (ev.target !== demoBalloon) return;
   if (ev.key === 'Enter' || ev.key === ' ') {
     ev.preventDefault();
     advanceDemoBalloon();
