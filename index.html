@@ -806,14 +806,6 @@
       pointer-events: none;
       -webkit-user-select: none; user-select: none;
     }
-    /* The pointer arrow on principle 1 (the selector). Turns with the wheel. */
-    #pcbase .wheel-pointer {
-      fill: var(--ink);
-      stroke: var(--line);
-      stroke-width: 1;
-      pointer-events: none;
-    }
-
     /* The wedge shapes and their labels (built in JS). */
     .base-wedge {
       fill: transparent;
@@ -2057,16 +2049,6 @@ function buildWheelPc(group) {
     pcWheelLabels.push({ el: num, A, tx: nx, ty: ny });
   });
 
-  /* The pointer: an arrow on principle 1 (the selector), pointing radially
-     outward. It lives in the wheel group, so it turns with the wheel and always
-     shows which base wedge principle 1 is aimed at. */
-  const A0 = WHEEL_ANGLE(0);
-  const [tipx, tipy] = polar(R_OUT + 22, A0);
-  const b1 = polar(R_OUT + 3, A0 - 3.2), b2 = polar(R_OUT + 3, A0 + 3.2);
-  const arrow = document.createElementNS(NS, 'path');
-  arrow.setAttribute('class', 'wheel-pointer');
-  arrow.setAttribute('d', `M ${tipx.toFixed(2)} ${tipy.toFixed(2)} L ${b1[0].toFixed(2)} ${b1[1].toFixed(2)} L ${b2[0].toFixed(2)} ${b2[1].toFixed(2)} Z`);
-  group.appendChild(arrow);
   orientPcWheel(state.outer.angle);           // set upright immediately
 }
 
@@ -2857,20 +2839,20 @@ const DEMO_GUIDE = {
   de: {
     nudge: 'Hier klicken, um zu lernen, wie das Rad benutzt wird.',
     siblingChild: {
-      person: 'Finden Sie auf der Basis das Prinzip, bei dem die Geschwister stehen.',
-      event: 'Kinder gehören bei Ihrem Geschwister zum 5. Prinzip.',
+      person: 'Ihre Geschwister befinden sich in Ihrem 3. Prinzip.',
+      event: 'Kinder befinden sich im 5. Prinzip.',
       result: 'Die Geburt des Kindes eines Geschwisters spiegelt Ihr 7. Lebensprinzip wider.',
       correspondences: 'Beim Drehen eines Rades erscheinen hier die drei Entsprechungen des ausgewählten Prinzips.'
     },
     friendJob: {
-      person: 'Finden Sie auf der Basis das Prinzip, bei dem die Freunde stehen.',
-      event: 'Eine neue Arbeit gehört bei Ihrem Freund zum 6. Prinzip.',
+      person: 'Ihre Freunde befinden sich in Ihrem 11. Prinzip.',
+      event: 'Arbeit befindet sich im 6. Prinzip.',
       result: 'Der neue Arbeitsplatz eines Freundes spiegelt Ihr 4. Lebensprinzip wider.',
       correspondences: 'Beim Drehen eines Rades erscheinen hier die drei Entsprechungen des ausgewählten Prinzips.'
     },
     promotion: {
-      person: 'Finden Sie auf der Basis das Prinzip, bei dem die Kollegen stehen.',
-      event: 'Eine Beförderung gehört bei Ihrem Kollegen zum 9. Prinzip.',
+      person: 'Ihre Mitarbeiter befinden sich in Ihrem 6. Prinzip.',
+      event: 'Expansion befindet sich im 9. Prinzip.',
       result: 'Die Beförderung eines Kollegen spiegelt Ihr 2. Lebensprinzip wider.',
       correspondences: 'Beim Drehen eines Rades erscheinen hier die drei Entsprechungen des ausgewählten Prinzips.'
     }
@@ -2878,20 +2860,20 @@ const DEMO_GUIDE = {
   en: {
     nudge: 'Click here to learn how to use the wheel.',
     siblingChild: {
-      person: 'Find the principle on the base where siblings are represented.',
-      event: "Children are in principle 5 of your sibling's outer world.",
+      person: 'Your siblings are in your 3rd principle',
+      event: 'Children are in the 5th principle',
       result: "The birth of a sibling's child reflects your 7th life principle.",
       correspondences: 'When you turn either wheel, the three correspondences for its selected principle appear here.'
     },
     friendJob: {
-      person: 'Find the principle on the base where friends are represented.',
-      event: "A new job is in principle 6 of your friend's outer world.",
+      person: 'Your friends are in your 11th principle',
+      event: 'Work is in the 6th principle',
       result: "A friend starting a new job reflects your 4th life principle.",
       correspondences: 'When you turn either wheel, the three correspondences for its selected principle appear here.'
     },
     promotion: {
-      person: 'Find the principle on the base where colleagues are represented.',
-      event: "A promotion is in principle 9 of your colleague's outer world.",
+      person: 'Your coworkers are in your 6th principle',
+      event: 'Expansion is in the 9th principle',
       result: "A colleague's promotion reflects your 2nd life principle.",
       correspondences: 'When you turn either wheel, the three correspondences for its selected principle appear here.'
     }
@@ -2899,20 +2881,20 @@ const DEMO_GUIDE = {
   ru: {
     nudge: 'Нажмите здесь, чтобы узнать, как пользоваться колесом.',
     siblingChild: {
-      person: 'Найдите на основе принцип, где указаны братья и сёстры.',
-      event: 'Дети относятся к 5-му принципу внешнего мира вашего брата или сестры.',
+      person: 'Ваши братья и сёстры находятся в вашем 3-м принципе.',
+      event: 'Дети находятся в 5-м принципе.',
       result: 'Рождение ребёнка у брата или сестры отражает ваш 7-й жизненный принцип.',
       correspondences: 'При вращении любого колеса здесь появляются три соответствия выбранного принципа.'
     },
     friendJob: {
-      person: 'Найдите на основе принцип, где указаны друзья.',
-      event: 'Новая работа относится к 6-му принципу внешнего мира вашего друга.',
+      person: 'Ваши друзья находятся в вашем 11-м принципе.',
+      event: 'Работа находится в 6-м принципе.',
       result: 'Новая работа друга отражает ваш 4-й жизненный принцип.',
       correspondences: 'При вращении любого колеса здесь появляются три соответствия выбранного принципа.'
     },
     promotion: {
-      person: 'Найдите на основе принцип, где указаны коллеги.',
-      event: 'Повышение относится к 9-му принципу внешнего мира вашего коллеги.',
+      person: 'Ваши сотрудники находятся в вашем 6-м принципе.',
+      event: 'Расширение находится в 9-м принципе.',
       result: 'Повышение коллеги отражает ваш 2-й жизненный принцип.',
       correspondences: 'При вращении любого колеса здесь появляются три соответствия выбранного принципа.'
     }
@@ -2920,44 +2902,25 @@ const DEMO_GUIDE = {
   bg: {
     nudge: 'Натиснете тук, за да научите как се използва колелото.',
     siblingChild: {
-      person: 'Намерете в основата принципа, в който са братята и сестрите.',
-      event: 'Децата са в 5-и принцип от външния свят на вашия брат или сестра.',
+      person: 'Вашите братя и сестри са във вашия 3-ти принцип.',
+      event: 'Децата са в 5-ия принцип.',
       result: 'Раждането на дете на брат или сестра отразява вашия 7-и жизнен принцип.',
       correspondences: 'Когато завъртите някое от колелата, тук се показват трите съответствия на избрания принцип.'
     },
     friendJob: {
-      person: 'Намерете в основата принципа, в който са приятелите.',
-      event: 'Новата работа е в 6-и принцип от външния свят на вашия приятел.',
+      person: 'Вашите приятели са във вашия 11-и принцип.',
+      event: 'Работата е в 6-ия принцип.',
       result: 'Новата работа на приятел отразява вашия 4-и жизнен принцип.',
       correspondences: 'Когато завъртите някое от колелата, тук се показват трите съответствия на избрания принцип.'
     },
     promotion: {
-      person: 'Намерете в основата принципа, в който са колегите.',
-      event: 'Повишението е в 9-и принцип от външния свят на вашия колега.',
+      person: 'Вашите служители са във вашия 6-и принцип.',
+      event: 'Разширението е в 9-ия принцип.',
       result: 'Повишението на колега отразява вашия 2-и жизнен принцип.',
       correspondences: 'Когато завъртите някое от колелата, тук се показват трите съответствия на избрания принцип.'
     }
   }
 };
-const MOBILE_CORR_GUIDE = {
-  de: {
-    person: n => `Die hervorgehobene Personen-Entsprechung erklärt, warum Prinzip ${n} gewählt wurde.`,
-    event: n => `Die hervorgehobene Entsprechung erklärt, warum das Ereignis zu Prinzip ${n} gehört.`
-  },
-  en: {
-    person: n => `The highlighted people correspondence explains why principle ${n} was selected.`,
-    event: n => `The highlighted correspondence explains why the event belongs to principle ${n}.`
-  },
-  ru: {
-    person: n => `Выделенное соответствие людей объясняет выбор принципа ${n}.`,
-    event: n => `Выделенное соответствие объясняет, почему событие относится к принципу ${n}.`
-  },
-  bg: {
-    person: n => `Подчертаното съответствие за хората обяснява защо е избран принцип ${n}.`,
-    event: n => `Подчертаното съответствие обяснява защо събитието принадлежи към принцип ${n}.`
-  }
-};
-
 let demoTimers = [];
 let demoActive = false;
 let demoCompleting = false;
@@ -3041,9 +3004,9 @@ function moveDemoLightTo(el) {
 }
 
 /* Underline the first occurrence of `word` inside `container` (an SVG
-   foreignObject with the principle's HTML text). Returns true if found. */
+   foreignObject with the principle's HTML text). Returns the highlighted span. */
 function underlineWordIn(container, word) {
-  if (!container || !word) return false;
+  if (!container || !word) return null;
   const lower = String(word).toLowerCase();
   const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
   let node;
@@ -3057,16 +3020,16 @@ function underlineWordIn(container, word) {
       const span = document.createElement('span');
       span.className = 'demo-underline';
       range.surroundContents(span);
-      return true;
-    } catch (e) { return false; }
+      return span;
+    } catch (e) { return null; }
   }
-  return false;
+  return null;
 }
 /* Light a chosen principle's whole text block and underline its driving word.
-   Returns true if the word was underlined (so the caller can skip the pointer). */
+   Returns the highlighted word so the guide popup can point directly to it. */
 function demoHighlightPrinciple(index, word) {
   const fo = baseSvg?.querySelector(`foreignObject[data-index="${index}"]`);
-  if (!fo) return false;
+  if (!fo) return null;
   fo.querySelector('.bs-box')?.classList.add('demo-lit');
   return underlineWordIn(fo, word);
 }
@@ -3228,13 +3191,13 @@ function runDesktopGuidedExample(key, { person, event }) {
   /* Step 2: light the event principle's text block and underline its word. */
   const showEvent = () => {
     clearDemoHighlights();
-    const lit = demoHighlightPrinciple(event, words.ew);
-    presentDemoStep(copy.event, eventBase, showResult, 'auto', !lit);
+    const highlightedWord = demoHighlightPrinciple(event, words.ew);
+    presentDemoStep(copy.event, highlightedWord || eventBase, showResult, 'auto', !highlightedWord);
   };
   /* Step 1: light the person principle's text block and underline its word. */
   demoLater(() => {
-    const lit = demoHighlightPrinciple(person, words.pw);
-    presentDemoStep(copy.person, personBase, showEvent, 'auto', !lit);
+    const highlightedWord = demoHighlightPrinciple(person, words.pw);
+    presentDemoStep(copy.person, highlightedWord || personBase, showEvent, 'auto', !highlightedWord);
   }, 1300);
 }
 
@@ -3266,7 +3229,7 @@ function runMobileGuidedExample(key, { person, event }) {
     panel?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     demoLater(() => {
       const correspondence = focusDemoCorrespondence(eventField);
-      presentDemoStep(`${copy.event} ${MOBILE_CORR_GUIDE[lang].event(event + 1)}`, correspondence, showResult);
+      presentDemoStep(copy.event, correspondence, showResult);
     }, 650);
   };
   const rotateEvent = () => {
@@ -3284,7 +3247,7 @@ function runMobileGuidedExample(key, { person, event }) {
     panel?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     demoLater(() => {
       const correspondence = focusDemoCorrespondence('people');
-      presentDemoStep(MOBILE_CORR_GUIDE[lang].person(person + 1), correspondence, rotateEvent);
+      presentDemoStep(copy.person, correspondence, rotateEvent);
     }, 650);
   }, 1250);
 }
