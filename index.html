@@ -3031,17 +3031,9 @@ function insistOnDemoBalloon() {
 }
 
 function moveDemoLightTo(el) {
-  if (!el || !demoLight) return;
-  const target = el.getBoundingClientRect();
-  if (isPcBase() && pcbaseEl) {
-    const base = pcbaseEl.getBoundingClientRect();
-    demoLight.style.left = (target.left + target.width / 2 - base.left) + 'px';
-    demoLight.style.top = (target.top + target.height / 2 - base.top) + 'px';
-  } else {
-    demoLight.style.left = (target.left + target.width / 2) + 'px';
-    demoLight.style.top = (target.top + target.height / 2) + 'px';
-  }
-  demoLight.classList.add('on');
+  /* Pointer removed by request — the guide relies on highlighting the principle
+     text / correspondence and underlining the driving word instead. */
+  demoLight?.classList.remove('on');
 }
 
 /* Underline the first occurrence of `word` inside `container` (an SVG
