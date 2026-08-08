@@ -854,6 +854,8 @@
     .base-wedge.event,
     .base-wedge.hover,
     .base-wedge:hover { fill: var(--seg-color, var(--paper)); }
+    /* Keep the initial principle neutral until the wheel has fully landed. */
+    body.intro-selection-away .base-wedge.event { fill: transparent; }
     .base-num {
       font-family: 'Marcellus', serif;
       fill: var(--ink);
@@ -902,7 +904,7 @@
   }
 </style>
 </head>
-<body class="intro-base-away intro-wheel-away intro-running">
+<body class="intro-base-away intro-wheel-away intro-selection-away intro-running">
 
 <button class="guide-help" id="guideBtn" type="button" aria-label="Open guided examples">?</button>
 
@@ -2105,10 +2107,12 @@ function buildWheelPc(group) {
   group.insertBefore(shaft, group.firstChild);
 
   const [tipx, tipy] = polar(R_OUT + 36, A0);
-  const b1 = polar(R_OUT - 3, A0 - 5.2), b2 = polar(R_OUT - 3, A0 + 5.2);
+  /* The curved base spans the complete 30° outer edge of principle 1. */
+  const headRadius = R_OUT - 3;
+  const b1 = polar(headRadius, A0 - STEP / 2), b2 = polar(headRadius, A0 + STEP / 2);
   const arrow = document.createElementNS(NS, 'path');
   arrow.setAttribute('class', 'wheel-pointer');
-  arrow.setAttribute('d', `M ${tipx.toFixed(2)} ${tipy.toFixed(2)} L ${b1[0].toFixed(2)} ${b1[1].toFixed(2)} L ${b2[0].toFixed(2)} ${b2[1].toFixed(2)} Z`);
+  arrow.setAttribute('d', `M ${tipx.toFixed(2)} ${tipy.toFixed(2)} L ${b1[0].toFixed(2)} ${b1[1].toFixed(2)} A ${headRadius} ${headRadius} 0 0 1 ${b2[0].toFixed(2)} ${b2[1].toFixed(2)} Z`);
   group.appendChild(arrow);
 
   orientPcWheel(state.outer.angle);           // set upright immediately
@@ -3359,7 +3363,7 @@ function openGuideOnDemand() {
   }
   clearDemoTimers();
   clearDemoVisuals();
-  document.body.classList.remove('intro-base-away', 'intro-wheel-away', 'intro-running');
+  document.body.classList.remove('intro-base-away', 'intro-wheel-away', 'intro-selection-away', 'intro-running');
   showDemoChooser();
 }
 
@@ -3396,17 +3400,18 @@ document.addEventListener('keydown', ev => {
    base copy, then keep the existing wheel drop/spin entrance. */
 function scheduleLandingIntro() {
   if (!isPcBase()) {
-    document.body.classList.remove('intro-base-away', 'intro-wheel-away', 'intro-running');
+    document.body.classList.remove('intro-base-away', 'intro-wheel-away', 'intro-selection-away', 'intro-running');
     demoLater(showGuideNudge, 650);
     return;
   }
   if (reduceMotion()) {
-    document.body.classList.remove('intro-base-away', 'intro-wheel-away', 'intro-running');
+    document.body.classList.remove('intro-base-away', 'intro-wheel-away', 'intro-selection-away', 'intro-running');
     showGuideNudge();
     return;
   }
   demoLater(() => document.body.classList.remove('intro-base-away'), 250);
   demoLater(() => document.body.classList.remove('intro-wheel-away'), 1650);
+  demoLater(() => document.body.classList.remove('intro-selection-away'), 3000);
   demoLater(showGuideNudge, 3200);
 }
 if (document.readyState === 'complete') scheduleLandingIntro();
