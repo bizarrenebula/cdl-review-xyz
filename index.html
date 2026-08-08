@@ -2301,15 +2301,15 @@ function buildBaseSectors() {
     baseSvg.appendChild(num);
   }));
 
-  /* One chart, one type size: use the largest size all twelve measured boxes
-     can hold. A small safety step prevents glyph descenders or browser rounding
-     from being clipped exactly at a row edge. */
-  if (copyBoxes.length) {
-    const commonFont = Math.max(6, Math.min(...copyBoxes.map(entry => entry.fontSize)) - .65);
-    copyBoxes.forEach(entry => {
-      entry.box.style.fontSize = `${commonFont.toFixed(2)}px`;
-    });
-  }
+  /* Principle 11 remains the visual ceiling, but no single dense translation
+     is allowed to shrink the entire chart. Each sector uses the largest size
+     it actually fits up to that ceiling; only content-heavy sectors step down.
+     The small safety step protects descenders from subpixel edge clipping. */
+  const reference = copyBoxes.find(entry => entry.pIdx === 10);
+  if (reference) copyBoxes.forEach(entry => {
+    const fittedFont = Math.max(6, Math.min(reference.fontSize, entry.fontSize) - .55);
+    entry.box.style.fontSize = `${fittedFont.toFixed(2)}px`;
+  });
 }
 
 /* Rotation (screen degrees) that lays text along the radius at angle A (from
