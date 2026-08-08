@@ -1780,7 +1780,7 @@ function buildBaseSectors() {
   const fNum = Math.max(19, Math.min(36, H * 0.042));
   /* Keep the entire glyph outside the wheel layer, not merely its centre. The
      font-aware clearance prevents tall digits from being partially occluded. */
-  const baseNumberRadius = wheelRimRadius + fNum * 0.65 + 7;
+  const baseNumberRadius = wheelRimRadius + fNum * 0.7 + 10;
   const capFont = fNum * 1.7;                       // ceiling for body text, relative to the number
 
   /* Sample a wedge's outline (inner arc + outer edge) as a polygon, and find
@@ -2107,7 +2107,9 @@ function buildWheelPc(group) {
   shaft.setAttribute('y2', shaftEndY.toFixed(2));
   group.insertBefore(shaft, group.firstChild);
 
-  const [tipx, tipy] = polar(R_OUT + 36, A0);
+  /* Keep the head broad but shallow so it points at, rather than covers, the
+     base principle number outside the rim. */
+  const [tipx, tipy] = polar(R_OUT + 18, A0);
   /* The curved base spans the complete 30° outer edge of principle 1. */
   const headRadius = R_OUT - 3;
   const b1 = polar(headRadius, A0 - STEP / 2), b2 = polar(headRadius, A0 + STEP / 2);
