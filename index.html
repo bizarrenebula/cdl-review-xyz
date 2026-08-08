@@ -1849,6 +1849,10 @@ function fitLabel(name, r1, r2, cls) {
 const wedgePrincipleIndex = i => (20 - i) % 12;   // reference (astrological) order
 const baseSvg = document.getElementById('baseSvg');
 const pcbaseEl = document.getElementById('pcbase');
+/* Single typography tuning knob for all desktop base sectors. At the reference
+   1920px layout this is the rendered size; responsive scaling below preserves
+   the same proportions on narrower or shorter browser viewports. */
+const BASE_SECTOR_FONT_SIZE = 19;
 
 function buildRadialBaseSectorsLegacy() {
   if (!baseSvg || !pcbaseEl) return;
@@ -2187,7 +2191,6 @@ function buildBaseSectors() {
   const fNum = Math.max(18, Math.min(31, nominalRowH * .27));
   const outerPad = Math.max(12, W * .009);
   const numberGap = fNum * 1.75;
-  const capFont = Math.max(16, Math.min(30, nominalRowH * .28));
   const columns = [
     { side: 'left', principles: [9, 10, 11, 0, 1, 2] },
     { side: 'right', principles: [8, 7, 6, 5, 4, 3] }
@@ -2235,18 +2238,7 @@ function buildBaseSectors() {
     fo.appendChild(box);
     baseSvg.appendChild(fo);
 
-    /* Measure against this sector's real rendered width and height. The shared
-       size is chosen after all twelve measurements, so viewport size, language
-       length, browser zoom, and wrapping are all accounted for together. */
-    let lo = 6, hi = capFont;
-    for (let i = 0; i < 10; i++) {
-      const mid = (lo + hi) / 2;
-      box.style.fontSize = `${mid}px`;
-      if (content.scrollWidth <= width && content.offsetHeight <= height) lo = mid;
-      else hi = mid;
-    }
-    box.style.fontSize = `${lo.toFixed(2)}px`;
-    copyBoxes.push({ pIdx, box, fontSize: lo });
+    copyBoxes.push({ pIdx, box });
   };
 
   baseSvg.setAttribute('viewBox', `0 0 ${W} ${H}`);
@@ -2301,14 +2293,13 @@ function buildBaseSectors() {
     baseSvg.appendChild(num);
   }));
 
-  /* Principle 11 remains the visual ceiling, but no single dense translation
-     is allowed to shrink the entire chart. Each sector uses the largest size
-     it actually fits up to that ceiling; only content-heavy sectors step down.
-     The small safety step protects descenders from subpixel edge clipping. */
-  const reference = copyBoxes.find(entry => entry.pIdx === 10);
-  if (reference) copyBoxes.forEach(entry => {
-    const fittedFont = Math.max(6, Math.min(reference.fontSize, entry.fontSize) - .55);
-    entry.box.style.fontSize = `${fittedFont.toFixed(2)}px`;
+  /* One responsive size for the entire chart—never a per-sector fallback.
+     Change BASE_SECTOR_FONT_SIZE above to tune all twelve sectors together. */
+  const viewportScale = Math.max(.68, Math.min(1.15,
+    W / 1920, nominalRowH / 133));
+  const commonFont = BASE_SECTOR_FONT_SIZE * viewportScale;
+  copyBoxes.forEach(entry => {
+    entry.box.style.fontSize = `${commonFont.toFixed(2)}px`;
   });
 }
 
