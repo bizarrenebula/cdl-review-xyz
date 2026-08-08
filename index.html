@@ -792,14 +792,22 @@
       max-width: 88rem;
       max-height: 90vh;
       padding: 2rem 2.6rem 2.4rem;
-      border-color: rgba(52, 43, 34, .78);
+      color: #ecd28e;
+      background:
+        linear-gradient(rgba(2, 9, 26, .12), rgba(2, 9, 26, .3)),
+        url('assets/cosmic-header.webp') center 47% / cover no-repeat;
+      border-color: rgba(201, 151, 54, .7);
+      box-shadow: inset 0 0 0 1px rgba(255, 224, 145, .13), 0 18px 55px rgba(0, 0, 0, .48);
+    }
+    #overlay.result-open .modal .close {
+      color: #e8c56e;
     }
     #overlay.result-open .modal > .eyebrow {
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: .15rem;
-      color: #6e521e;
+      color: #d5a746;
       letter-spacing: .16em;
     }
     #overlay.result-open .result-principle-number {
@@ -807,7 +815,12 @@
       font-size: clamp(2.8rem, 5vw, 5rem);
       line-height: .92;
       letter-spacing: 0;
-      color: var(--ink);
+      color: var(--gold);
+      background: linear-gradient(105deg, #c18a2a, #ffe4a0 46%, #c99532 78%, #f7d984);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .85));
     }
     #overlay.result-open .result-principle-label {
       margin-left: 0;
@@ -820,6 +833,8 @@
       font-size: clamp(1.35rem, 2.15vw, 2.05rem);
       line-height: 1.25;
       text-align: center;
+      color: #e9c66d;
+      text-shadow: 0 1px 1px rgba(0, 0, 0, .8);
     }
     #overlay.result-open .rule {
       width: min(11rem, 28%);
@@ -840,19 +855,22 @@
     #overlay.result-open .result-correspondences .field {
       margin: 0;
       padding: 1.15rem 1.25rem 1.25rem;
-      border-top: 3px solid rgba(156, 114, 37, .58);
-      background: rgba(180, 135, 45, .055);
-      box-shadow: inset 0 0 0 1px rgba(52, 43, 34, .12);
+      color: #efd895;
+      border-top: 3px solid rgba(222, 174, 78, .72);
+      background: rgba(1, 7, 22, .42);
+      box-shadow: inset 0 0 0 1px rgba(239, 205, 126, .2);
     }
     #overlay.result-open .result-correspondences .field .k {
       min-height: 2.8em;
       margin-bottom: .65rem;
       font-size: .7rem;
       line-height: 1.4;
+      color: #cfa047;
     }
     #overlay.result-open .result-correspondences .field .v {
       font-size: 1rem;
       line-height: 1.55;
+      color: #f1d993;
     }
     #overlay.result-open .result-mottos {
       position: relative;
@@ -868,7 +886,7 @@
       font-family: 'Marcellus', serif;
       font-size: 4.5rem;
       line-height: 1;
-      color: rgba(156, 114, 37, .42);
+      color: rgba(231, 186, 91, .62);
       pointer-events: none;
     }
     #overlay.result-open .result-mottos::before {
@@ -884,8 +902,11 @@
     #overlay.result-open .result-mottos .motto {
       position: relative;
       margin-bottom: .3rem;
-      font-size: 1.08rem;
-      line-height: 1.55;
+      font-size: clamp(1.25rem, 1.7vw, 1.55rem);
+      line-height: 1.45;
+      font-weight: 700;
+      color: #e8bf5d;
+      text-shadow: 0 1px 1px rgba(0, 0, 0, .8);
     }
     #overlay.result-open .impulse {
       order: 3;
@@ -899,11 +920,13 @@
     #overlay.result-open .impulse > .k {
       margin-bottom: .75rem;
       font-size: .78rem;
+      color: #cfa047;
     }
     #overlay.result-open .impulse .lead {
       margin: .75rem 0 .45rem;
       font-size: 1.02rem;
       font-weight: 600;
+      color: #efd895;
     }
     #overlay.result-open .impulse ul {
       columns: 2;
@@ -916,8 +939,9 @@
       padding-left: .2rem;
       font-size: .96rem;
       line-height: 1.5;
+      color: #ead8aa;
     }
-    #overlay.result-open .impulse li::marker { color: #8b641e; }
+    #overlay.result-open .impulse li::marker { color: #d8a647; }
   }
 
   /* ============ PC LAYOUT — one wheel on a rectangular base ============
