@@ -4306,13 +4306,14 @@ function runMobileGuidedExample(key, { person, event }) {
     focusDemoWheelSector(person, 'outer', false);
     demoLater(() => {
       hubEl.classList.add('demo-result');
-      presentDemoStep(mobileCopy.result || copy.result, hubEl, () => {
-        document.getElementById('readMoreBtn').click();
+      const readMoreButton = document.getElementById('readMoreBtn');
+      presentDemoStep(mobileCopy.result || copy.result, readMoreButton || hubEl, viaTarget => {
+        if (!viaTarget) readMoreButton?.click();
         demoLight?.classList.remove('on');
         const modal = overlay.querySelector('.modal');
         if (modal) modal.scrollTop = 0;
         waitForTutorialResultClose();
-      }, 'auto', false, false, { kind:'result', step:3, total:3 });
+      }, 'auto', false, true, { kind:'result', step:3, total:3 });
     }, 950);
   };
   const showEvent = () => {
