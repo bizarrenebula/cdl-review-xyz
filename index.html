@@ -2860,18 +2860,21 @@ const DEMO_GUIDE = {
     siblingChild: {
       person: 'Ihre Geschwister befinden sich in Ihrem 3. Prinzip.',
       event: 'Kinder befinden sich im 5. Prinzip.',
+      relationship: 'Das 5. Prinzip Ihrer Geschwister spiegelt Ihr 7. Prinzip wider.',
       result: 'Die Geburt des Kindes eines Geschwisters spiegelt Ihr 7. Lebensprinzip wider.',
       correspondences: 'Beim Drehen eines Rades erscheinen hier die drei Entsprechungen des ausgewählten Prinzips.'
     },
     friendJob: {
       person: 'Ihre Freunde befinden sich in Ihrem 11. Prinzip.',
       event: 'Arbeit befindet sich im 6. Prinzip.',
+      relationship: 'Das 6. Prinzip Ihrer Freunde spiegelt Ihr 4. Prinzip wider.',
       result: 'Der neue Arbeitsplatz eines Freundes spiegelt Ihr 4. Lebensprinzip wider.',
       correspondences: 'Beim Drehen eines Rades erscheinen hier die drei Entsprechungen des ausgewählten Prinzips.'
     },
     promotion: {
       person: 'Ihre Mitarbeiter befinden sich in Ihrem 6. Prinzip.',
       event: 'Expansion befindet sich im 9. Prinzip.',
+      relationship: 'Das 9. Prinzip Ihrer Mitarbeiter spiegelt Ihr 2. Prinzip wider.',
       result: 'Die Beförderung eines Kollegen spiegelt Ihr 2. Lebensprinzip wider.',
       correspondences: 'Beim Drehen eines Rades erscheinen hier die drei Entsprechungen des ausgewählten Prinzips.'
     }
@@ -2881,18 +2884,21 @@ const DEMO_GUIDE = {
     siblingChild: {
       person: 'Your siblings are in your 3rd principle',
       event: 'Children are in the 5th principle',
+      relationship: 'The 5th principle of your siblings reflect your 7th principle',
       result: "The birth of a sibling's child reflects your 7th life principle.",
       correspondences: 'When you turn either wheel, the three correspondences for its selected principle appear here.'
     },
     friendJob: {
       person: 'Your friends are in your 11th principle',
       event: 'Work is in the 6th principle',
+      relationship: 'The 6th principle of your friends reflects your 4th principle',
       result: "A friend starting a new job reflects your 4th life principle.",
       correspondences: 'When you turn either wheel, the three correspondences for its selected principle appear here.'
     },
     promotion: {
       person: 'Your coworkers are in your 6th principle',
       event: 'Expansion is in the 9th principle',
+      relationship: 'The 9th principle of your coworkers reflects your 2nd principle',
       result: "A colleague's promotion reflects your 2nd life principle.",
       correspondences: 'When you turn either wheel, the three correspondences for its selected principle appear here.'
     }
@@ -2902,18 +2908,21 @@ const DEMO_GUIDE = {
     siblingChild: {
       person: 'Ваши братья и сёстры находятся в вашем 3-м принципе.',
       event: 'Дети находятся в 5-м принципе.',
+      relationship: '5-й принцип ваших братьев и сестёр отражает ваш 7-й принцип.',
       result: 'Рождение ребёнка у брата или сестры отражает ваш 7-й жизненный принцип.',
       correspondences: 'При вращении любого колеса здесь появляются три соответствия выбранного принципа.'
     },
     friendJob: {
       person: 'Ваши друзья находятся в вашем 11-м принципе.',
       event: 'Работа находится в 6-м принципе.',
+      relationship: '6-й принцип ваших друзей отражает ваш 4-й принцип.',
       result: 'Новая работа друга отражает ваш 4-й жизненный принцип.',
       correspondences: 'При вращении любого колеса здесь появляются три соответствия выбранного принципа.'
     },
     promotion: {
       person: 'Ваши сотрудники находятся в вашем 6-м принципе.',
       event: 'Расширение находится в 9-м принципе.',
+      relationship: '9-й принцип ваших сотрудников отражает ваш 2-й принцип.',
       result: 'Повышение коллеги отражает ваш 2-й жизненный принцип.',
       correspondences: 'При вращении любого колеса здесь появляются три соответствия выбранного принципа.'
     }
@@ -2923,18 +2932,21 @@ const DEMO_GUIDE = {
     siblingChild: {
       person: 'Вашите братя и сестри са във вашия 3-ти принцип.',
       event: 'Децата са в 5-ия принцип.',
+      relationship: '5-ият принцип на вашите братя и сестри отразява вашия 7-и принцип.',
       result: 'Раждането на дете на брат или сестра отразява вашия 7-и жизнен принцип.',
       correspondences: 'Когато завъртите някое от колелата, тук се показват трите съответствия на избрания принцип.'
     },
     friendJob: {
       person: 'Вашите приятели са във вашия 11-и принцип.',
       event: 'Работата е в 6-ия принцип.',
+      relationship: '6-ият принцип на вашите приятели отразява вашия 4-и принцип.',
       result: 'Новата работа на приятел отразява вашия 4-и жизнен принцип.',
       correspondences: 'Когато завъртите някое от колелата, тук се показват трите съответствия на избрания принцип.'
     },
     promotion: {
       person: 'Вашите служители са във вашия 6-и принцип.',
       event: 'Разширението е в 9-ия принцип.',
+      relationship: '9-ият принцип на вашите служители отразява вашия 2-и принцип.',
       result: 'Повишението на колега отразява вашия 2-и жизнен принцип.',
       correspondences: 'Когато завъртите някое от колелата, тук се показват трите съответствия на избрания принцип.'
     }
@@ -3207,11 +3219,19 @@ function runDesktopGuidedExample(key, { person, event }) {
       });
     }, 950);
   };
+  /* Step 3: connect the event principle on the base to the same numbered
+     principle on the wheel before revealing the resulting principle. */
+  const showRelationship = () => {
+    clearDemoHighlights();
+    focusDemoWheelSector(event);
+    const wheelNumber = outerG.querySelector(`.wheel-num-pc[data-index="${event}"]`);
+    presentDemoStep(copy.relationship, wheelNumber || outerG.querySelector(`.sector-outer[data-index="${event}"]`), showResult);
+  };
   /* Step 2: light the event principle's text block and underline its word. */
   const showEvent = () => {
     clearDemoHighlights();
     const highlightedWord = demoHighlightPrinciple(event, words.ew);
-    presentDemoStep(copy.event, highlightedWord || eventBase, showResult, 'auto', !highlightedWord);
+    presentDemoStep(copy.event, highlightedWord || eventBase, showRelationship, 'auto', !highlightedWord);
   };
   /* Step 1: light the person principle's text block and underline its word. */
   demoLater(() => {
