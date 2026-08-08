@@ -214,6 +214,7 @@
     80% { transform: translate(18px, -50%) rotate(1.5deg) scale(1.015); }
   }
   header {
+    position: relative;
     width: 100%;
     text-align: center;
     padding: 1.4rem 1rem .4rem;
@@ -266,6 +267,11 @@
   .mobile-correspondences { display: none; }
   @media (max-width: 899px) {
     header { transform: translateY(-.4rem); }
+    .guide-help {
+      position: absolute;
+      top: calc(100% + .55rem);
+      left: .65rem;
+    }
     .stage { margin-top: 2.2rem; }
     body.intro-running .stage { pointer-events: none; }
     .demo-balloon {
@@ -977,11 +983,10 @@
 </head>
 <body class="intro-base-away intro-wheel-away intro-selection-away intro-running">
 
-<button class="guide-help" id="guideBtn" type="button" aria-label="Open guided examples">?</button>
-
 <header>
   <h1 id="uiTitle"></h1>
   <p id="uiSubtitle"></p>
+  <button class="guide-help" id="guideBtn" type="button" aria-label="Open guided examples">?</button>
 </header>
 
 <div class="pcbase" id="pcbase">
