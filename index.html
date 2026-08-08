@@ -885,6 +885,8 @@
       fill: var(--seg-color, var(--paper));
       stroke-width: 4;
       filter: drop-shadow(0 0 7px rgba(207, 147, 14, .9));
+      pointer-events: auto;
+      cursor: pointer;
     }
     .base-wedge.demo-person {
       stroke: #fff5b0;
@@ -3235,6 +3237,7 @@ let demoActive = false;
 let demoCompleting = false;
 let activeDemoKey = null;
 let balloonAdvance = null;
+let balloonInteractiveTarget = null;
 const demoLater = (fn, delay) => {
   const id = setTimeout(fn, delay);
   demoTimers.push(id);
@@ -3284,20 +3287,22 @@ function showDemoBalloon(text, el, placement = 'auto') {
   demoBalloon.classList.add('on');
 }
 
-function presentDemoStep(text, el, onAdvance, placement = 'auto', showLight = true) {
+function presentDemoStep(text, el, onAdvance, placement = 'auto', showLight = true, allowTargetInteraction = false) {
   balloonAdvance = onAdvance;
+  balloonInteractiveTarget = allowTargetInteraction ? el : null;
   if (placement === 'right' || !showLight) demoLight?.classList.remove('on');
   else moveDemoLightTo(el);
   showDemoBalloon(text, el, placement);
   demoBalloon.focus({ preventScroll: true });
 }
 
-function advanceDemoBalloon() {
+function advanceDemoBalloon(viaTarget = false) {
   if (!balloonAdvance) return;
   const next = balloonAdvance;
   balloonAdvance = null;
+  balloonInteractiveTarget = null;
   demoBalloon.classList.remove('on', 'insist');
-  next();
+  next(viaTarget);
 }
 
 function insistOnDemoBalloon() {
@@ -3367,6 +3372,7 @@ function focusDemoWheelSector(index, ring = 'outer', showLight = true) {
 
 function clearDemoVisuals() {
   balloonAdvance = null;
+  balloonInteractiveTarget = null;
   demoLight?.classList.remove('on');
   demoBalloon?.classList.remove('on', 'below', 'right', 'insist');
   document.getElementById('guideBtn').classList.remove('attention');
@@ -3483,13 +3489,13 @@ function runDesktopGuidedExample(key, { person, event }) {
       const resultWedge = baseSvg?.querySelector(`.base-wedge[data-index="${result}"]`);
       resultWedge?.classList.add('demo-result');
       baseSvg?.querySelector(`foreignObject[data-index="${result}"] .bs-box`)?.classList.add('demo-lit');
-      presentDemoStep(copy.result, resultWedge, () => {
-        resultWedge?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      presentDemoStep(copy.result, resultWedge, viaTarget => {
+        if (!viaTarget) resultWedge?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
         demoLight?.classList.remove('on');
         const modal = overlay.querySelector('.modal');
         if (modal) modal.scrollTop = 0;
         waitForTutorialResultClose();
-      });
+      }, 'auto', true, true);
     }, 950);
   };
   /* Step 3: connect the event principle on the base to the same numbered
@@ -3602,7 +3608,7 @@ function openGuideOnDemand() {
 }
 
 document.getElementById('guideBtn').addEventListener('click', openGuideOnDemand);
-demoBalloon.addEventListener('click', advanceDemoBalloon);
+demoBalloon.addEventListener('click', () => advanceDemoBalloon());
 demoBalloon.addEventListener('keydown', ev => {
   if (ev.target !== demoBalloon) return;
   if (ev.key === 'Enter' || ev.key === ' ') {
@@ -3614,6 +3620,10 @@ demoBalloon.addEventListener('animationend', () => demoBalloon.classList.remove(
 document.addEventListener('pointerdown', ev => {
   if (!balloonAdvance || demoBalloon.contains(ev.target)) return;
   if (ev.target.closest && ev.target.closest('#guideBtn')) return;
+  if (balloonInteractiveTarget?.contains(ev.target)) {
+    advanceDemoBalloon(true);
+    return;
+  }
   ev.preventDefault();
   ev.stopPropagation();
   insistOnDemoBalloon();
