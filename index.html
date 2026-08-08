@@ -1425,21 +1425,27 @@
       pointer-events: none;
       -webkit-user-select: none; user-select: none;
     }
-    /* A prominent gold selector on principle 1. It turns with the wheel. */
+    /* The dark rim flows directly into the selector, making both read as one
+       continuous instrument without reaching the outer principle numbers. */
+    #pcbase .wheel-rim {
+      stroke: #11100d;
+      stroke-width: 5;
+      stroke-dasharray: none;
+    }
     #pcbase .wheel-pointer {
-      fill: var(--gold);
-      stroke: #6f4a0b;
-      stroke-width: 2;
+      fill: #11100d;
+      stroke: #11100d;
+      stroke-width: 4;
       stroke-linejoin: round;
       pointer-events: none;
-      filter: drop-shadow(0 1px 2px rgba(55, 35, 5, .45));
+      filter: drop-shadow(0 2px 2px rgba(255, 255, 255, .42));
     }
     #pcbase .wheel-pointer-base {
-      stroke: var(--gold);
-      stroke-width: 10;
+      stroke: #11100d;
+      stroke-width: 12;
       stroke-linecap: round;
       pointer-events: none;
-      filter: drop-shadow(0 1px 2px rgba(55, 35, 5, .45));
+      filter: drop-shadow(0 2px 2px rgba(255, 255, 255, .42));
     }
 
     /* The wedge shapes and their labels (built in JS). */
@@ -2925,7 +2931,7 @@ function buildWheelPc(group) {
     pcWheelLabels.push({ el: num, A, tx: nx, ty: ny });
   });
 
-  /* Gold principle-1 arrow: its shaft spans the sector's full radius and its
+  /* Principle-1 arrow: its shaft spans the sector's full radius and its
      head projects beyond the rim toward the selected base sector. */
   const A0 = WHEEL_ANGLE(0);
   const [shaftStartX, shaftStartY] = polar(4, A0);
@@ -2940,9 +2946,9 @@ function buildWheelPc(group) {
 
   /* Keep the head broad but shallow so it points at, rather than covers, the
      base principle number outside the rim. */
-  const [tipx, tipy] = polar(R_OUT + 18, A0);
+  const [tipx, tipy] = polar(R_OUT + 23, A0);
   /* The curved base spans the complete 30° outer edge of principle 1. */
-  const headRadius = R_OUT - 3;
+  const headRadius = R_OUT - 1;
   const b1 = polar(headRadius, A0 - STEP / 2), b2 = polar(headRadius, A0 + STEP / 2);
   const arrow = document.createElementNS(NS, 'path');
   arrow.setAttribute('class', 'wheel-pointer');
