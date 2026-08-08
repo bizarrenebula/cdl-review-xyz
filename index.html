@@ -38,7 +38,7 @@
     color-scheme: light;   /* render light even when the OS is in dark mode */
     --paper: #fff;   /* page + every surface */
     --ink:   #000;   /* text */
-    --line:  #000;   /* borders and strokes */
+    --line:  #342b22; /* warm weathered charcoal: borders and strokes */
     --gold:  #b4872d; /* title and subtitle */
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -110,9 +110,11 @@
     z-index: 9;
     width: min(30rem, calc(100vw - 1rem));
     padding: 1rem 2.5rem 1rem 1.2rem;
-    border: 3px solid #853b38;
+    border: 3px solid #713c37;
     border-radius: 10px;
-    background: #b85a56;
+    background:
+      repeating-linear-gradient(97deg, rgba(255, 242, 218, .025) 0 1px, transparent 1px 6px),
+      linear-gradient(180deg, #b75b57, #ad514e);
     color: #fff;
     font-size: clamp(1rem, 2.1vw, 1.18rem);
     line-height: 1.45;
@@ -120,7 +122,7 @@
     pointer-events: none;
     opacity: 0;
     transform: translate(-50%, calc(-100% - 18px));
-    box-shadow: 0 5px 20px rgba(15, 10, 2, .28);
+    box-shadow: inset 0 0 0 1px rgba(255, 232, 198, .12), 0 5px 20px rgba(31, 20, 12, .28);
     transition: left .8s cubic-bezier(.2, .72, .2, 1), top .8s cubic-bezier(.2, .72, .2, 1), opacity .25s ease;
   }
   .demo-balloon::after {
@@ -129,9 +131,9 @@
     left: 50%; bottom: -8px;
     width: 14px; height: 14px;
     transform: translateX(-50%) rotate(45deg);
-    background: #b85a56;
-    border-right: 3px solid #853b38;
-    border-bottom: 3px solid #853b38;
+    background: #ad514e;
+    border-right: 3px solid #713c37;
+    border-bottom: 3px solid #713c37;
   }
   .demo-balloon.on {
     opacity: 1;
@@ -461,13 +463,20 @@
 
   .sector-outer, .sector-inner {
     fill: var(--seg-color, var(--paper));
-    stroke: var(--line);
+    stroke: rgba(52, 43, 34, .92);
     stroke-width: 1.4;
     stroke-linejoin: round;
+    stroke-dasharray: 118 .55 47 .75;
+    stroke-linecap: round;
     transition: fill .22s ease;
   }
   /* The wheel's outer rim and the two inner guide circles. */
-  .wheel-rim  { stroke: var(--line); stroke-width: 1.4; }
+  .wheel-rim  {
+    stroke: rgba(52, 43, 34, .92);
+    stroke-width: 1.4;
+    stroke-dasharray: 165 .65 73 .85;
+    stroke-linecap: round;
+  }
   .wheel-guide { stroke: var(--line); stroke-width: 1; }
 
   /* ---- The counting ring ------------------------------------------------
@@ -615,8 +624,9 @@
   .modal {
     background: var(--paper); color: var(--ink);
     max-width: 34rem; width: 100%; max-height: 84vh; overflow-y: auto;
-    border-radius: 6px; border: 1px solid var(--line);
+    border-radius: 6px; border: 1px solid rgba(52, 43, 34, .9);
     padding: 2.1rem 2.3rem 1.9rem; position: relative;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .24), 0 7px 24px rgba(38, 28, 18, .2);
   }
   .modal .eyebrow {
     font-size: .6rem; letter-spacing: .28em;
@@ -815,7 +825,7 @@
       width: 100%;
       align-self: center;
       margin: 0 auto;
-      border: 1px solid var(--line);
+      border: 1px solid rgba(52, 43, 34, .88);
       border-radius: 0;
       background: #faf4e6 url('assets/parchment-base.webp') center / cover no-repeat;
       min-height: 0;
@@ -977,8 +987,10 @@
     /* The wedge shapes and their labels (built in JS). */
     .base-wedge {
       fill: transparent;
-      stroke: var(--line);
-      stroke-width: 2;
+      stroke: rgba(52, 43, 34, .9);
+      stroke-width: 1.7;
+      stroke-dasharray: 150 .65 62 .9;
+      stroke-linecap: round;
       stroke-linejoin: round;
       opacity: 1;
       transform: scaleX(1);
