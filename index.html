@@ -1733,9 +1733,6 @@ function buildBaseSectors() {
   const stageH = stageEl.getBoundingClientRect().height;
   const wheelRimRadius = (stageH / 2) * (344 / 350);
   const Rin = wheelRimRadius + 2;                  // wedges begin just past the rim
-  /* PC wheel numbers sit 15 viewBox units inside its 344-unit rim. Mirror that
-     exact rendered offset outside the rim for the base principle numbers. */
-  const baseNumberRadius = wheelRimRadius + stageH * (15 / 700);
 
   const rad = d => d * Math.PI / 180;
   const pol = (r, d) => [cx + r * Math.sin(rad(d)), cy - r * Math.cos(rad(d))];
@@ -1781,6 +1778,9 @@ function buildBaseSectors() {
   })();
 
   const fNum = Math.max(19, Math.min(36, H * 0.042));
+  /* Keep the entire glyph outside the wheel layer, not merely its centre. The
+     font-aware clearance prevents tall digits from being partially occluded. */
+  const baseNumberRadius = wheelRimRadius + fNum * 0.65 + 7;
   const capFont = fNum * 1.7;                       // ceiling for body text, relative to the number
 
   /* Sample a wedge's outline (inner arc + outer edge) as a polygon, and find
