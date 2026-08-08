@@ -810,7 +810,10 @@
       dominant-baseline: central;
     }
     /* Labels never eat the wedge's pointer events. */
-    .base-area, .base-person, .base-num { pointer-events: none; }
+    .base-area, .base-person, .base-num {
+      pointer-events: none;
+      -webkit-user-select: none; user-select: none;
+    }
 
     /* The per-sector text block (description, people, body) — the same three
        lines the book's chart shows. Wrapped inside a foreignObject. */
@@ -819,6 +822,7 @@
       display: flex; align-items: center; justify-content: center;
       text-align: center; line-height: 1.16;
       font-family: 'Spectral', Georgia, serif; color: var(--ink);
+      -webkit-user-select: none; user-select: none;
     }
     .bs-box .bs-content { display: flex; flex-direction: column; gap: .35em; width: 100%; }
     .bs-box .bs-keys {
