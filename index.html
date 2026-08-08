@@ -2898,9 +2898,9 @@ function openCategoryModal(idx, ring) {
 
 /* ---- Original book text rendering ---- */
 
-/* Russian needs declined phrases rather than inserting UI labels verbatim.
-   These two lists preserve the 12×12 meaning while making every generated
-   result read as a natural sentence without quoted people or event areas. */
+/* Russian and Bulgarian need inflected phrases rather than inserting UI
+   labels verbatim. These mappings preserve the 12×12 meaning while making
+   every generated result natural and removing quoted people/event areas. */
 const RU_REFLECT_PEOPLE = [
   'братьями и сёстрами ваших друзей',
   'партнёрами ваших бывших',
@@ -2929,11 +2929,39 @@ const RU_REFLECT_AREAS = [
   'свободы и досуга',
   'мечтаний и надежд'
 ];
+const BG_REFLECT_PEOPLE = [
+  'братята и сестрите на вашите приятели',
+  'партньорите на вашите бивши партньори',
+  'вашите братя, сестри и съседи',
+  'вашата майка',
+  'вашите деца',
+  'вашите колеги',
+  'вашия партньор',
+  'вашите бивши партньори',
+  'братята и сестрите на вашия партньор',
+  'вашия баща',
+  'вашите приятели',
+  'вашите чичовци и лели по бащина линия'
+];
+const BG_REFLECT_AREAS = [
+  'себеутвърждаването',
+  'финансите',
+  'общуването',
+  'семейството и дома',
+  'себереализацията',
+  'работата и ежедневието',
+  'любовта и партньорството',
+  'плановете и връзките',
+  'успеха и пътуванията',
+  'кариерата и целите',
+  'свободата и свободното време',
+  'мечтите и надеждите'
+];
 const REFLECT = {
   de: (area, label, n) => `Die ${area} Ihrer ${label} spiegelt Ihr ${n}. Lebensprinzip wider.`,
   en: (area, label, n) => `What happens to your ${label.toLowerCase()} in the area of ${area.toLowerCase()} reflects your ${n}${ordEn(n)} life principle.`,
   ru: (area, label, n, person, event) => `То, что происходит с ${RU_REFLECT_PEOPLE[person]} в сфере ${RU_REFLECT_AREAS[event]}, отражает ваш ${n}-й жизненный принцип.`,
-  bg: (area, label, n) => `Това, което се случва с човека „${label}“ в сферата „${area.toLowerCase()}“, отразява вашия ${n}-и жизнен принцип.`
+  bg: (area, label, n, person, event) => `Това, което се случва с ${BG_REFLECT_PEOPLE[person]} в сферата на ${BG_REFLECT_AREAS[event]}, отразява вашия ${n}-и жизнен принцип.`
 };
 function ordEn(n){ const s=['th','st','nd','rd'], v=n%100; return s[(v-20)%10]||s[v]||s[0]; }
 const BOOK_BTN = {
