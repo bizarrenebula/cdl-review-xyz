@@ -609,17 +609,20 @@
      instead of pointing at it: a bold line that flashes in and stays until the
      user advances the step. */
   .demo-underline {
+    display: inline-block;
     font-weight: 700;
     text-decoration: underline;
     text-decoration-color: var(--gold, #c8892e);
     text-decoration-thickness: .17em;
     text-underline-offset: .16em;
     border-radius: 3px;
-    animation: demo-underline-in .6s ease-out both;
+    transform-origin: center bottom;
+    animation: demo-underline-in .9s ease-out both;
   }
   @keyframes demo-underline-in {
-    0%   { background: rgba(200, 137, 46, .55); }
-    100% { background: rgba(200, 137, 46, 0); }
+    0%   { background: rgba(200, 137, 46, .55); transform: scale(1); }
+    42%  { background: rgba(200, 137, 46, .32); transform: scale(1.18); }
+    100% { background: rgba(200, 137, 46, 0); transform: scale(1); }
   }
   /* The whole text block of the chosen principle is lit while its word is
      underlined, so the eye lands on the right sector first. */
