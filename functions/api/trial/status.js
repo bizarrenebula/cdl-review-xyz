@@ -9,7 +9,10 @@ export async function onRequestGet({ request, env }) {
   }
 
   const user = await env.TRIAL_DB.prepare(
-    'SELECT id, trial_start_at, trial_end_at, trial_ended, trial_ended_at FROM users WHERE id = ?'
+    `SELECT id, trial_start_at, trial_end_at,
+      verification_attempts AS trial_ended,
+      verification_expires_at AS trial_ended_at
+     FROM users WHERE id = ?`
   ).bind(session.sub).first();
   if (!user || !user.trial_start_at || !user.trial_end_at) {
     return json({ configured: true, state: 'unregistered', turnstileSiteKey: env.TURNSTILE_SITE_KEY || null });
@@ -27,13 +30,13 @@ export async function onRequestGet({ request, env }) {
     trialStart = now;
     trialEnd = now + 7 * 24 * 60 * 60 * 1000;
     await env.TRIAL_DB.prepare(`
-      UPDATE users SET trial_start_at = ?, trial_end_at = ?, trial_ended_at = NULL,
+      UPDATE users SET trial_start_at = ?, trial_end_at = ?, verification_expires_at = NULL,
         updated_at = ? WHERE id = ?
     `).bind(trialStart, trialEnd, now, user.id).run();
   } else if (!ended && trialEnd <= now) {
     ended = true;
     await env.TRIAL_DB.prepare(
-      'UPDATE users SET trial_ended = 1, trial_ended_at = ?, updated_at = ? WHERE id = ?'
+      'UPDATE users SET verification_attempts = 1, verification_expires_at = ?, updated_at = ? WHERE id = ?'
     ).bind(now, now, user.id).run();
   }
   const active = !ended && trialEnd > now;

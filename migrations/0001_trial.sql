@@ -16,4 +16,3 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE INDEX IF NOT EXISTS idx_users_trial_end ON users(trial_end_at);
 CREATE INDEX IF NOT EXISTS idx_users_created_at ON users(created_at);
-

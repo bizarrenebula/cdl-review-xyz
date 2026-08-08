@@ -11,7 +11,9 @@ export async function onRequestPost({ request, env }) {
 
   const suppliedHash = await codeHash(env, code);
   const user = await env.TRIAL_DB.prepare(
-    'SELECT * FROM users WHERE verification_code_hash = ?'
+    `SELECT *, verification_attempts AS trial_ended,
+      verification_expires_at AS trial_ended_at
+     FROM users WHERE verification_code_hash = ?`
   ).bind(suppliedHash).first();
   const now = Date.now();
   if (!user) return json({ error: 'That trial code is not valid.' }, 400);
@@ -22,7 +24,7 @@ export async function onRequestPost({ request, env }) {
   if (ended) return json({ error: 'This trial code has expired.', state: 'expired' }, 403);
   if (previousEnd && previousEnd <= now && !wasManuallyReset) {
     await env.TRIAL_DB.prepare(
-      'UPDATE users SET trial_ended = 1, trial_ended_at = ?, updated_at = ? WHERE id = ?'
+      'UPDATE users SET verification_attempts = 1, verification_expires_at = ?, updated_at = ? WHERE id = ?'
     ).bind(now, now, user.id).run();
     return json({ error: 'This trial code has expired.', state: 'expired' }, 403);
   }
@@ -31,7 +33,7 @@ export async function onRequestPost({ request, env }) {
   const trialEnd = !user.trial_end_at || wasManuallyReset ? trialStart + TRIAL_LENGTH_MS : previousEnd;
   await env.TRIAL_DB.prepare(`
     UPDATE users SET trial_start_at = ?, trial_end_at = ?,
-      trial_ended = 0, trial_ended_at = NULL, updated_at = ? WHERE id = ?
+      verification_attempts = 0, verification_expires_at = NULL, updated_at = ? WHERE id = ?
   `).bind(trialStart, trialEnd, now, user.id).run();
 
   const active = trialEnd > now;

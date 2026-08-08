@@ -8,8 +8,7 @@ disabled and the application opens normally.
 
 1. In Cloudflare, open **Workers & Pages → D1 SQL Database → Create database**.
 2. Name it `codeoflife-trials`.
-3. Open its console and execute `migrations/0001_trial.sql`, followed by
-   `migrations/0002_trial_codes.sql`.
+3. Open its console and execute `migrations/0001_trial.sql`.
 4. Open the Code of Life Pages project, then **Settings → Bindings → Add → D1 database**.
 5. Set the variable name to `TRIAL_DB` and select `codeoflife-trials`.
 6. Redeploy after adding the binding.
@@ -17,8 +16,9 @@ disabled and the application opens normally.
 The table can be inspected from the D1 console with:
 
 ```sql
-SELECT id, username, trial_code_prefix, trial_start_at, trial_end_at,
-       trial_ended, trial_ended_at, created_at
+SELECT id, username, trial_start_at, trial_end_at,
+       verification_attempts AS trial_ended,
+       verification_expires_at AS trial_ended_at, created_at
 FROM users
 ORDER BY created_at DESC;
 ```
@@ -28,7 +28,7 @@ ORDER BY created_at DESC;
 In **Settings → Variables and Secrets**, add:
 
 - `SESSION_SECRET`: at least 32 cryptographically random bytes, stored as an encrypted secret.
-- `TRIALS_ENABLED`: keep `false` until D1 and email delivery have been tested, then set to `true`.
+- `TRIALS_ENABLED`: keep `false` until D1 and trial-code activation have been tested, then set to `true`.
 
 ## Local development
 
@@ -44,6 +44,7 @@ binding. Never commit `.dev.vars`.
 - The first successful code verification starts exactly seven 24-hour periods.
 - Re-entering the same code never resets its existing trial timestamps.
 - Trial status is determined by server timestamps, not browser storage or the browser clock.
-- At expiry, `trial_ended` is set to `1` and `trial_ended_at` records when it happened.
-- To grant a fresh trial, set that user's `trial_ended` back to `0`. The next
+- The existing `verification_attempts` column is reused as `trial_ended`; at expiry it is set to `1`.
+  The existing `verification_expires_at` column records when expiry was detected.
+- To grant a fresh trial, set that user's `verification_attempts` back to `0`. The next
   session check or valid code entry starts a new seven-day window.
