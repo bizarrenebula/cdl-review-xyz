@@ -1530,6 +1530,35 @@
     }
     .bs-box .bs-keys .bs-icon { font-size: 1.22em; }
     .bs-box .bs-line .bs-icon { font-size: 1.45em; }
+    .bs-box .bs-person-icon {
+      position: relative;
+      width: 1.18em;
+      height: .92em;
+      min-width: 1.18em;
+      vertical-align: -.1em;
+    }
+    .bs-box .bs-person-icon::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      width: .34em;
+      height: .34em;
+      border-radius: 50%;
+      background: currentColor;
+      transform: translateX(-50%);
+    }
+    .bs-box .bs-person-icon::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      bottom: 0;
+      width: .86em;
+      height: .46em;
+      border-radius: .48em .48em .12em .12em;
+      background: currentColor;
+      transform: translateX(-50%);
+    }
 
     /* Once the wheel has moved, every wedge is a clickable journey-end. */
     #pcbase.engaged .base-wedge { cursor: pointer; }
@@ -2573,7 +2602,7 @@ function buildRadialBaseSectorsLegacy() {
     const kIco = document.createElement('b'); kIco.className = 'bs-icon'; kIco.textContent = '✧';
     kEl.append(kIco, document.createTextNode(' ' + item.keys));
     const pEl = document.createElement('div'); pEl.className = 'bs-line';
-    const pIco = document.createElement('b'); pIco.className = 'bs-icon'; pIco.textContent = '♟';
+    const pIco = document.createElement('b'); pIco.className = 'bs-icon bs-person-icon';
     pEl.append(pIco, document.createTextNode(' ' + item.people));
     const bEl = document.createElement('div'); bEl.className = 'bs-line';
     const bIco = document.createElement('b'); bIco.className = 'bs-icon'; bIco.textContent = '⚕';
@@ -2747,8 +2776,7 @@ function buildBaseSectors() {
     const people = document.createElement('div');
     people.className = 'bs-line';
     const peopleIcon = document.createElement('b');
-    peopleIcon.className = 'bs-icon';
-    peopleIcon.textContent = '♟';
+    peopleIcon.className = 'bs-icon bs-person-icon';
     people.append(peopleIcon, document.createTextNode(' ' + item.people));
     const body = document.createElement('div');
     body.className = 'bs-line';
