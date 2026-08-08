@@ -262,6 +262,7 @@
     header p { margin-top: .9rem; }
     .stage { margin: 1.8rem auto; }
   }
+  .mobile-guidance-slot,
   .mobile-correspondences { display: none; }
   @media (max-width: 899px) {
     header { transform: translateY(-.4rem); }
@@ -307,13 +308,60 @@
       font-weight: 700;
       filter: drop-shadow(0 0 2px #fff) drop-shadow(0 0 5px #f4c95a);
     }
+    .mobile-guidance-slot {
+      display: block;
+      position: relative;
+      width: min(92vw, 42rem);
+      height: 16.5rem;
+      margin: .45rem auto 1.5rem;
+    }
+    .wheel-gesture-hint {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      color: #b9852a;
+      visibility: hidden;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .3s ease, visibility .3s ease;
+    }
+    .wheel-gesture-hint.show { visibility: visible; opacity: 1; }
+    .wheel-gesture-hint svg {
+      width: min(48vw, 12rem);
+      height: auto;
+      overflow: visible;
+      filter: drop-shadow(0 2px 2px rgba(26, 17, 3, .18));
+    }
+    .gesture-orbit {
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-dasharray: 4 7;
+      opacity: .55;
+    }
+    .gesture-hand {
+      fill: rgba(250, 244, 230, .88);
+      stroke: currentColor;
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transform-origin: 110px 108px;
+      animation: gesture-turn 1.55s ease-in-out infinite alternate;
+    }
+    @keyframes gesture-turn {
+      from { transform: rotate(-23deg); }
+      to { transform: rotate(23deg); }
+    }
     .mobile-correspondences {
       display: grid;
       grid-template-rows: auto auto minmax(0, 1fr);
-      position: relative;
-      width: min(92vw, 42rem);
-      margin: .45rem auto 1.5rem;
-      height: 16.5rem;
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      margin: 0;
       box-sizing: border-box;
       padding: .65rem .75rem .75rem;
       border: 1px solid var(--line);
@@ -384,10 +432,13 @@
     }
   }
   @media (min-width: 640px) and (max-width: 899px) {
-    .mobile-correspondences { height: 10.5rem; }
+    .mobile-guidance-slot { height: 10.5rem; }
     .corr-grid { grid-template-columns: repeat(3, 1fr); grid-template-rows: minmax(0, 1fr); gap: .65rem; }
     .corr-field { display: block; }
     .corr-key { margin-bottom: .2rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .gesture-hand { animation: none; }
   }
   /* The outer ring reaches r=344 in a 700-unit viewBox, so its halo — and the
      counting ring past it — would be clipped flat by the SVG viewport. Let
@@ -957,16 +1008,28 @@
 </div>
 <div class="demo-balloon" id="demoBalloon" role="dialog" tabindex="0" aria-live="polite"></div>
 
-<section class="mobile-correspondences" id="correspondencePanel" aria-live="polite">
-  <button class="corr-close" id="closeCorrespondences" type="button" aria-label="Close">×</button>
-  <div class="corr-source" id="corrSource"></div>
-  <div class="corr-title" id="corrTitle"></div>
-  <div class="corr-grid">
-    <div class="corr-field"><div class="corr-key" id="corrKeysLabel"></div><div class="corr-value" id="corrKeys"></div></div>
-    <div class="corr-field"><div class="corr-key" id="corrPeopleLabel"></div><div class="corr-value" id="corrPeople"></div></div>
-    <div class="corr-field"><div class="corr-key" id="corrBodyLabel"></div><div class="corr-value" id="corrBody"></div></div>
+<div class="mobile-guidance-slot">
+  <div class="wheel-gesture-hint" id="wheelGestureHint" aria-hidden="true">
+    <svg viewBox="0 0 220 140" role="presentation">
+      <path class="gesture-orbit" d="M38 69 A80 80 0 0 1 182 69"/>
+      <path class="gesture-orbit" d="M38 69 l9 -7 M38 69 l11 3 M182 69 l-9 -7 M182 69 l-11 3"/>
+      <g class="gesture-hand">
+        <path d="M89 119 C80 108 79 98 83 91 C86 86 91 87 96 94 L96 49 C96 42 106 42 106 49 L106 82 L108 40 C108 33 118 33 118 40 L118 81 L120 49 C120 42 130 42 130 49 L130 84 L132 60 C132 53 142 54 142 61 L142 94 C142 110 131 123 116 128 C105 130 96 126 89 119 Z"/>
+        <circle cx="113" cy="28" r="4" fill="currentColor" stroke="none"/>
+      </g>
+    </svg>
   </div>
-</section>
+  <section class="mobile-correspondences" id="correspondencePanel" aria-live="polite">
+    <button class="corr-close" id="closeCorrespondences" type="button" aria-label="Close">×</button>
+    <div class="corr-source" id="corrSource"></div>
+    <div class="corr-title" id="corrTitle"></div>
+    <div class="corr-grid">
+      <div class="corr-field"><div class="corr-key" id="corrKeysLabel"></div><div class="corr-value" id="corrKeys"></div></div>
+      <div class="corr-field"><div class="corr-key" id="corrPeopleLabel"></div><div class="corr-value" id="corrPeople"></div></div>
+      <div class="corr-field"><div class="corr-key" id="corrBodyLabel"></div><div class="corr-value" id="corrBody"></div></div>
+    </div>
+  </section>
+</div>
 
 <div class="overlay" id="overlay" role="dialog" aria-modal="true">
   <div class="modal">
@@ -2296,12 +2359,23 @@ function updateMobileCorrespondences(ring = 'outer', force = false) {
 
 function showMobileCorrespondences(ring = 'outer', duringDemo = false) {
   if (isPcBase() || (demoActive && !duringDemo)) return;
+  hideWheelGestureHint();
   updateMobileCorrespondences(ring);
   document.getElementById('correspondencePanel')?.classList.add('open');
 }
 
 function hideMobileCorrespondences() {
   document.getElementById('correspondencePanel')?.classList.remove('open', 'updating');
+}
+
+function showWheelGestureHint() {
+  if (isPcBase()) return;
+  hideMobileCorrespondences();
+  document.getElementById('wheelGestureHint')?.classList.add('show');
+}
+
+function hideWheelGestureHint() {
+  document.getElementById('wheelGestureHint')?.classList.remove('show');
 }
 
 function applyRotation(ring) {
@@ -3227,6 +3301,7 @@ function showDemoChooser() {
   clearDemoTimers();
   clearDemoVisuals();
   hideMobileCorrespondences();
+  hideWheelGestureHint();
   document.body.classList.remove('intro-running');
   renderDemoChooser();
   demoOverlay.classList.add('open');
@@ -3249,6 +3324,7 @@ function interruptGuidedDemo(showChooser = true) {
   document.body.classList.remove('intro-running');
   resetWheelsToOne();
   if (showChooser) demoLater(showDemoChooser, 300);
+  else showWheelGestureHint();
 }
 
 function closeDemoChooser() {
@@ -3406,6 +3482,7 @@ function startGuidedDemo(key) {
   clearDemoTimers();
   clearDemoVisuals();
   hideMobileCorrespondences();
+  hideWheelGestureHint();
   demoOverlay.classList.remove('open');
   document.body.classList.add('intro-running');
   demoActive = true;
