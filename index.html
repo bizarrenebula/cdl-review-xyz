@@ -559,7 +559,7 @@
   .modal .field { margin-bottom: .75rem; }
   .modal .field .k {
     font-size: .62rem; letter-spacing: .2em; text-transform: uppercase;
-    color: var(--ink); margin-bottom: .15rem;
+    color: var(--ink); margin-bottom: .15rem; font-weight: 700;
   }
   .modal .field .v { font-size: .9rem; line-height: 1.55; }
   .modal .close {
@@ -575,6 +575,12 @@
   .demo-picker { max-width: 30rem; }
   .demo-picker h2 { padding-right: 1.5rem; }
   .demo-options { display: grid; gap: .65rem; margin-top: 1.2rem; }
+  /* Language buttons live inside the picker, below the examples — not fixed to
+     the corner (where the overlay would hide them during the tutorial). */
+  .lang-switch.demo-lang {
+    position: static; top: auto; right: auto;
+    justify-content: center; margin-top: 1.3rem;
+  }
   .demo-option {
     width: 100%;
     border: 1px solid var(--line);
@@ -594,6 +600,7 @@
   }
   .modal .demo-heading {
     border-radius: 4px;
+    font-weight: 700;
     background: rgba(242, 221, 126, .58);
     box-shadow: 0 0 0 4px rgba(242, 221, 126, .28), 0 0 16px rgba(180, 135, 45, .42);
     transition: background .25s ease, box-shadow .25s ease;
@@ -615,7 +622,7 @@
   .impulse { margin-top: 1rem; padding-top: .8rem; border-top: 1px dashed var(--line); }
   .impulse .k {
     font-size: .62rem; letter-spacing: .2em; text-transform: uppercase;
-    color: var(--ink); margin-bottom: .35rem;
+    color: var(--ink); margin-bottom: .35rem; font-weight: 700;
   }
   .impulse .lead { font-style: italic; font-size: .9rem; margin-bottom: .3rem; }
   .impulse ul { margin: .1rem 0 .7rem 1.2rem; }
@@ -768,7 +775,7 @@
     /* Principle number on each wheel sector, near the rim. */
     #pcbase .wheel-num-pc {
       font-family: 'Marcellus', serif;
-      font-size: 22px;
+      font-size: 27px;
       font-weight: 700;
       fill: var(--ink);
       pointer-events: none;
@@ -909,6 +916,12 @@
     <h2 id="demoTitle"></h2>
     <div class="rule"></div>
     <div class="demo-options" id="demoOptions"></div>
+    <div class="lang-switch demo-lang" aria-label="Language">
+      <button data-lang="de">DE</button>
+      <button data-lang="en">EN</button>
+      <button data-lang="ru">RU</button>
+      <button data-lang="bg">BG</button>
+    </div>
   </div>
 </div>
 
@@ -1388,7 +1401,7 @@ const LP = () => I18N[lang].lp;
    palette stays deliberately pale so black type and fine linework remain the
    strongest visual layer. */
 const LP_COLORS = [
-  '#f2a06f', // fire — warm red-orange
+  '#e0604a', // fire — warm red
   '#9fc58a', // earth — natural green
   '#f2dd7e', // wind  — soft yellow
   '#8bbdd8'  // water — calm blue
@@ -1707,7 +1720,7 @@ function buildBaseSectors() {
     return b;
   })();
 
-  const fNum = Math.max(15, Math.min(28, H * 0.032));
+  const fNum = Math.max(19, Math.min(36, H * 0.042));
   const capFont = fNum * 1.7;                       // ceiling for body text, relative to the number
 
   /* Sample a wedge's outline (inner arc + outer edge) as a polygon, and find
