@@ -1731,7 +1731,11 @@ function buildBaseSectors() {
   const ns = 'http://www.w3.org/2000/svg';
   const cx = W / 2, cy = H / 2;
   const stageH = stageEl.getBoundingClientRect().height;
-  const Rin = (stageH / 2) * (344 / 350) + 2;     // wedges begin just past the rim
+  const wheelRimRadius = (stageH / 2) * (344 / 350);
+  const Rin = wheelRimRadius + 2;                  // wedges begin just past the rim
+  /* PC wheel numbers sit 15 viewBox units inside its 344-unit rim. Mirror that
+     exact rendered offset outside the rim for the base principle numbers. */
+  const baseNumberRadius = wheelRimRadius + stageH * (15 / 700);
 
   const rad = d => d * Math.PI / 180;
   const pol = (r, d) => [cx + r * Math.sin(rad(d)), cy - r * Math.cos(rad(d))];
@@ -1845,11 +1849,9 @@ function buildBaseSectors() {
     if (Math.abs(A) > 1) { cX /= 6 * A; cY /= 6 * A; }
     else { cX = poly.reduce((s, p) => s + p[0], 0) / poly.length; cY = poly.reduce((s, p) => s + p[1], 0) / poly.length; }
 
-    /* The principle number sits near the outer edge on the mid-angle; the text
-       box is kept clear of it. */
-    const [imx, imy] = pol(Rin, (ia1 + ia2) / 2);
-    const [omx, omy] = rectHit((oa1 + oa2) / 2);
-    const numX = omx * 0.9 + imx * 0.1, numY = omy * 0.9 + imy * 0.1;
+    /* Mirror the wheel's principle number across the rim. Keeping the base
+       number near the wheel frees the sector's wider outer area for its copy. */
+    const [numX, numY] = pol(baseNumberRadius, (ia1 + ia2) / 2);
     const numR = fNum * 0.95;
 
     /* Rotate a point around the sector centroid. The text box is built in this
@@ -1982,8 +1984,8 @@ function buildBaseSectors() {
         const py = spineInner[1] + (spineOuter[1] - spineInner[1]) * u;
         centres.push(rotP(px, py, -tilt));
       }
-      /* On the thin top/bottom wedges the number sits in the middle of the wide
-         outer strip; a smaller keep-out lets the text claim more of that width. */
+      /* A slightly smaller keep-out on thin top/bottom wedges leaves enough
+         room beside the number at their narrow inner edge. */
       const keepR = isSide ? numR : numR * 0.55;
       for (const [bx, by] of centres)
         for (const r0 of maxRectAt(plR, bx, by, nRx, nRy, keepR)) {
@@ -2008,8 +2010,7 @@ function buildBaseSectors() {
     fo.setAttribute('height', (gBest.r.hH * 2).toFixed(1));
     if (gBest.tilt) fo.setAttribute('transform', `rotate(${gBest.tilt.toFixed(2)}, ${acx.toFixed(1)}, ${acy.toFixed(1)})`);
 
-    /* The principle number, near the outer edge on the mid-angle (kept clear of
-       the text above). */
+    /* The principle number, immediately outside the wheel on the mid-angle. */
     const num = document.createElementNS(ns, 'text');
     num.setAttribute('class', 'base-num base-copy');
     num.style.setProperty('--copy-delay', `${880 + pIdx * 12}ms`);
