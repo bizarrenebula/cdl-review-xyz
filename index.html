@@ -4669,6 +4669,9 @@ const TRIAL_COPY = {
 
 let trialEndAt = 0;
 let trialExpiryTimer = null;
+let releaseTrialGateReveal;
+let trialGateRevealReleased = false;
+const trialGateReveal = new Promise(resolve => { releaseTrialGateReveal = resolve; });
 const trialGate = document.getElementById('trialGate');
 const trialCode = document.getElementById('trialCode');
 const trialBegin = document.getElementById('trialBegin');
@@ -4710,6 +4713,11 @@ function showExpiredTrial() {
 function showTrialGate() {
   trialGate.hidden = false;
   document.body.classList.add('trial-locked');
+}
+function signalTrialGateReveal() {
+  if (trialGateRevealReleased) return;
+  trialGateRevealReleased = true;
+  releaseTrialGateReveal();
 }
 async function expireTrialAtDeadline() {
   try { await trialApi('status'); } catch { /* The local barrier still closes on time. */ }
@@ -4756,6 +4764,7 @@ async function initializeTrialGate() {
       showExpiredTrial();
       return;
     }
+    await trialGateReveal;
     showTrialGate();
     trialCode.focus({ preventScroll:true });
   } catch (error) {
@@ -4828,11 +4837,13 @@ document.addEventListener('visibilitychange', () => {
    reveal the copy and selected sector. */
 function scheduleLandingIntro() {
   if (!isPcBase()) {
+    signalTrialGateReveal();
     document.body.classList.remove('intro-base-away', 'intro-wheel-away', 'intro-wheel-landing', 'intro-wheel-geometry-away', 'intro-wheel-colors-away', 'intro-wheel-copy-away', 'intro-wheel-sun', 'intro-selection-away', 'intro-running');
     demoLater(showGuideNudge, 650);
     return;
   }
   if (reduceMotion()) {
+    signalTrialGateReveal();
     document.body.classList.remove('intro-base-away', 'intro-wheel-away', 'intro-wheel-landing', 'intro-wheel-geometry-away', 'intro-wheel-colors-away', 'intro-wheel-copy-away', 'intro-wheel-sun', 'intro-selection-away', 'intro-running');
     showGuideNudge();
     return;
@@ -4845,6 +4856,7 @@ function scheduleLandingIntro() {
   demoLater(() => document.body.classList.remove('intro-wheel-colors-away'), 1120);
   demoLater(() => {
     document.body.classList.remove('intro-wheel-landing', 'intro-wheel-copy-away', 'intro-wheel-sun');
+    signalTrialGateReveal();
   }, 1700);
   demoLater(() => document.body.classList.remove('intro-base-away'), 1850);
   demoLater(() => document.body.classList.remove('intro-selection-away'), 3200);
