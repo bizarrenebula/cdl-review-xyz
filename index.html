@@ -855,14 +855,37 @@
       line-height: 1.55;
     }
     #overlay.result-open .result-mottos {
+      position: relative;
       order: 2;
-      margin: 1.4rem auto 0;
+      margin: 1.75rem auto .15rem;
       max-width: 58rem;
+      padding: .45rem 4rem .55rem;
       text-align: center;
     }
+    #overlay.result-open .result-mottos::before,
+    #overlay.result-open .result-mottos::after {
+      position: absolute;
+      font-family: 'Marcellus', serif;
+      font-size: 4.5rem;
+      line-height: 1;
+      color: rgba(156, 114, 37, .42);
+      pointer-events: none;
+    }
+    #overlay.result-open .result-mottos::before {
+      content: '\201C';
+      top: -.15rem;
+      left: .35rem;
+    }
+    #overlay.result-open .result-mottos::after {
+      content: '\201D';
+      right: .35rem;
+      bottom: -.65rem;
+    }
     #overlay.result-open .result-mottos .motto {
-      margin-bottom: .35rem;
-      font-size: 1.03rem;
+      position: relative;
+      margin-bottom: .3rem;
+      font-size: 1.08rem;
+      line-height: 1.55;
     }
     #overlay.result-open .impulse {
       order: 3;
@@ -871,7 +894,7 @@
       padding: 1.25rem 1.5rem 1.35rem 1.8rem;
       border-top: 0;
       border-left: 3px solid rgba(156, 114, 37, .66);
-      background: linear-gradient(90deg, rgba(180, 135, 45, .09), rgba(180, 135, 45, .025));
+      background: transparent;
     }
     #overlay.result-open .impulse > .k {
       margin-bottom: .75rem;
