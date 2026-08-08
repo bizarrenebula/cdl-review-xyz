@@ -2926,9 +2926,14 @@ function bookHTML(p, e) {
   if (sec.m && sec.m.length) html += sec.m.map(t => `<p class="motto">${t}</p>`).join('');
   html += field(L.a, sec.a) + field(L.i, sec.i) + field(L.b, sec.b);
   html += `<div class="impulse"><div class="k">${L.s}</div>`;
+  const sourceSolutions = BOOK_DE[key]?.s || [];
   let listOpen = false;
-  sec.s.forEach(ln => {
-    if (/^(je mehr|desto)/i.test(ln)) {
+  sec.s.forEach((ln, index) => {
+    /* The translated line may no longer begin with the German structural
+       markers. Use its matching source line so “the more … the more …” stays
+       introductory/concluding prose in every language, with bullets only on
+       the actionable items between those lines. */
+    if (/^(je mehr|desto)/i.test(sourceSolutions[index] || '')) {
       if (listOpen) { html += '</ul>'; listOpen = false; }
       html += `<p class="lead">${ln}</p>`;
     } else {
