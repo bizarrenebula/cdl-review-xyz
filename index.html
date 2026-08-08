@@ -2188,6 +2188,7 @@ function buildBaseSectors() {
   const outerPad = Math.max(12, W * .009);
   const numberGap = fNum * 1.75;
   const capFont = Math.max(16, Math.min(30, nominalRowH * .28));
+  const floorFont = Math.max(10, Math.min(15, W * .008));
   const columns = [
     { side: 'left', principles: [9, 10, 11, 0, 1, 2] },
     { side: 'right', principles: [8, 7, 6, 5, 4, 3] }
@@ -2234,7 +2235,10 @@ function buildBaseSectors() {
     fo.appendChild(box);
     baseSvg.appendChild(fo);
 
-    let lo = 8, hi = capFont;
+    /* Long translated people lines used to collapse the whole middle block to
+       8px. Wrapping now absorbs that length; this responsive floor keeps every
+       row readable while still allowing narrower desktop windows to fit. */
+    let lo = floorFont, hi = capFont;
     for (let i = 0; i < 10; i++) {
       const mid = (lo + hi) / 2;
       box.style.fontSize = `${mid}px`;
