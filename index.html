@@ -709,9 +709,10 @@
     }
     header { padding: 1.4rem 1rem .5rem; flex: 0 0 auto; }
     header p {
-      max-width: none;
-      white-space: nowrap;
+      max-width: min(96vw, 95rem);
+      white-space: normal;
       font-size: clamp(1rem, 1.45vw, 1.4rem);
+      line-height: 1.25;
     }
 
     /* The base rectangle. The twelve principle wedges (SVG) fill it and wrap
@@ -1005,7 +1006,7 @@ const I18N = {
     ui: {
       title: 'Der Code des Lebens',
       subtitle: 'Drehen Sie das äußere Rad (Ihre äußere Welt) nach links und rechts, um die Person zu wählen, und drehen Sie das innere Rad (Ihre innere Welt) nach links und rechts, um die Kategorie des Ereignisses zu wählen.',
-      pcSubtitle: 'Bewegen Sie das Rad, um die Person auszuwählen, und wählen Sie dann einen Sektor auf der Basis.',
+      pcSubtitle: 'Drehen Sie das Rad (Sie), um eine Person aus Ihrer äußeren Welt (der Basis) auszuwählen, und wählen Sie dann, was in der inneren Welt dieser Person geschehen ist.',
       alignment: 'Ausrichtung',
       readMore: 'Mehr lesen',
       outer: 'Außen · Personen',
@@ -1118,7 +1119,7 @@ const I18N = {
     ui: {
       title: 'The Code of Life',
       subtitle: 'Rotate the outer wheel (your outer world) left and right to select the person, and rotate the inner wheel (your inner world) left and right to select the category of the event.',
-      pcSubtitle: 'Move the wheel to select the person, then choose a sector on the base.',
+      pcSubtitle: "Rotate the wheel (you), to select a person from your outer world (the base), and then choose what happened to that person's inner world.",
       alignment: 'Alignment',
       readMore: 'Read more',
       outer: 'Outer · People',
@@ -1231,7 +1232,7 @@ const I18N = {
     ui: {
       title: 'Код жизни',
       subtitle: 'Поворачивайте внешнее колесо (ваш внешний мир) влево и вправо, чтобы выбрать человека, и поворачивайте внутреннее колесо (ваш внутренний мир) влево и вправо, чтобы выбрать категорию события.',
-      pcSubtitle: 'Двигайте колесо, чтобы выбрать человека, затем выберите сектор на основе.',
+      pcSubtitle: 'Вращайте колесо (вы), чтобы выбрать человека из вашего внешнего мира (основы), а затем выберите, что произошло во внутреннем мире этого человека.',
       alignment: 'Совмещение',
       readMore: 'Подробнее',
       outer: 'Внешний · Люди',
@@ -1344,7 +1345,7 @@ const I18N = {
     ui: {
       title: 'Кодът на живота',
       subtitle: 'Завъртайте външното колело (вашият външен свят) наляво и надясно, за да изберете човека, и завъртайте вътрешното колело (вашият вътрешен свят) наляво и надясно, за да изберете категорията на събитието.',
-      pcSubtitle: 'Преместете колелото, за да изберете човека, след което изберете сектор от основата.',
+      pcSubtitle: 'Завъртете колелото (вие), за да изберете човек от вашия външен свят (основата), а след това изберете какво се е случило във вътрешния свят на този човек.',
       alignment: 'Подравняване',
       readMore: 'Прочети още',
       outer: 'Външен · Хора',
